@@ -1,0 +1,68 @@
+#!/usr/bin/env python
+import argparse
+from ZenPacks.zenoss.Import4 import migration, model, events, perf
+
+
+def run_migration(MigrationClass, args):
+    _migration = MigrationClass(args, progress_report)
+    result = _migration.prevalidate()
+    if args.dryrun or isFailure(result, args.ignorewarnings):
+        exit(migration.exitCode[result])
+
+    try:
+        _migration.wipe()
+        _migration.doImport()
+    except Exception as ex:
+        raise ex
+    else:
+        result = _migration.postvalidate()
+        if isFailure(result, args.ignorewarnings):
+            exit(migration.exitCode[result])
+
+
+def isFailure(result, ignoreWarnings=False):
+    return result == migration.ValidationResults.FAILURE or \
+           (result == migration.ValidationResults.WARNING and not ignoreWarnings)
+
+
+def progress_report(progress):
+    print progress
+
+
+def parse_args():
+    parser = argparse.ArgumentParser(description=(
+        "Import data from a 4.x Zenoss instance. These imports are destructive - "
+        "the relevant datastore on this instance will be destroyed, and the 4.x "
+        "data imported in its place.\n\n"
+        "Model data migration must be run first, and only by itself.\n"
+        "Events and Performance data migration may be run simultaneously."
+    ))
+
+    parser.add_argument('-c', '--check', '--dry-run', action='store_true', dest='dryrun',
+                        help="Pre-validate only, do not perform any destructive operations")
+    parser.add_argument('-f', '--ignore-warnings', action='store_true', dest='ignorewarnings',
+                        help="Continue with the import even if pre-validation generates warnings")
+    parser.add_argument('-d', '--debug', action='store_true', dest='debug',
+                        help="Log at debug level")
+    parser.add_argument('-s', '--stage', dest='staging_dir',
+                        help="Location to use for file staging during the import process")
+
+    subparsers = parser.add_subparsers(dest='subparsers')
+
+    for module in (model, events, perf):
+        parser = module.get_command(subparsers)
+        parser.add_argument('file', type=file, help="4x archive file to import")
+        parser.set_defaults(functor=lambda args: run_migration(module.Migration, args))
+
+    args = parser.parse_args()
+
+    return args
+
+
+def main():
+    args = parse_args()
+    args.functor(args)
+
+
+if __name__ == "__main__":
+    main()
