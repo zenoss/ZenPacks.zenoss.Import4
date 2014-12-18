@@ -1,4 +1,3 @@
-# import argparse
 from ZenPacks.zenoss.Import4.migration import MigrationBase
 
 
