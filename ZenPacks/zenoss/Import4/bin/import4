@@ -1,12 +1,12 @@
 #!/usr/bin/env python
-import sys
-import os
 import argparse
 
 from ZenPacks.zenoss.Import4 import migration, model, events, perf
 
-def run_migration(MigrationClass, args):
-    _migration = MigrationClass(args, progress_report)
+
+def run_migration(migration_class, args):
+    # The main control running a migration process
+    _migration = migration_class(args, progress_report)
     result = _migration.prevalidate()
     if args.dryrun or isFailure(result, args.ignorewarnings):
         exit(migration.exitCode[result])
@@ -23,22 +23,23 @@ def run_migration(MigrationClass, args):
 
 
 def isFailure(result, ignoreWarnings=False):
-    return result == migration.ValidationResults.FAILURE or \
-           (result == migration.ValidationResults.WARNING and not ignoreWarnings)
+    return (result == migration.ValidationResults.FAILURE or
+            (result == migration.ValidationResults.WARNING and
+             not ignoreWarnings))
 
 
-def progress_report(progress):
-    print progress
+def progress_report(msg):
+    print msg
 
 
 def parse_args():
     parser = argparse.ArgumentParser(
         description=(
-        "Import data from a 4.x Zenoss instance. These imports are destructive - "
-        "the relevant datastores on this instance will be destroyed, and the 4.x "
-        "data imported in its place.\n\n"
-        "Model data migration must be run first, and only by itself.\n"
-        "Events and Performance data migration may be run simultaneously."
+            "Import data from a 4.x Zenoss instance. These imports are destructive - "
+            "the relevant datastores on this instance will be destroyed, and the 4.x "
+            "data imported in its place.\n\n"
+            "Model data migration must be run first, and only by itself.\n"
+            "Events and Performance data migration may be run simultaneously."
         )
     )
 
@@ -54,9 +55,9 @@ def parse_args():
     subparsers = parser.add_subparsers(help='Group of migration functions')
 
     for module in (model, events, perf):
-        m_parser = module.get_command(subparsers)
+        m_parser = module.init_command_parser(subparsers)
         m_parser.add_argument('file', type=argparse.FileType('r'), help="4.x archive file to import")
-        m_parser.set_defaults(functor=lambda args: run_migration(module.Migration, args))
+        m_parser.set_defaults(functor=lambda args, mclass=module.Migration: run_migration(mclass, args))
 
     args = parser.parse_args()
 
