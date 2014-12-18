@@ -3,13 +3,6 @@ import sys
 import os
 import argparse
 
-# Finding the package location -
-# the import script and the migration functions are included in the same Zenpack
-# assuming their relateive dir location is fixed
-script_location=sys.argv[0]
-package_location=os.path.abspath("%s/../../../.." % os.path.dirname(script_location))
-
-sys.path.append(package_location)
 from ZenPacks.zenoss.Import4 import migration, model, events, perf
 
 def run_migration(MigrationClass, args):
