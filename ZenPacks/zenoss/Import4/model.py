@@ -7,5 +7,5 @@ class Migration(MigrationBase):
 
 
 def get_command(subparsers):
-    model_parser = subparsers.add_parser('model')
+    model_parser = subparsers.add_parser('model', help='migrate model data')
     return model_parser
