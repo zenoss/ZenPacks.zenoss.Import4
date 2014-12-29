@@ -40,8 +40,9 @@ class MigrationBase(object):
         return
 
     def reportProgress(self, progress):
-        # callback to self.progress register at creation
-        self.progress(progress)
+        # callback to self.progress if register at creation
+        if self.progress:
+            self.progress(progress)
 
     def postvalidate(self):
         self.__NOT_YET__()

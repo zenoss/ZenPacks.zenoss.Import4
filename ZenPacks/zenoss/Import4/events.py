@@ -53,7 +53,6 @@ class Migration(MigrationBase):
         return
 
     def doImport(self):
-        self.prevalidate()
         self._restoreMySqlDb('zodb')
         return
 
@@ -86,7 +85,8 @@ class Migration(MigrationBase):
         """
         unpack the backup package to sql files
         """
-        cmd = 'tar Cxf %s %s' % (self.tempDir, self.file.name)
+        cmd = 'tar --wildcards-match-slash -C %s -f %s -x %s' % (
+            self.tempDir, self.file.name, 'zenbackup/zep.sql\*')
         if os.system(cmd):
             return Results.UNTAR_FAIL
         else:
@@ -122,7 +122,7 @@ class Migration(MigrationBase):
             cmd_fmt = "cat {sql_path}"
         cmd_fmt += " | {mysql_cmd} {db}"
         cmd = cmd_fmt.format(**locals())
-        proc = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
+        proc = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         while True:
             raw_line = proc.stdout.readline()
             if raw_line != '':
