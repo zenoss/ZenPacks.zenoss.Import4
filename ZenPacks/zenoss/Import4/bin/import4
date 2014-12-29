@@ -1,15 +1,32 @@
 #!/usr/bin/env python
 import argparse
+import sys
 
 from ZenPacks.zenoss.Import4 import migration, model, events, perf
+
+exitCode = {
+    # event module mapping
+    events.Results.SYSTEM_ERROR: 8,
+    events.Results.UNTAR_FAIL: 7,
+    events.Results.INVALID: 6,
+    events.Results.WARNING: 5,
+    events.Results.FAILURE: 4,
+    events.Results.SUCCESS: 0,
+
+    # migration module mapping
+    migration.Results.FAILURE: 2,
+    migration.Results.WARNING: 1,
+    migration.Results.SUCCESS: 0,
+    None: -1    # when the method has not been implemented
+}
 
 
 def run_migration(migration_class, args):
     # The main control running a migration process
-    _migration = migration_class(args, progress_report)
+    _migration = migration_class(args, progress_report_callback)
     result = _migration.prevalidate()
     if args.dryrun or isFailure(result, args.ignorewarnings):
-        exit(migration.exitCode[result])
+        exit(exitCode[result])
 
     try:
         _migration.wipe()
@@ -19,17 +36,17 @@ def run_migration(migration_class, args):
     else:
         result = _migration.postvalidate()
         if isFailure(result, args.ignorewarnings):
-            exit(migration.exitCode[result])
+            exit(exitCode[result])
 
 
 def isFailure(result, ignoreWarnings=False):
-    return (result == migration.ValidationResults.FAILURE or
-            (result == migration.ValidationResults.WARNING and
+    return (result == migration.Results.FAILURE or
+            (result == migration.Results.WARNING and
              not ignoreWarnings))
 
 
-def progress_report(msg):
-    print msg
+def progress_report_callback(msg):
+    sys.stdout.write(msg)
 
 
 def parse_args():
@@ -49,8 +66,14 @@ def parse_args():
                         help="Continue with the import even if pre-validation generates warnings")
     parser.add_argument('-d', '--debug', action='store_true', dest='debug', default=False,
                         help="Log at debug level")
-    parser.add_argument('-s', '--stage', dest='staging_dir', default=".",
+    parser.add_argument('-s', '--stage', dest='staging_dir', default='.',
                         help="Location to use for file staging during the import process")
+    parser.add_argument('-i', '--ip', dest='ip', default="localhost",
+                        help="The ip address for MariaDB host")
+    parser.add_argument('-u', '--user', dest='user', default='root',
+                        help="The username for MariaDB access")
+    parser.add_argument('-p', '--password', dest='password', default=None,
+                        help="The password for MariaDB access")
 
     subparsers = parser.add_subparsers(help='Group of migration functions')
 
