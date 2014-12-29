@@ -6,11 +6,12 @@ from ZenPacks.zenoss.Import4 import migration, model, events, perf
 
 exitCode = {
     # event module mapping
-    events.Results.SYSTEM_ERROR: 8,
+    events.Results.COMMAND_ERROR: 8,
     events.Results.UNTAR_FAIL: 7,
     events.Results.INVALID: 6,
-    events.Results.WARNING: 5,
-    events.Results.FAILURE: 4,
+
+    events.Results.FAILURE: 2,
+    events.Results.WARNING: 1,
     events.Results.SUCCESS: 0,
 
     # migration module mapping
@@ -24,19 +25,41 @@ exitCode = {
 def run_migration(migration_class, args):
     # The main control running a migration process
     _migration = migration_class(args, progress_report_callback)
-    result = _migration.prevalidate()
-    if args.dryrun or isFailure(result, args.ignorewarnings):
-        exit(exitCode[result])
+
+    # the prevalidation phase
+    try:
+        _migration.prevalidate()
+    except migration.ImportError as err:
+        sys.stderr.write('Error: %s(%d)\n' % (err.error_string, err.return_code))
+        _rc = exitCode[err.error_string]
+        if _rc >= 2:
+            exit (_rc)
+        elif (_rc == 1) and (not args.ignorewarnings):
+            exit (1)
+            # else, we continue
+    except Exception as e:
+        # unrecognized exception
+        print "Huh? unknown exception", e
+        exit (-1)
+
+    # we return when it is just a dryrun
+    if args.dryrun:
+        exit(0)
 
     try:
         _migration.wipe()
         _migration.doImport()
-    except Exception as ex:
-        raise ex
-    else:
-        result = _migration.postvalidate()
-        if isFailure(result, args.ignorewarnings):
-            exit(exitCode[result])
+        _migration.postvalidate()
+    except migration.ImportError as err:
+        sys.stderr.write('Error: %s(%d)\n' % (err.error_string, err.return_code))
+        _rc = exitCode[err.error_string]
+        if _rc >= 2:
+            exit (_rc)
+        elif (_rc == 1) and (not args.ignorewarnings):
+            exit (1)
+
+    # finished successfully
+    exit (0)
 
 
 def isFailure(result, ignoreWarnings=False):
