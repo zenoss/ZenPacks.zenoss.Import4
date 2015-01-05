@@ -1,5 +1,6 @@
 import os
 import subprocess
+import tempfile
 
 from ZenPacks.zenoss.Import4.migration import MigrationBase, ImportError
 
@@ -63,7 +64,9 @@ class Migration(MigrationBase):
     def reportProgress(self, raw_line):
         # filtering the lines
         _msg = ''
-        if raw_line.find('LOCK TABLES') == 0:
+        if raw_line.find('stderr') == 0:
+            _msg = raw_line
+        elif raw_line.find('LOCK TABLES') == 0:
             _msg = raw_line
         elif raw_line.find('DROP TABLE') == 0:
             _msg = raw_line
@@ -133,8 +136,11 @@ class Migration(MigrationBase):
             cmd_fmt = "cat {sql_path}"
         cmd_fmt += " | {mysql_cmd} {db}"
         cmd = cmd_fmt.format(**locals())
+
+        # prep for the error log file for the restoration command
+        _errfile = tempfile.NamedTemporaryFile(mode='w+b', dir=self.tempDir, prefix='_zen', delete=True)
         proc = subprocess.Popen(cmd, shell=True,
-                                stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                                stdout=subprocess.PIPE, stderr=_errfile)
         while True:
             raw_line = proc.stdout.readline()
             if raw_line != '':
@@ -145,14 +151,18 @@ class Migration(MigrationBase):
         proc.wait()
         if proc.returncode != 0:
             # report the stderr of the subprocess
+            # only if the return code is not success
+            _errfile.seek(0)
             while True:
-                raw_line = proc.stderr.readline()
+                raw_line = _errfile.readline()
                 if raw_line != '':
-                    self.reportProgress(raw_line)
+                    self.reportProgress('stderr:'+raw_line)
                 else:
                     break
+            _errfile.close()
             self.reportProgress(Results.FAILURE)
             raise EventImportError(Results.FAILURE, proc.returncode)
 
+        _errfile.close()
         self.reportProgress(Results.SUCCESS)
         return

@@ -18,6 +18,7 @@ exitCode = {
     migration.Results.FAILURE: 2,
     migration.Results.WARNING: 1,
     migration.Results.SUCCESS: 0,
+
     None: -1    # when the method has not been implemented
 }
 
@@ -29,43 +30,30 @@ def run_migration(migration_class, args):
     # the prevalidation phase
     try:
         _migration.prevalidate()
+
+        # we return when it is just a dryrun
+        if args.dryrun:
+            exit(exitCode[migration.Results.SUCCESS])
+
+        _migration.wipe()
+        _migration.doImport()
+        _migration.postvalidate()
+
     except migration.ImportError as err:
         sys.stderr.write('Error: %s(%d)\n' % (err.error_string, err.return_code))
         _rc = exitCode[err.error_string]
-        if _rc >= 2:
-            exit (_rc)
-        elif (_rc == 1) and (not args.ignorewarnings):
-            exit (1)
+        if _rc >= exitCode[migration.Results.FAILURE]:
+            exit(_rc)
+        elif (_rc == exitCode[migration.Results.WARNING]) and (not args.ignorewarnings):
+            exit(_rc)
             # else, we continue
     except Exception as e:
         # unrecognized exception
         print "Huh? unknown exception", e
-        exit (-1)
+        exit(-1)
 
-    # we return when it is just a dryrun
-    if args.dryrun:
-        exit(0)
-
-    try:
-        _migration.wipe()
-        _migration.doImport()
-        _migration.postvalidate()
-    except migration.ImportError as err:
-        sys.stderr.write('Error: %s(%d)\n' % (err.error_string, err.return_code))
-        _rc = exitCode[err.error_string]
-        if _rc >= 2:
-            exit (_rc)
-        elif (_rc == 1) and (not args.ignorewarnings):
-            exit (1)
-
-    # finished successfully
-    exit (0)
-
-
-def isFailure(result, ignoreWarnings=False):
-    return (result == migration.Results.FAILURE or
-            (result == migration.Results.WARNING and
-             not ignoreWarnings))
+    # all finished successfully
+    exit(exitCode[migration.Results.SUCCESS])
 
 
 def progress_report_callback(msg):
