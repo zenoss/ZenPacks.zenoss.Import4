@@ -1,16 +1,22 @@
 import os
 import subprocess
+import tempfile
 
-from ZenPacks.zenoss.Import4.migration import MigrationBase
+from ZenPacks.zenoss.Import4.migration import MigrationBase, ImportError
 
 
 class Results(object):
-    SYSTEM_ERROR = 'EVENTMIGRATION_SYSTEM_ERROR'
+    COMMAND_ERROR = 'EVENTMIGRATION_COMMAND_ERROR'
     UNTAR_FAIL = 'EVENTMIGRATION_UNTAR_FAILED'
     INVALID = 'EVENTMIGRATION_INVALID'
     WARNING = 'EVENTMIGRATION_WARNING'
     FAILURE = 'EVENTMIGRATION_FAILURE'
     SUCCESS = 'EVENTMIGRATION_SUCCESS'
+
+
+class EventImportError(ImportError):
+    def __init__(self, error_string, return_code):
+        super(EventImportError, self).__init__(error_string, return_code)
 
 
 def init_command_parser(subparsers):
@@ -28,13 +34,12 @@ class Migration(MigrationBase):
 
     def prevalidate(self):
         # untar the provided zenbackup package
-        result = self._untarZenbackup()
-        if result is not Results.SUCCESS:
-            return result
+        # exception from this passed upward
+        self._untarZenbackup()
 
         # check the untar results
         if not os.path.exists(self.zenbackup_dir):
-            return Results.INVALID
+            raise EventImportError(Results.INVALID, -1)
 
         # attempt to find the zep.sql file
         self.zenbackup_file = os.path.join(self.zenbackup_dir, 'zep.sql')
@@ -42,10 +47,10 @@ class Migration(MigrationBase):
             self.zenbackup_file = os.path.join(self.zenbackup_dir, 'zep.sql.gz')
             # try another variety
             if not os.path.isfile(self.zenbackup_file):
-                return Results.INVALID
+                raise EventImportError(Results.INVALID, -1)
 
         # all files in place
-        return Results.SUCCESS
+        return
 
     def wipe(self):
         # this will be done by the import itself
@@ -59,7 +64,9 @@ class Migration(MigrationBase):
     def reportProgress(self, raw_line):
         # filtering the lines
         _msg = ''
-        if raw_line.find('LOCK TABLES') == 0:
+        if raw_line.find('stderr') == 0:
+            _msg = raw_line
+        elif raw_line.find('LOCK TABLES') == 0:
             _msg = raw_line
         elif raw_line.find('DROP TABLE') == 0:
             _msg = raw_line
@@ -79,18 +86,24 @@ class Migration(MigrationBase):
 
     def postvalidate(self):
         # we assume the db operations are all correct if no error returned
-        return Results.SUCCESS
+        return
 
     def _untarZenbackup(self):
         """
         unpack the backup package to sql files
         """
+        # remove the target dir
+        cmd = 'cd %s; rm -rf %s' % (self.tempDir, 'zenbackup')
+        _rc = os.system(cmd)
+        if _rc > 0:
+            raise EventImportError(Results.COMMAND_ERROR, _rc)
+
         cmd = 'tar --wildcards-match-slash -C %s -f %s -x %s' % (
             self.tempDir, self.file.name, 'zenbackup/zep.sql\*')
-        if os.system(cmd):
-            return Results.UNTAR_FAIL
-        else:
-            return Results.SUCCESS
+        _rc = os.system(cmd)
+        if _rc:
+            raise EventImportError(Results.UNTAR_FAIL, _rc)
+        return
 
     def _restoreMySqlDb(self, db):
         """
@@ -112,8 +125,9 @@ class Migration(MigrationBase):
         mysql_cmd = subprocess.list2cmdline(mysql_cmd)
 
         cmd = 'echo "create database if not exists %s" | %s' % (db, mysql_cmd)
-        if os.system(cmd):
-            return Results.SYSTEM_ERROR
+        _rc = os.system(cmd)
+        if _rc:
+            raise EventImportError(Results.COMMAND_ERROR, _rc)
 
         sql_path = self.zenbackup_file
         if sql_path.endswith('.gz'):
@@ -122,13 +136,33 @@ class Migration(MigrationBase):
             cmd_fmt = "cat {sql_path}"
         cmd_fmt += " | {mysql_cmd} {db}"
         cmd = cmd_fmt.format(**locals())
-        proc = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
+        # prep for the error log file for the restoration command
+        _errfile = tempfile.NamedTemporaryFile(mode='w+b', dir=self.tempDir, prefix='_zen', delete=True)
+        proc = subprocess.Popen(cmd, shell=True,
+                                stdout=subprocess.PIPE, stderr=_errfile)
         while True:
             raw_line = proc.stdout.readline()
             if raw_line != '':
                 self.reportProgress(raw_line)
             else:
                 break
-        self.reportProgress(Results.SUCCESS)
 
-        return Results.SUCCESS
+        proc.wait()
+        if proc.returncode != 0:
+            # report the stderr of the subprocess
+            # only if the return code is not success
+            _errfile.seek(0)
+            while True:
+                raw_line = _errfile.readline()
+                if raw_line != '':
+                    self.reportProgress('stderr:'+raw_line)
+                else:
+                    break
+            _errfile.close()
+            self.reportProgress(Results.FAILURE)
+            raise EventImportError(Results.FAILURE, proc.returncode)
+
+        _errfile.close()
+        self.reportProgress(Results.SUCCESS)
+        return

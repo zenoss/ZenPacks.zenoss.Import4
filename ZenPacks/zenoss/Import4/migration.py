@@ -6,6 +6,11 @@ class Results(object):
 import inspect
 
 
+class ImportError(Exception):
+    def __init__(self, error_string, return_code):
+        self.return_code = return_code
+        self.error_string = error_string
+
 class MigrationBase(object):
     def __init__(self, args, progressCallback):
         self.args = args
