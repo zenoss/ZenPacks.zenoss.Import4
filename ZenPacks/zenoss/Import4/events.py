@@ -58,7 +58,7 @@ class Migration(MigrationBase):
         return
 
     def doImport(self):
-        self._restoreMySqlDb('zodb')
+        self._restoreMySqlDb('zenoss_zep')
         return
 
     def reportProgress(self, raw_line):
@@ -138,7 +138,8 @@ class Migration(MigrationBase):
         cmd = cmd_fmt.format(**locals())
 
         # prep for the error log file for the restoration command
-        _errfile = tempfile.NamedTemporaryFile(mode='w+b', dir=self.tempDir, prefix='_zen', delete=True)
+        _errfile = tempfile.NamedTemporaryFile(
+            mode='w+b', dir=self.tempDir, prefix='_zen', delete=True)
         proc = subprocess.Popen(cmd, shell=True,
                                 stdout=subprocess.PIPE, stderr=_errfile)
         while True:
