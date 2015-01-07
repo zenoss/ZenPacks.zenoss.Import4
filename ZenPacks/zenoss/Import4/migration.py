@@ -1,3 +1,13 @@
+##############################################################################
+#
+# Copyright (C) Zenoss, Inc. 2014-2015, all rights reserved.
+#
+# This content is made available according to terms specified in
+# License.zenoss under the directory where your Zenoss product is installed.
+#
+##############################################################################
+
+
 class Results(object):
     SUCCESS = 'SUCCESS'
     WARNING = 'WARNING'
@@ -10,6 +20,7 @@ class ImportError(Exception):
     def __init__(self, error_string, return_code):
         self.return_code = return_code
         self.error_string = error_string
+
 
 class MigrationBase(object):
     def __init__(self, args, progressCallback):
