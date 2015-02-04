@@ -113,8 +113,7 @@ class Migration(MigrationBase):
         elif raw_line.find('INSERT INTO ') == 0:
             self.insert_running += 1
             _msg = raw_line.split('(', 1)[0] +\
-                '[%3.1f/100]' % (self.insert_running * 100.0 /
-                                 self.insert_count)
+                '[%3.1f%%]' % (self.insert_running * 100.0 / self.insert_count)
         else:
             # throw away the rest
             _msg = None
