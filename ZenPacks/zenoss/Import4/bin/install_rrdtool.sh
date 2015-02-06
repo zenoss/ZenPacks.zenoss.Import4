@@ -1,3 +1,5 @@
+#!/usr/bin/bash
+
 rm -rf /tmp/rrdtool
 mkdir -p /tmp/rrdtool
 cd /tmp/rrdtool

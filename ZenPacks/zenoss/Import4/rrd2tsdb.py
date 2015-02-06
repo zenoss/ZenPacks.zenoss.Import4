@@ -22,8 +22,9 @@ log = logging.getLogger(__name__)
 _ES = OrderedDict(
     E_ID='RRD path does not contain a device ID',
     E_RRD='RRD dump and conversion error',
-    E_XML='Input XML file Parsing Error',
+    E_XML='Input XML Parsing Error',
     E_STOP='Stop traversing the tree',
+    E_DMD='Cannot obtain the dmd uuid',
     E_LAST='TERMINATOR')
 
 
@@ -48,8 +49,17 @@ class ImportRRD():
         self.rrdPath = rrdPath
         self.perfPath = perfPath
         self.last_timestamp = 0
+        # timeseries timestamp regex
         self.ts_re = re.compile('\d{4}-\d\d-\d\d \d\d:\d\d:\d\d UTC / \d{8,15}')
+        # LINUX time regex
         self.tm_re = re.compile('\d{8,15}')
+        try:
+            self.dmd_uuid = subprocess.check_output("./bin/get_dmduuid.sh",
+                                                    shell=True)
+        except:
+            raise _Error('E_DMD')
+
+        log.debug(rrdPath)
         _f_name = rrdPath.lstrip(perfPath)
         if _f_name[0] == '/':
             _f_name = _f_name[1:]
@@ -59,7 +69,7 @@ class ImportRRD():
             log.info("device:%s" % self.device)
 
             _context, _rrdName = _f_name.rsplit('/', 1)
-            _rrdName = _rrdName.rstrip('.rrd')
+            _rrdName = _rrdName.rsplit('.', 1)[0]
             self.metric = "%s/%s" % (self.device, _rrdName)
             log.info("metric:%s" % self.metric)
 
@@ -84,9 +94,9 @@ class ImportRRD():
         # TBD need to do different calc for different type
         if self.type == 'GAUGE':
             if content.strip() != 'NaN':
-                print '%s %s %s device=%s key=%s' % (
+                print '%s %s %s device=%s key=%s zenoss_tenant_id=%s' % (
                     self.metric, self.last_timestamp, content.strip(),
-                    self.device, self.key)
+                    self.device, self.key, self.dmd_uuid)
         elif self.type == 'COUNTER':
             log.warning("COUNTER NOT HANDLED YET")
             return
@@ -139,20 +149,20 @@ class ImportRRD():
                 self._traverse_nodes(child, '%s' % my_tag_path)
         except _Error as e:
             if e.error_tag != 'E_STOP':
-                print e
+                log.exception(e)
             raise e
 
     def write_tsdb(self):
         '''
         We assume the size of the rrdfile is limited (e.g. 280KB)
-        a direct parsing of the whole file is OK
+        a direct parsing of the whole xml in memory is OK
         '''
-        # convert rrd to xml file
+        # convert rrd to xml
         try:
             _cmd = ['rrdtool', 'dump', self.rrdPath]
             _xml_str = subprocess.check_output(_cmd)
         except Exception as e:
-            print e
+            log.exception(e)
             raise _Error('E_RRD')
 
         try:
@@ -166,10 +176,10 @@ class ImportRRD():
         except _Error as e:
             # 'E_STOP' when traverse ends
             if e.error_tag != 'E_STOP':
-                print e
+                log.exception(e)
                 raise _Error('E_XML')
         except Exception as e:
-            print e
+            log.exception(e)
             raise _Error('E_XML')
 
 
@@ -190,9 +200,9 @@ def parse_args():
                         help="Configuration file (TBD)")
     parser.add_argument('-w', '--ignore-warnings', action='store_true',
                         dest='ignore_warnings', default=False,
-                        help="Continue with the conversion even if warnings")
+                        help="Continue with the conversion even with warnings")
     parser.add_argument('rrd_files', nargs='+', type=argparse.FileType('r'),
-                        help="a list of rrd files")
+                        help="a list of rrd files (absolute path)")
     parser.add_argument('-p', '--perf',
                         dest='perfPath', default='/mnt/src',
                         help='The absolute path of the root to device rrd tree\
@@ -227,10 +237,10 @@ def main():
             imp = ImportRRD(f.name, args.perfPath)
             imp.write_tsdb()
     except _Error as e:
-        print e
+        log.exception(e)
         raise e
     except Exception as e:
-        print e
+        log.exception(e)
         raise e
 
 
