@@ -16,6 +16,7 @@ import StringIO
 import lxml.etree as ET
 from collections import OrderedDict
 import re
+import os.path
 
 log = logging.getLogger(__name__)
 
@@ -49,6 +50,7 @@ class ImportRRD():
         self.rrdPath = rrdPath
         self.perfPath = perfPath
         self.last_timestamp = 0
+        self.derived_value = 0
         # timeseries timestamp regex
         self.ts_re = re.compile('\d{4}-\d\d-\d\d \d\d:\d\d:\d\d UTC / \d{8,15}')
         # LINUX time regex
@@ -69,7 +71,16 @@ class ImportRRD():
             log.info("device:%s" % self.device)
 
             _context, _rrdName = _f_name.rsplit('/', 1)
-            _rrdName = _rrdName.rsplit('.', 1)[0]
+
+            # remove '.rrd' postfix
+            if _rrdName.endswith('.rrd'):
+                _rrdName = _rrdName[:-4]
+
+            # this is the accompanying gauge file for a derive type
+            if _rrdName.endswith('_GAUGE'):
+                log.info("Processing derived file:%s", self.rrdPath)
+                _rrdName = _rrdName[:-6]
+
             self.metric = "%s/%s" % (self.device, _rrdName)
             log.info("metric:%s" % self.metric)
 
@@ -91,24 +102,25 @@ class ImportRRD():
         if tag_path != '/rrd/rra/database/row/v':
             return
 
-        # TBD need to do different calc for different type
+        # don't output NaN values
+        if content.strip() == 'NaN':
+            return
+
+        # compute the tsdb data value per type
         if self.type == 'GAUGE':
-            if content.strip() != 'NaN':
-                print '%s %s %s device=%s key=%s zenoss_tenant_id=%s' % (
-                    self.metric, self.last_timestamp, content.strip(),
-                    self.device, self.key, self.dmd_uuid)
-        elif self.type == 'COUNTER':
-            log.warning("COUNTER NOT HANDLED YET")
-            return
-        elif self.type == 'DERIVE':
-            log.warning("DERIVE NOT HANDLED YET")
-            return
-            return
+            _value = float(content.strip())
+        elif self.type == 'DERIVE' or self.type == 'COUNTER':
+            self.derived_value += float(content.strip()) * self.step
+            _value = self.derived_value
         elif self.type == 'ABSOLUTE':
-            log.warning("ABSOLUTE NOT HANDLED YET")
-            return
+            _value = float(content.strip())*self.step
         else:
             log.warning('Unrecognized rrd type:%s' % self.type)
+
+        # output the tsdb import statement
+        print '{} {} {:.10e} device={} key={} zenoss_tenant_id={}'.format(
+            self.metric, self.last_timestamp, _value,
+            self.device, self.key, self.dmd_uuid)
 
     def _process_a_node(self, tag, tag_path, content):
         # depending on the tag
@@ -123,13 +135,23 @@ class ImportRRD():
             # the values need to be handled differenly
             self.type = content.strip()
             log.info("Type:%s" % self.type)
+            # if a DERIVE or COUNTER type check accompanying _GAUGE file
+            # if so, skip the traversing altogether if self.type == 'DERIVE' or self.type == 'COUNTER':
+            if self.type == 'DERIVE':
+                _gFile = self.rrdPath[:-4] + "_GAUGE.rrd"
+                if os.path.isfile(_gFile):
+                    log.info("Found GAUGE file, skipping %s" % self.rrdPath)
+                    raise _Error('E_STOP')
         elif tag == 'v':
             self._process_v(tag_path, content)
             log.info("v.%s" % content)
         elif tag == 'cf':
             if content.strip() == 'MAX':
                 raise _Error('E_STOP')
-
+        elif tag == 'step':
+            self.step = float(content.strip())
+            if self.step <= 0.0:
+                raise _Error('E_XML')
         # else
         return
 
