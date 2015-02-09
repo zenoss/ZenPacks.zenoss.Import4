@@ -62,7 +62,8 @@ class ImportRRD():
             raise _Error('E_DMD')
 
         log.debug(rrdPath)
-        _f_name = rrdPath.lstrip(perfPath)
+        if rrdPath.startswith(perfPath):
+            _f_name = rrdPath[len(perfPath):]
         if _f_name[0] == '/':
             _f_name = _f_name[1:]
 
