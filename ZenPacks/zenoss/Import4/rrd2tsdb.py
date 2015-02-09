@@ -136,8 +136,8 @@ class ImportRRD():
             self.type = content.strip()
             log.info("Type:%s" % self.type)
             # if a DERIVE or COUNTER type check accompanying _GAUGE file
-            # if so, skip the traversing altogether if self.type == 'DERIVE' or self.type == 'COUNTER':
-            if self.type == 'DERIVE':
+            # if so, skip the traversing altogether
+            if self.type == 'DERIVE' or self.type == 'COUNTER':
                 _gFile = self.rrdPath[:-4] + "_GAUGE.rrd"
                 if os.path.isfile(_gFile):
                     log.info("Found GAUGE file, skipping %s" % self.rrdPath)
