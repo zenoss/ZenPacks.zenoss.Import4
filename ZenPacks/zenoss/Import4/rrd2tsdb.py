@@ -118,8 +118,8 @@ class ImportRRD():
         if self.type == 'GAUGE':
             _value = float(content.strip())
         elif self.type == 'DERIVE' or self.type == 'COUNTER':
-            self.derived_value += float(content.strip()) * self.step
-            _value = self.derived_value
+            self.derived_value += float(content.strip())
+            _value = self.derived_value * self.step
         elif self.type == 'ABSOLUTE':
             _value = float(content.strip())*self.step
         else:
