@@ -25,6 +25,7 @@ _ES = OrderedDict(
     E_RRD='RRD dump and conversion error',
     E_XML='Input XML Parsing Error',
     E_STOP='Stop traversing the tree',
+    E_SKIP='Skip the current node to the next',
     E_DMD='Cannot obtain the dmd uuid',
     E_LAST='TERMINATOR')
 
@@ -51,6 +52,7 @@ class ImportRRD():
         self.perfPath = perfPath
         self.last_timestamp = 0
         self.derived_value = 0
+        self.cf = ''
         # timeseries timestamp regex
         self.ts_re = re.compile('\d{4}-\d\d-\d\d \d\d:\d\d:\d\d UTC / \d{8,15}')
         # LINUX time regex
@@ -103,10 +105,15 @@ class ImportRRD():
         if tag_path != '/rrd/rra/database/row/v':
             return
 
+        # don't output anything except for 'AVERAGE'
+        if self.cf != 'AVERAGE':
+            return
+
         # don't output NaN values
         if content.strip() == 'NaN':
             return
 
+        log.debug("v.%s" % content)
         # compute the tsdb data value per type
         if self.type == 'GAUGE':
             _value = float(content.strip())
@@ -121,7 +128,7 @@ class ImportRRD():
         # output the tsdb import statement
         print '{} {} {:.10e} device={} key={} zenoss_tenant_id={}'.format(
             self.metric, self.last_timestamp, _value,
-            self.device, self.key, self.dmd_uuid)
+            self.device, self.key.replace(' ', '-'), self.dmd_uuid)
 
     def _process_a_node(self, tag, tag_path, content):
         # depending on the tag
@@ -132,10 +139,11 @@ class ImportRRD():
             # this content could contain a timestamp
             self._process_timestamp(tag_path, content)
         elif tag == 'type':
-            # type can be GAUGE, COUNTER, DERIVE, ABSOLUTE
-            # the values need to be handled differenly
             self.type = content.strip()
             log.info("Type:%s" % self.type)
+
+            # type can be GAUGE, COUNTER, DERIVE, ABSOLUTE
+            # the values need to be handled differenly
             # if a DERIVE or COUNTER type check accompanying _GAUGE file
             # if so, skip the traversing altogether
             if self.type == 'DERIVE' or self.type == 'COUNTER':
@@ -145,10 +153,14 @@ class ImportRRD():
                     raise _Error('E_STOP')
         elif tag == 'v':
             self._process_v(tag_path, content)
-            log.info("v.%s" % content)
         elif tag == 'cf':
-            if content.strip() == 'MAX':
+            log.info("cf.%s" % content)
+            # if cf is already AVERAGE, no need to process another cf section
+            if self.cf == 'AVERAGE':
                 raise _Error('E_STOP')
+            else:
+                self.cf = content.strip()
+
         elif tag == 'step':
             self.step = float(content.strip())
             if self.step <= 0.0:
