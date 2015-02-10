@@ -154,13 +154,12 @@ class ImportRRD():
         elif tag == 'v':
             self._process_v(tag_path, content)
         elif tag == 'cf':
+            # note that multiple AVERAGE section
+            # may produce out-of-order and dup value
+            # results need to be post processed by sort | uniq
+            # before feeding to tsdb import
             log.info("cf.%s" % content)
-            # if cf is already AVERAGE, no need to process another cf section
-            if self.cf == 'AVERAGE':
-                raise _Error('E_STOP')
-            else:
-                self.cf = content.strip()
-
+            self.cf = content.strip()
         elif tag == 'step':
             self.step = float(content.strip())
             if self.step <= 0.0:
