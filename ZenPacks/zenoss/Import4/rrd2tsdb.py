@@ -19,6 +19,7 @@ import re
 import os.path
 
 log = logging.getLogger(__name__)
+script_path = os.path.dirname(os.path.realpath(__file__))
 
 _ES = OrderedDict(
     E_ID='RRD path does not contain a device ID',
@@ -58,8 +59,9 @@ class ImportRRD():
         # LINUX time regex
         self.tm_re = re.compile('\d{8,15}')
         try:
-            self.dmd_uuid = subprocess.check_output("./bin/get_dmduuid.sh",
-                                                    shell=True)
+            self.dmd_uuid = subprocess.check_output(
+                script_path + "/bin/get_dmduuid.sh",
+                shell=True)
         except:
             raise _Error('E_DMD')
 
