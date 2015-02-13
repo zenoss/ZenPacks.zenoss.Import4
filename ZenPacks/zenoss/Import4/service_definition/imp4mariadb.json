@@ -4,7 +4,7 @@
         "Name": "Imp4MariaDB",
         "Description": "MariaDB (mysql) environment for import4",
         "Launch": "manual",
-        "Command": "/usr/bin/sleep 1000000",
+        "Command": "bash -c \"while echo 'Starting ..'; do [[ -f /import4/pkg/bin/imp4mariadb.sh ]] && /import4/pkg/bin/imp4mariadb.sh || echo 'Startup script not ready ...'; sleep 7; done;\"",
         "ImageID": "",
         "Tags": [
             "daemon"

@@ -27,7 +27,6 @@ class MigrationBase(object):
         self.args = args
         self.progress = progressCallback
         self.tempDir = args.staging_dir
-        self.file = args.file
         self.ip = args.ip
         self.user = args.user
         self.password = args.password
