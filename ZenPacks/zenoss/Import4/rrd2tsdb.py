@@ -16,14 +16,17 @@ import StringIO
 import lxml.etree as ET
 from collections import OrderedDict
 import re
+import os.path
 
 log = logging.getLogger(__name__)
+script_path = os.path.dirname(os.path.realpath(__file__))
 
 _ES = OrderedDict(
     E_ID='RRD path does not contain a device ID',
     E_RRD='RRD dump and conversion error',
     E_XML='Input XML Parsing Error',
     E_STOP='Stop traversing the tree',
+    E_SKIP='Skip the current node to the next',
     E_DMD='Cannot obtain the dmd uuid',
     E_LAST='TERMINATOR')
 
@@ -49,18 +52,22 @@ class ImportRRD():
         self.rrdPath = rrdPath
         self.perfPath = perfPath
         self.last_timestamp = 0
+        self.derived_value = 0
+        self.cf = ''
         # timeseries timestamp regex
         self.ts_re = re.compile('\d{4}-\d\d-\d\d \d\d:\d\d:\d\d UTC / \d{8,15}')
         # LINUX time regex
         self.tm_re = re.compile('\d{8,15}')
         try:
-            self.dmd_uuid = subprocess.check_output("./bin/get_dmduuid.sh",
-                                                    shell=True)
+            self.dmd_uuid = subprocess.check_output(
+                script_path + "/bin/get_dmduuid.sh",
+                shell=True)
         except:
             raise _Error('E_DMD')
 
         log.debug(rrdPath)
-        _f_name = rrdPath.lstrip(perfPath)
+        if rrdPath.startswith(perfPath):
+            _f_name = rrdPath[len(perfPath):]
         if _f_name[0] == '/':
             _f_name = _f_name[1:]
 
@@ -69,7 +76,16 @@ class ImportRRD():
             log.info("device:%s" % self.device)
 
             _context, _rrdName = _f_name.rsplit('/', 1)
-            _rrdName = _rrdName.rsplit('.', 1)[0]
+
+            # remove '.rrd' postfix
+            if _rrdName.endswith('.rrd'):
+                _rrdName = _rrdName[:-4]
+
+            # this is the accompanying gauge file for a derive type
+            if _rrdName.endswith('_GAUGE'):
+                log.info("Processing derived file:%s", self.rrdPath)
+                _rrdName = _rrdName[:-6]
+
             self.metric = "%s/%s" % (self.device, _rrdName)
             log.info("metric:%s" % self.metric)
 
@@ -91,24 +107,30 @@ class ImportRRD():
         if tag_path != '/rrd/rra/database/row/v':
             return
 
-        # TBD need to do different calc for different type
+        # don't output anything except for 'AVERAGE'
+        if self.cf != 'AVERAGE':
+            return
+
+        # don't output NaN values
+        if content.strip() == 'NaN':
+            return
+
+        log.debug("v.%s" % content)
+        # compute the tsdb data value per type
         if self.type == 'GAUGE':
-            if content.strip() != 'NaN':
-                print '%s %s %s device=%s key=%s zenoss_tenant_id=%s' % (
-                    self.metric, self.last_timestamp, content.strip(),
-                    self.device, self.key, self.dmd_uuid)
-        elif self.type == 'COUNTER':
-            log.warning("COUNTER NOT HANDLED YET")
-            return
-        elif self.type == 'DERIVE':
-            log.warning("DERIVE NOT HANDLED YET")
-            return
-            return
+            _value = float(content.strip())
+        elif self.type == 'DERIVE' or self.type == 'COUNTER':
+            self.derived_value += float(content.strip())
+            _value = self.derived_value * self.step
         elif self.type == 'ABSOLUTE':
-            log.warning("ABSOLUTE NOT HANDLED YET")
-            return
+            _value = float(content.strip())*self.step
         else:
             log.warning('Unrecognized rrd type:%s' % self.type)
+
+        # output the tsdb import statement
+        print '{} {} {:.10e} device={} key={} zenoss_tenant_id={}'.format(
+            self.metric, self.last_timestamp, _value,
+            self.device, self.key.replace(' ', '-'), self.dmd_uuid)
 
     def _process_a_node(self, tag, tag_path, content):
         # depending on the tag
@@ -119,17 +141,31 @@ class ImportRRD():
             # this content could contain a timestamp
             self._process_timestamp(tag_path, content)
         elif tag == 'type':
-            # type can be GAUGE, COUNTER, DERIVE, ABSOLUTE
-            # the values need to be handled differenly
             self.type = content.strip()
             log.info("Type:%s" % self.type)
+
+            # type can be GAUGE, COUNTER, DERIVE, ABSOLUTE
+            # the values need to be handled differenly
+            # if a DERIVE or COUNTER type check accompanying _GAUGE file
+            # if so, skip the traversing altogether
+            if self.type == 'DERIVE' or self.type == 'COUNTER':
+                _gFile = self.rrdPath[:-4] + "_GAUGE.rrd"
+                if os.path.isfile(_gFile):
+                    log.info("Found GAUGE file, skipping %s" % self.rrdPath)
+                    raise _Error('E_STOP')
         elif tag == 'v':
             self._process_v(tag_path, content)
-            log.info("v.%s" % content)
         elif tag == 'cf':
-            if content.strip() == 'MAX':
-                raise _Error('E_STOP')
-
+            # note that multiple AVERAGE section
+            # may produce out-of-order and dup value
+            # results need to be post processed by sort | uniq
+            # before feeding to tsdb import
+            log.info("cf.%s" % content)
+            self.cf = content.strip()
+        elif tag == 'step':
+            self.step = float(content.strip())
+            if self.step <= 0.0:
+                raise _Error('E_XML')
         # else
         return
 
