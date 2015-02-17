@@ -3,7 +3,7 @@
    "serviceDefinition": {
         "Name": "Imp4OpenTSDB",
         "Launch": "manual",
-        "Command": "bash -c \"while echo 'Starting ..'; do [ -f /import4/imp4opentsdb.sh ] && /import4/imp4opentsdb.sh || echo 'Startup script not ready ...'; sleep 7; done;\"",
+        "Command": "bash -c \"while echo 'Starting ..'; do [ -f /import4/pkg/bin/imp4opentsdb.sh ] && /import4/pkg/bin/imp4opentsdb.sh || echo 'Startup script not ready ...'; sleep 7; done;\"",
         "Description": "OpenTSDB environment for import4",
         "Services": [],
         "Tags": [
