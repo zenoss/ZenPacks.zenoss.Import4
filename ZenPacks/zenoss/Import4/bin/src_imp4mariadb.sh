@@ -14,4 +14,15 @@ export PATH=$PATH:$VOL_D/pkg/bin
 progdir=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 . "$progdir/utils.sh"
 
-# continuously looking for the next task files
+# after a cycle
+# depending on serviced to restart the service
+
+# pre install in each container
+which rrdtool || /import4/pkg/bin/install_rrdtool.sh
+
+# find the available task and execute it
+while read task
+do
+    echo "Trying $task ..."
+    /import4/pkg/bin/exec_task.sh "$task"
+done < <(ls /import4/Q.tasks/task* | head -n 1) 

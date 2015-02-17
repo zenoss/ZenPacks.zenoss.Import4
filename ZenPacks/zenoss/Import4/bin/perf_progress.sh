@@ -23,7 +23,7 @@ progdir=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 # the current conversion status
 wait_no=$(find $tasks_Q -type f -name "task.*" | wc -l)
 started_no=$(find $jobs_Q -type f -name "task.*" | wc -l)
-done_no=$(find $jdone_Q -type f -name "task.*" | wc -l)
+jdone_no=$(find $jdone_Q -type f -name "task.*" | wc -l)
 tsum=$((wait_no+started_no))
 [[ $tsum -ne 0 ]] || err_exit "No task"
 
@@ -32,5 +32,5 @@ imported_no=$(find $tdone_Q -type f -name "task.*.tsdb" | wc -l)
 cent=$(((imported_no*100)/tsum))
 
 # the exact output format is important
-echo "T:$tsum S:$started_no C:$done_no D:$imported_no P:$cent"
+echo "T:$tsum S:$started_no C:$jdone_no D:$imported_no P:$cent"
 exit 0

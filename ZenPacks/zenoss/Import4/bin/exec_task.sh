@@ -3,10 +3,11 @@
 # try to lock/grab the given task
 #   returns non-zero if not successful
 
-# environ:PERFTOP must be set and points to the top of the device tree
-export task="$1"     # the absolute path to a task file containing a rrdfiles list
-export job_dir="$2"  # the path keeping the current processed task
-export tsdb_dir="$3" # the path to keep the final tsdb import files
+# PERFTOP must be set and points to the top of the device tree
+export task="$1"                    # the absolute path to a task file containing a rrdfiles list
+export task_dir="/import4/Q.tasks"  # the path keeping the unclaimed tasks
+export job_dir="/import4/Q.jobs"    # the path keeping the tasks being processed
+export tsdb_dir="/import4/Q.tsdb"   # the path to keep the final tsdb import files
 
 # derived
 export taskname=$(basename "$task")
@@ -25,9 +26,12 @@ progdir=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 . "$progdir/utils.sh"
 
 # check parameters and environment
-[[ -d "$PERFTOP" ]]     || err_exit "Environment variable PERFTOP is not correct"
+[[ -f "$task_dir/PERFTOP" ]] || err_exit "file:$task/PERFTOP not exist"
+read PERFTOP < "$task_dir/PERFTOP"
+[[ -d "$PERFTOP" ]]     || err_exit "$PERFTOP location in \"$task_dir/PERFTOP\" is not correct"
+
 [[ -f "$task" ]]        || err_exit "task:$task not available anymore"
-[[ -f "$job_dir" ]]      || err_exit "Job directory not available"
+[[ -d "$job_dir" ]]     || err_exit "Job directory not available"
 
 # double attempts for an atomic ownership
 ln "$task" "$job" >/dev/null 2>&1  || err_exit "someone else got $task - ln" 
@@ -41,11 +45,25 @@ sync
 # now this process does own the $job
 mkdir -p "$tsdb_tmp_dir" 
 rm -f "$tsdb_raw"   # cleanup first
+sync
+
 while read one_rrd
 do
     "$progdir"/../rrd2tsdb.py -l info -p "$PERFTOP" "$one_rrd" >> "$tsdb_raw"
+    let rc=$?
+    if [[ $rc -ne 0 ]] then
+        # failed, give up all the previous result
+        rm -f "$tsdb_raw"
+
+        # return the job to the task pool
+        mv "$job" "$task"
+        sync
+
+        exit 1
+    fi
 done < "$job"
 
+# if successful
 # we need to do a sort and uniq to resolve out-of-order and dup rrd data
 sort "$tsdb_raw" | uniq > "$tsdb_ok"
 

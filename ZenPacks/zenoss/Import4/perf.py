@@ -52,7 +52,7 @@ def init_command_parser(subparsers):
     # TBD collect the rrd top and perf data top
     perf_parser.add_argument('rrd_dir',
                              help="Top directory for a 4.x rrd tree")
-    perf_parser.add_argument('-p', '--perf_top', dest='perf_top', default="",
+    perf_parser.add_argument('-t', '--perf_top', dest='perf_top', default="",
                              help="Parent directory of the rrd trees")
     return perf_parser
 
@@ -61,7 +61,10 @@ class Migration(MigrationBase):
     def __init__(self, args, progressCallback):
         # common setup
         super(Migration, self).__init__(args, progressCallback)
+
+        # check and install the scripts for mariadb and opentsdb services
         self.rrd_dir = os.path.abspath(args.rrd_dir)
+        self.perf_top = os.path.abspath(args.perf_top)
         if not os.path.exists(_import4_vol):
             print _import_prefix + "%s does not exist" % _import4_vol
             raise PerfDataImportError(Results.RUNTIME_ERROR, -1)
@@ -98,13 +101,25 @@ class Migration(MigrationBase):
         return
 
     def doImport(self):
+        # cleanup the shared directories for the services
+        _args = ["%s/cleanup_jobs.sh" % sys.path[0]]
+        _rc = subprocess.call(
+            _args, shell=False, stderr=subprocess.STDOUT)
+        if _rc != 0:
+            raise PerfDataImportError(Results.COMMAND_ERROR, _rc)
+
+        # setup the fixed PERFTOP file for the parallel services
+        text_file = open("/import4/Q.tasks/PERFTOP", "w")
+        text_file.write("%s" % self.perf_top)
+        text_file.close()
+
         # dispatch the work into task lists
         _args = ["%s/dispatch.sh" % sys.path[0], self.rrd_dir, _tasks_Q]
         _rc = subprocess.call(
             _args, shell=False, stderr=subprocess.STDOUT)
-
         if _rc != 0:
             raise PerfDataImportError(Results.COMMAND_ERROR, _rc)
+
         self.reportProgress("rrd files dispatched to tasks")
 
         # polling the task files and job/.done to report progress

@@ -151,12 +151,16 @@
          "running": {
            "Script": "echo import4",
            "Interval": 5
+         },
+         "answering": {
+           "Script": "mysql -uroot -hlocalhost -P3306 -e 'select 1' > /dev/null",
+           "Interval": 5.0
          }
        },
        "Prereqs": [
          {
-           "Name": "MariaDB connectivity",
-           "Script": "su - zenoss -c '/opt/zenoss/bin/python /opt/zenoss/Products/ZenUtils/ZenDB.py --usedb zenoss_zep --execsql=\";\"'"
+           "Name": "MariaDB Availability",
+           "Script": "mysql -uroot -hlocalhost -P3306 -e 'select 1' > /dev/null"
          }
        ],
        "MonitoringProfile": {
