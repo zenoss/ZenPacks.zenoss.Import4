@@ -1,6 +1,7 @@
 #!/bin/bash
 #
 # The script is the starter script for imp4mariadb container
+# It runs as root
 # There maybe multiple instances running at the same time
 # task(s): perfdata conversion
 #
@@ -18,11 +19,19 @@ progdir=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 # depending on serviced to restart the service
 
 # pre install in each container
-which rrdtool || /import4/pkg/bin/install_rrdtool.sh
+which rrdtool || ( [[ -f /import4/pkg/bin/install_rrdtool.sh ]] && /import4/pkg/bin/install_rrdtool.sh )
+
+# cache the uuid first
+runuser -l zenoss -c /import4/pkg/bin/get_dmduuid.sh
 
 # find the available task and execute it
 while read task
 do
-    echo "Trying $task ..."
-    /import4/pkg/bin/exec_task.sh "$task"
-done < <(ls /import4/Q.tasks/task* | head -n 1) 
+    if [[ "$task" == "" ]]
+    then
+        sleep 5
+    else
+        echo "Trying $task ..."
+        runuser -l zenoss -c "/import4/pkg/bin/exec_task.sh \"$task\""
+    fi
+done < <(ls -1 /import4/Q.tasks/task* | head -n 1) 

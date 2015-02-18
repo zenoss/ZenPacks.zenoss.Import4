@@ -14,3 +14,9 @@ err_exit()
 }
 export -f err_exit
 
+ok_exit()
+{
+  err_out "$1"
+  exit 0
+}
+export -f ok_exit

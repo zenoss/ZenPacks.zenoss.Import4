@@ -130,7 +130,7 @@ class Migration(MigrationBase):
         try:
             # wait 10 seconds before each check
             while True:
-                self.reportProgress(".")
+                # self.reportProgress(".")
                 time.sleep(10)
                 _progress = subprocess.check_output(["%s/perf_progress.sh" % sys.path[0]])
                 _num = _repattern.search(_progress)

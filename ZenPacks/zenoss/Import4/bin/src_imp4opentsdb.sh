@@ -15,5 +15,14 @@ progdir=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 . "$progdir/utils.sh"
 
 #
-# continuously picking a task list for perf data conversion task
-#
+# find the converted input file and import it
+while read tfile
+do
+    echo "Importing $tfile ..."
+    if [[ "$tfile" != "" ]]
+    then
+        /import4/pkg/bin/import_tsdb.sh "$tfile"
+    else
+        sleep 5
+    fi
+done < <(ls -1 /import4/Q.tsdb/task*.tsdb 2>/dev/null | head -n 1) 

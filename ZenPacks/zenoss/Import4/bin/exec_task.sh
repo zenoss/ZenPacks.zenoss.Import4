@@ -51,7 +51,8 @@ while read one_rrd
 do
     "$progdir"/../rrd2tsdb.py -l info -p "$PERFTOP" "$one_rrd" >> "$tsdb_raw"
     let rc=$?
-    if [[ $rc -ne 0 ]] then
+    if [[ $rc -ne 0 ]] 
+    then
         # failed, give up all the previous result
         rm -f "$tsdb_raw"
 
