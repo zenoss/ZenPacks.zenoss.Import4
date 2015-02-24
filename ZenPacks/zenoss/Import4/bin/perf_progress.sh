@@ -13,7 +13,7 @@ export tdone_Q=/import4/Q.tsdb/.done    # completed
 # common block
 progdir=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 # echo "$progdir"
-. "$progdir/utils.sh"
+source "$progdir/utils.sh"
 
 # check all the target directories
 [[ -d $tasks_Q ]] || err_exit "$tasks_Q does not exist"

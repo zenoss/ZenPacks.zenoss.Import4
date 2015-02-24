@@ -23,7 +23,7 @@ export tsdb_file="$tsdb_dir/$taskname".tsdb
 
 # common block
 progdir=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
-. "$progdir/utils.sh"
+source "$progdir/utils.sh"
 
 # check parameters and environment
 [[ -f "$task_dir/PERFTOP" ]] || err_exit "file:$task/PERFTOP not exist"

@@ -12,7 +12,7 @@ export PATH=$PATH:$VOL_D/pkg/bin
 
 # common block
 progdir=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
-. "$progdir/utils.sh"
+source "$progdir/utils.sh"
 
 #
 # find the converted input file and import it

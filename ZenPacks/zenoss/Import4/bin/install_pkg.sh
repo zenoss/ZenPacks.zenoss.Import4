@@ -10,7 +10,7 @@ export BIN_D="$VOL_D/pkg/bin"
 
 # common block
 progdir=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
-. "$progdir/utils.sh"
+source "$progdir/utils.sh"
 
 echo "Installing import4 worker scripts from $progdir ..."
 

@@ -68,15 +68,15 @@ class Migration(MigrationBase):
         if not os.path.exists(_import4_vol):
             print _import_prefix + "%s does not exist" % _import4_vol
             raise PerfDataImportError(Results.RUNTIME_ERROR, -1)
-        # for the imp4mariadb and imp4opentsdb services
-        if (not os.path.exists(_import4_pkg) or
-           not os.path.exists(_import4_pkg_bin)):
-            # this call should not execute under '/import4/pkg'
-            # instead, via <zenpack_path>/bin/import4
-            _rc = subprocess.call(["%s/install_pkg.sh" % sys.path[0]],
-                                  shell=True, stderr=subprocess.STDOUT)
-            if _rc > 0:
-                raise PerfDataImportError(Results.RUNTIME_ERROR, _rc)
+
+        # always copy the small pkg for the imp4mariadb and imp4opentsdb services
+        # this call should not execute under '/import4/pkg'
+        # instead, via <zenpack_path>/bin/import4
+        _rc = subprocess.call(["%s/install_pkg.sh" % sys.path[0]],
+                              shell=True, stderr=subprocess.STDOUT)
+        if _rc > 0:
+            raise PerfDataImportError(Results.RUNTIME_ERROR, _rc)
+
         if not os.path.exists('%s/imp4mariadb.sh' % _import4_pkg_bin):
             raise PerfDataImportError(Results.RUNTIME_ERROR, _rc)
         if not os.path.exists('%s/imp4opentsdb.sh' % _import4_pkg_bin):

@@ -14,7 +14,7 @@ export tasktmp="$2/.tmp"
 
 # common block
 progdir=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
-. "$progdir/utils.sh"
+source "$progdir/utils.sh"
 
 # finds all the rrd files and group them into task files
 # The result is placed into the provied task queue directory
