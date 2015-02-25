@@ -99,7 +99,6 @@ def parse_args():
 
     for module in (model, events, perf):
         m_parser = module.init_command_parser(subparsers)
-        m_parser.add_argument('file', type=argparse.FileType('r'), help="4.x archive file to import")
         m_parser.set_defaults(functor=lambda args, mclass=module.Migration: run_migration(mclass, args))
 
     args = parser.parse_args()
