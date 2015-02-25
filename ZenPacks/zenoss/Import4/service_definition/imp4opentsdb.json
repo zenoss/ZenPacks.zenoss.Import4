@@ -3,13 +3,13 @@
    "serviceDefinition": {
         "Name": "Imp4OpenTSDB",
         "Launch": "manual",
-        "Command": "bash -c \"while echo 'Starting ..'; do [ -f /import4/imp4opentsdb.sh ] && /import4/imp4opentsdb.sh || echo 'Startup script not ready ...'; sleep 7; done;\"",
+        "Command": "bash -c \"while echo 'Starting ..'; do if [[ -f /import4/pkg/bin/imp4opentsdb.sh ]]; then /import4/pkg/bin/imp4opentsdb.sh; else  echo 'Startup script not ready ...'; sleep 7; fi; done;\"",
         "Description": "OpenTSDB environment for import4",
         "Services": [],
         "Tags": [
             "daemon"
         ],
-        "ImageID": "zenoss/opentsdb:v11",
+        "ImageID": "zenoss/opentsdb:v13",
         "Instances": {
             "Min": 1,
             "Max": 0,

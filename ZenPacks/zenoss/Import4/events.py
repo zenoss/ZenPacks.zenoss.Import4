@@ -7,6 +7,7 @@
 #
 ##############################################################################
 
+import argparse
 import os
 import subprocess
 import tempfile
@@ -16,7 +17,7 @@ from ZenPacks.zenoss.Import4.migration import MigrationBase, ImportError
 # some common tags
 _check_tag = '[Check] '
 _stderr_tag = '[STDERR] '
-_import_prefix = 'Import: '
+_import_prefix = 'Event: '
 
 
 class Results(object):
@@ -35,7 +36,9 @@ class EventImportError(ImportError):
 
 def init_command_parser(subparsers):
     # add specific arguments for events migration
-    events_parser = subparsers.add_parser('events', help='migrate event data')
+    events_parser = subparsers.add_parser('event', help='migrate event data')
+    events_parser.add_argument('file', type=argparse.FileType('r'),
+                               help="4.x archive file to import")
     return events_parser
 
 
@@ -47,6 +50,7 @@ class Migration(MigrationBase):
         self.zenbackup_file = ''
         self.insert_count = 0
         self.insert_running = 0
+        self.file = args.file
 
     def prevalidate(self):
         # untar the provided zenbackup package
