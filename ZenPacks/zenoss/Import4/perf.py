@@ -127,12 +127,10 @@ class Migration(MigrationBase):
         try:
             _rrd_list = '%s/rrd.list' % Config.perfDir
             _cmd = 'find %s -type f -name "*.rrd"' % self.rrd_dir
-            _rlfile = open(_rrd_list, "w")
-            _errfile = open('%s.err' % _rrd_list, "w")
-            subprocess.check_call(_cmd, shell=True,
-                                  stdout=_rlfile, stderr=_errfile)
-            _rlfile.close()
-            _errfile.close()
+
+            with open(_rrd_list, "w") as _rlfile, open('%s.err' % _rrd_list, "w") as _errfile:
+                subprocess.check_call(_cmd, shell=True, stdout=_rlfile, stderr=_errfile)
+
             _cmd = 'cat %s | wc -l' % _rrd_list
             _files_no = int(subprocess.check_output('cat %s | wc -l' % _rrd_list, shell=True))
         except Exception as e:
@@ -261,13 +259,13 @@ class Migration(MigrationBase):
             raise PerfDataImportError(Results.COMMAND_ERROR, _rc)
 
         # untar the zenbackup file for perf.tar file
-        _cmd = 'tar --totals -R --wildcards-match-slash -C %s -f %s -x %s' % (
+        _cmd = 'tar -v --totals -R --wildcards-match-slash -C %s -f %s -x %s' % (
             Config.stageDir, self.file.name, Config.perfBackup)
         _rc = os.system(_cmd)
         if _rc > 0:
             raise PerfDataImportError(Results.COMMAND_ERROR, _rc)
 
-        _cmd = 'tar --totals -R -C %s -xf %s/%s' % (
+        _cmd = 'tar -v --totals -R -C %s -xf %s/%s' % (
             Config.zenbackupDir, Config.stageDir, Config.perfBackup)
         _rc = os.system(_cmd)
         if _rc > 0:
