@@ -13,6 +13,23 @@ class Results(object):
     WARNING = 'WARNING'
     FAILURE = 'FAILURE'
 
+
+class Config(object):
+    volume =        '/import4'
+    pkgPath =       '/import4/pkg'
+    pkgBinPath =    '/import4/pkg/bin'
+    stageDir =      '/import4/staging'
+    zenbackupDir =  '/import4/staging/zenbackup'
+    perfDir =       '/import4/staging/zenbackup/perf'
+    rrdTop =        '/import4/staging/zenbackup/perf/Devices'
+    # content of a 4.x zenbackup file
+    zepBackup =     'zenbackup/zep.sql.gz'
+    zepSQL =        'zenbackup/zep.sql'
+    zenpackBackup = 'zenbackup/ZenPacks.tar'
+    perfBackup =    'zenbackup/perf.tar'
+    zodbBackup =    'zenbackup/zodb.sql.gz'
+
+
 import inspect
 
 
