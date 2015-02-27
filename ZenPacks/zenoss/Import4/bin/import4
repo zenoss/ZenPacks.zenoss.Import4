@@ -9,9 +9,10 @@
 ##############################################################################
 
 import argparse
-import sys
+import sys, traceback
 
 from ZenPacks.zenoss.Import4 import migration, model, events, perf
+from ZenPacks.zenoss.Import4.migration import Config
 
 exitCode = {
     # event module mapping
@@ -58,7 +59,8 @@ def run_migration(migration_class, args):
             # else, we continue
     except Exception as e:
         # unrecognized exception
-        print "Huh? unknown exception", e
+        print "Huh? unknown exception during import ---", e
+        traceback.print_exc(file=sys.stderr)
         exit(-1)
 
     # all finished successfully
@@ -86,7 +88,7 @@ def parse_args():
                         help="Continue with the import even if pre-validation generates warnings")
     parser.add_argument('-d', '--debug', action='store_true', dest='debug', default=False,
                         help="Log at debug level")
-    parser.add_argument('-s', '--stage', dest='staging_dir', default='.',
+    parser.add_argument('-s', '--stage', dest='staging_dir', default=Config.stageDir,
                         help="Location to use for file staging during the import process")
     parser.add_argument('-i', '--ip', dest='ip', default="localhost",
                         help="The ip address for MariaDB host")
