@@ -12,7 +12,7 @@ import os
 import subprocess
 import tempfile
 
-from ZenPacks.zenoss.Import4.migration import MigrationBase, ImportError
+from ZenPacks.zenoss.Import4.migration import MigrationBase, ImportError, Config
 
 # some common tags
 _check_tag = '[Check] '
@@ -46,8 +46,8 @@ class Migration(MigrationBase):
     def __init__(self, args, progressCallback):
         # common setup setup
         super(Migration, self).__init__(args, progressCallback)
-        self.zenbackup_dir = os.path.join(self.tempDir, 'zenbackup')
-        self.zenbackup_file = ''
+        self.zenbackup_dir = Config.zenbackupDir
+        self.zep_sql = ''
         self.insert_count = 0
         self.insert_running = 0
         self.file = args.file
@@ -61,13 +61,13 @@ class Migration(MigrationBase):
         self.reportProgress(
             _check_tag+'checking package "%s"..' % self.file.name)
 
-        if not os.path.exists(self.zenbackup_dir):
+        if not os.path.isdir(self.zenbackup_dir):
             raise EventImportError(Results.INVALID, -1)
         self.reportProgress(_check_tag + 'zenbackup directory found')
 
         # attempt to find the compressed zep.sql file
-        self.zenbackup_file = os.path.join(self.zenbackup_dir, 'zep.sql')
-        _gzfile = os.path.join(self.zenbackup_dir, 'zep.sql.gz')
+        self.zep_sql = '%s/%s' % (self.tempDir, Config.zepSQL)
+        _gzfile = '%s/%s' % (self.tempDir, Config.zepBackup)
 
         # if compressed file found, uncompressed it to zep.sql
         if os.path.isfile(_gzfile):
@@ -75,16 +75,17 @@ class Migration(MigrationBase):
             if _rc > 0:
                 raise EventImportError(Results.COMMAND_ERROR, _rc)
 
-        if not os.path.isfile(self.zenbackup_file):
+        print self.tempDir, self.zep_sql
+        if not os.path.isfile(self.zep_sql):
             raise EventImportError(Results.INVALID, -1)
 
         # obtain the number of insert counts
         self.insert_count = int(subprocess.check_output(
-            'egrep "^INSERT INTO" %s|wc -l' % self.zenbackup_file, shell=True))
+            'egrep "^INSERT INTO" %s|wc -l' % self.zep_sql, shell=True))
         if self.insert_count <= 0:
             raise EventImportError(Results.INVALID, -1)
 
-        self.reportProgress(_check_tag + 'zep.sql[.gz] file found')
+        self.reportProgress(_check_tag + '%s file is OK' % self.zep_sql)
         self.reportProgress(_check_tag +
                             'A rough scan shows [%d] INSERT statements'
                             % self.insert_count)
@@ -135,13 +136,14 @@ class Migration(MigrationBase):
         unpack the backup package to sql files
         """
         # remove the target dir
-        cmd = 'cd %s; rm -rf %s' % (self.tempDir, 'zenbackup')
+        if not os.path.exists(self.tempDir):
+            os.makedirs(self.tempDir)
+        cmd = 'cd %s; rm -f %s %s' % (self.tempDir, Config.zepBackup, Config.zepSQL)
         _rc = os.system(cmd)
         if _rc > 0:
             raise EventImportError(Results.COMMAND_ERROR, _rc)
-
         cmd = 'tar --wildcards-match-slash -C %s -f %s -x %s' % (
-            self.tempDir, self.file.name, 'zenbackup/zep.sql\*')
+            self.tempDir, self.file.name, Config.zepBackup)
         _rc = os.system(cmd)
         if _rc:
             raise EventImportError(Results.UNTAR_FAIL, _rc)
@@ -166,7 +168,7 @@ class Migration(MigrationBase):
         if _rc:
             raise EventImportError(Results.COMMAND_ERROR, _rc)
 
-        sql_path = self.zenbackup_file
+        sql_path = self.zep_sql
         if sql_path.endswith('.gz'):
             cmd_fmt = "gzip -dc {sql_path}"
         else:

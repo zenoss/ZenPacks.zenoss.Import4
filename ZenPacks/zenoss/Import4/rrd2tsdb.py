@@ -41,7 +41,7 @@ class _Error(Exception):
 
 
 class ImportRRD():
-    def __init__(self, rrdPath, perfPath):
+    def __init__(self, rrdPath, perfPath, test_mode):
         '''
         rrdPath /mnt/dumptree/Devices/10.10.99.107/os/something_good/abc.rrd
         where   perfPath = /mnt/dumptree/Devices
@@ -54,6 +54,8 @@ class ImportRRD():
         self.last_timestamp = 0
         self.derived_value = 0
         self.cf = ''
+        self.test_mode = test_mode
+        self.entries = 0
         # timeseries timestamp regex
         self.ts_re = re.compile('\d{4}-\d\d-\d\d \d\d:\d\d:\d\d UTC / \d{8,15}')
         # LINUX time regex
@@ -128,9 +130,18 @@ class ImportRRD():
             log.warning('Unrecognized rrd type:%s' % self.type)
 
         # output the tsdb import statement
-        print '{} {} {:.10e} device={} key={} zenoss_tenant_id={}'.format(
-            self.metric, self.last_timestamp, _value,
-            self.device, self.key.replace(' ', '-'), self.dmd_uuid)
+        self.entries += 1
+        if not self.test_mode:
+            print '{} {} {:.10e} device={} key={} zenoss_tenant_id={}'.format(
+                self.metric, self.last_timestamp, _value,
+                self.device, self.key.replace(' ', '-'), self.dmd_uuid)
+
+    def _find_context_uid(self, context_key):
+        '''
+        find the context uid of a data source
+        TBD - ???
+        '''
+        return ""
 
     def _process_a_node(self, tag, tag_path, content):
         # depending on the tag
@@ -243,6 +254,9 @@ def parse_args():
                         dest='perfPath', default='/mnt/src',
                         help='The absolute path of the root to device rrd tree\
                         <first level nodes are the device ids>')
+    parser.add_argument('-t', '--test_mode', action='store_true',
+                        dest='test_mode', default=False,
+                        help="Perform a parse on the input file and generate stat info, only")
 
     args = parser.parse_args()
     return args
@@ -268,16 +282,23 @@ def main():
     args = parse_args()
     configLogger(args.log_level)
 
+    _total = 0
+
     try:
         for f in args.rrd_files:
-            imp = ImportRRD(f.name, args.perfPath)
+            imp = ImportRRD(f.name, args.perfPath, args.test_mode)
             imp.write_tsdb()
+            _total += imp.entries
     except _Error as e:
         log.exception(e)
         raise e
     except Exception as e:
         log.exception(e)
         raise e
+
+    if args.test_mode:
+        # print the number of records found
+        print "%d" % _total
 
 
 if __name__ == "__main__":
