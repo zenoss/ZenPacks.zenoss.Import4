@@ -59,6 +59,8 @@ def init_command_parser(subparsers):
                              help="Top directory for a existing 4.x rrd tree")
     perf_parser.add_argument('-t', '--perf_top', dest='perf_top', default="",
                              help="Parent directory of the rrd trees")
+    perf_parser.add_argument('-n', '--skip-scan', action='store_true', dest='skip_scan', default=False,
+                        help="Skip the scanning of rrdfiles' content")
     return perf_parser
 
 
@@ -70,6 +72,7 @@ class Migration(MigrationBase):
         # check and install the scripts for mariadb and opentsdb services
         self.rrd_dir_arg = args.rrd_dir
         self.rrd_dir = os.path.abspath(args.rrd_dir)
+        self.skip_scan = args.skip_scan
 
         # if self.perf_top does not exist, derive it from rrd_dir
         if args.perf_top:
@@ -136,6 +139,10 @@ class Migration(MigrationBase):
             print e
             raise PerfDataImportError(Results.INVALID, -1)
         self.reportProgress("rrd's to scan:%s" % _files_no)
+
+        if self.skip_scan:
+            self.reportProgress("rrd scanning skip option specified - skipped")
+            return
 
         # we go thru each rrdfile and do a dryrun
         self.reportProgress("Scanning rrdfiles ...")
