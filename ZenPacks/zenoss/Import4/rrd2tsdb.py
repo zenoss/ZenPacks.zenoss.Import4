@@ -24,6 +24,7 @@ script_path = os.path.dirname(os.path.realpath(__file__))
 _ES = OrderedDict(
     E_ID='RRD path does not contain a device ID',
     E_RRD='RRD dump and conversion error',
+    E_TSDB='TSDB entry not exist',
     E_XML='Input XML Parsing Error',
     E_STOP='Stop traversing the tree',
     E_SKIP='Skip the current node to the next',
@@ -41,7 +42,7 @@ class _Error(Exception):
 
 
 class ImportRRD():
-    def __init__(self, rrdPath, perfPath, test_mode):
+    def __init__(self, rrdPath, args):
         '''
         rrdPath /mnt/dumptree/Devices/10.10.99.107/os/something_good/abc.rrd
         where   perfPath = /mnt/dumptree/Devices
@@ -50,12 +51,15 @@ class ImportRRD():
                 self.key = Devices/10.10.99.107/os/something_good
         '''
         self.rrdPath = rrdPath
-        self.perfPath = perfPath
+        self.perfPath = args.perfPath
         self.last_timestamp = 0
         self.derived_value = 0
         self.cf = ''
-        self.test_mode = test_mode
+        self.test_mode = args.test_mode
+        self.verify_mode = args.verify_mode
         self.entries = 0
+        self.verify_points = [None, None, None]
+
         # timeseries timestamp regex
         self.ts_re = re.compile('\d{4}-\d\d-\d\d \d\d:\d\d:\d\d UTC / \d{8,15}')
         # LINUX time regex
@@ -68,8 +72,8 @@ class ImportRRD():
             raise _Error('E_DMD')
 
         log.debug(rrdPath)
-        if rrdPath.startswith(perfPath):
-            _f_name = rrdPath[len(perfPath):]
+        if rrdPath.startswith(self.perfPath):
+            _f_name = rrdPath[len(self.perfPath):]
         if _f_name[0] == '/':
             _f_name = _f_name[1:]
 
@@ -101,7 +105,7 @@ class ImportRRD():
         if self.ts_re.match(content.strip()):
             _m = self.tm_re.search(content.strip())
             if _m:
-                self.last_timestamp = _m.group(0)
+                self.last_timestamp = int(_m.group(0))
         return
 
     def _process_v(self, tag_path, content):
@@ -131,10 +135,25 @@ class ImportRRD():
 
         # output the tsdb import statement
         self.entries += 1
-        if not self.test_mode:
-            print '{} {} {:.10e} device={} key={} zenoss_tenant_id={}'.format(
+
+        # output if it is not in the test nor verify mode
+        if self.test_mode:
+            return
+        elif self.verify_mode:
+            # always keep the last one
+            self.verify_points[2] = [self.last_timestamp, _value]
+            # if it is the first
+            if not self.verify_points[0]:
+                self.verify_points[0] = [self.last_timestamp, _value]
+            # pick a random one
+            if self.entries == 2221:    # 2221 is just a random pick for debuggability
+                self.verify_points[1] = [self.last_timestamp, _value]
+            return
+        else:
+            print '{} {:d} {:.10e} device={} key={} zenoss_tenant_id={}'.format(
                 self.metric, self.last_timestamp, _value,
                 self.device, self.key.replace(' ', '-'), self.dmd_uuid)
+            return
 
     def _find_context_uid(self, context_key):
         '''
@@ -229,6 +248,13 @@ class ImportRRD():
             log.exception(e)
             raise _Error('E_XML')
 
+    def verify(self):
+        # verify the collected three points against the tsdb
+        log.info("Verifying - %d %f" % (self.verify_points[0][0], self.verify_points[0][1]))
+        log.info("Verifying - %d %f" % (self.verify_points[1][0], self.verify_points[1][1]))
+        log.info("Verifying - %d %f" % (self.verify_points[2][0], self.verify_points[2][1]))
+        return
+
 
 def parse_args():
     parser = argparse.ArgumentParser(
@@ -254,9 +280,14 @@ def parse_args():
                         dest='perfPath', default='/mnt/src',
                         help='The absolute path of the root to device rrd tree\
                         <first level nodes are the device ids>')
-    parser.add_argument('-t', '--test_mode', action='store_true',
-                        dest='test_mode', default=False,
-                        help="Perform a parse on the input file and generate stat info, only")
+
+    group = parser.add_mutually_exclusive_group(required=False)
+    group.add_argument('-t', '--test_mode', action='store_true',
+                       dest='test_mode', default=False,
+                       help="Perform a parse on the input file and generate stat info, only")
+    group.add_argument('-v', '--verify_mode', action='store_true',
+                       dest='verify_mode', default=False,
+                       help="Perform a validation by sampling/comparing input against tsdb")
 
     args = parser.parse_args()
     return args
@@ -286,9 +317,14 @@ def main():
 
     try:
         for f in args.rrd_files:
-            imp = ImportRRD(f.name, args.perfPath, args.test_mode)
+            imp = ImportRRD(f.name, args)
             imp.write_tsdb()
             _total += imp.entries
+
+            # verify per rrd file
+            if args.verify_mode:
+                imp.verify()
+
     except _Error as e:
         log.exception(e)
         raise e
@@ -299,7 +335,6 @@ def main():
     if args.test_mode:
         # print the number of records found
         print "%d" % _total
-
 
 if __name__ == "__main__":
     main()
