@@ -47,6 +47,7 @@ class MigrationBase(object):
         self.ip = args.ip
         self.user = args.user
         self.password = args.password
+        self.zbfile = args.zenbackup_file
 
     def __NOT_YET__(self):
         caller = inspect.stack()[1]

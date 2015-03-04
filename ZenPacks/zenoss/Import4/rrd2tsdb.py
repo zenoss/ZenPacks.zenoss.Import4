@@ -17,6 +17,7 @@ import lxml.etree as ET
 from collections import OrderedDict
 import re
 import os.path
+import json
 
 log = logging.getLogger(__name__)
 script_path = os.path.dirname(os.path.realpath(__file__))
@@ -24,7 +25,7 @@ script_path = os.path.dirname(os.path.realpath(__file__))
 _ES = OrderedDict(
     E_ID='RRD path does not contain a device ID',
     E_RRD='RRD dump and conversion error',
-    E_TSDB='TSDB entry not exist',
+    E_TSDB='TSDB entry not correct',
     E_XML='Input XML Parsing Error',
     E_STOP='Stop traversing the tree',
     E_SKIP='Skip the current node to the next',
@@ -56,7 +57,7 @@ class ImportRRD():
         self.derived_value = 0
         self.cf = ''
         self.test_mode = args.test_mode
-        self.verify_mode = args.verify_mode
+        self.verify_credential = args.verify_credential
         self.entries = 0
         self.verify_points = [None, None, None]
 
@@ -139,7 +140,7 @@ class ImportRRD():
         # output if it is not in the test nor verify mode
         if self.test_mode:
             return
-        elif self.verify_mode:
+        elif self.verify_credential:
             # always keep the last one
             self.verify_points[2] = [self.last_timestamp, _value]
             # if it is the first
@@ -209,7 +210,7 @@ class ImportRRD():
             my_tag_path = '%s/%s' % (tag_path, node.tag)
 
         try:
-            log.debug('Found: %s' % my_tag_path)
+            # log.debug('Found: %s' % my_tag_path)
             self._process_a_node(node.tag, my_tag_path, node.text)
             for child in node:
                 self._traverse_nodes(child, '%s' % my_tag_path)
@@ -217,6 +218,66 @@ class ImportRRD():
             if e.error_tag != 'E_STOP':
                 log.exception(e)
             raise e
+
+    def _do_verify(self, pnt):
+        # point is a pair of timestamp(int) and value(float)
+        # query tsdb about the tags/metric with a timestamp ..
+        # check the returned value
+        if not pnt:
+            return
+
+        try:
+            _json = (
+                '{'
+                '"start":%d,'
+                '"end":%d,'
+                '"returnset":"last",'
+                '"metrics":[{"metric":"%s",'
+                '            "aggregator":"avg",'
+                '            "tags":{"key":["%s"],'
+                '                    "device":["%s"],'
+                '                    "zenoss_tenant_id":["%s"]}'
+                '        }]}'
+
+            ) % (pnt[0]-1,
+                 pnt[0],
+                 self.metric,
+                 self.key.replace(' ', '-'),
+                 self.device,
+                 self.dmd_uuid)
+
+            _cmd_str = ('curl -u %s -k -X POST -s '
+                        '-H "Content-Type: application/json" '
+                        '-d \'%s\' '
+                        'http://localhost:8080/api/performance/query') % (
+                            self.verify_credential,
+                            _json)
+            log.debug(_cmd_str)
+            _result = subprocess.check_output(_cmd_str, shell=True)
+            log.debug(_result)
+            _json_data = json.loads(_result)
+            log.debug('here')
+        except Exception as e:
+            log.exception(e)
+            raise _Error('E_TSDB')
+
+        # verify here, log warning and raise exception
+        try:
+            if int(_json_data["results"][0]["datapoints"][0]["timestamp"]) != pnt[0]:
+                log.warning('Timestamp not matching:%d/%d' % (
+                    int(_json_data["results"][0]["datapoints"][0]["timestamp"]), pnt[0]))
+                raise _Error('E_TSDB')
+
+            # What is the best way to compare two floating points?
+            if abs(1.0 - float(_json_data["results"][0]["datapoints"][0]["value"])/pnt[1]) > 0.0000001:
+                log.warning('Value not matching:%f/%f' % (
+                    float(_json_data["results"][0]["datapoints"][0]["value"]), pnt[1]))
+                raise _Error('E_TSDB')
+        except Exception as e:
+            log.exception(e)
+            raise _Error('E_TSDB')
+
+        return
 
     def write_tsdb(self):
         '''
@@ -250,9 +311,17 @@ class ImportRRD():
 
     def verify(self):
         # verify the collected three points against the tsdb
-        log.info("Verifying - %d %f" % (self.verify_points[0][0], self.verify_points[0][1]))
-        log.info("Verifying - %d %f" % (self.verify_points[1][0], self.verify_points[1][1]))
-        log.info("Verifying - %d %f" % (self.verify_points[2][0], self.verify_points[2][1]))
+        try:
+            self._do_verify(self.verify_points[0])
+            self._do_verify(self.verify_points[1])
+            self._do_verify(self.verify_points[2])
+            log.info('%s verified ...' % self.metric)
+        except _Error as e:
+            # absorb the exception and continue
+            if e.error_tag == 'E_TSDB':
+                log.warning('Error in verification')
+
+        print 'OK'
         return
 
 
@@ -277,7 +346,7 @@ def parse_args():
     parser.add_argument('rrd_files', nargs='+', type=argparse.FileType('r'),
                         help="a list of rrd files (absolute path)")
     parser.add_argument('-p', '--perf',
-                        dest='perfPath', default='/mnt/src',
+                        dest='perfPath', default='/import4/staging/perf/Devices',
                         help='The absolute path of the root to device rrd tree\
                         <first level nodes are the device ids>')
 
@@ -285,9 +354,10 @@ def parse_args():
     group.add_argument('-t', '--test_mode', action='store_true',
                        dest='test_mode', default=False,
                        help="Perform a parse on the input file and generate stat info, only")
-    group.add_argument('-v', '--verify_mode', action='store_true',
-                       dest='verify_mode', default=False,
-                       help="Perform a validation by sampling/comparing input against tsdb")
+    group.add_argument('-v', '--verify_credential',
+                       dest='verify_credential', default=None,
+                       help=("Perform a validation by sampling/comparing input against tsdb,"
+                             "credential must be supplied.. e.g. 'admin:zenoss' "))
 
     args = parser.parse_args()
     return args
@@ -322,7 +392,7 @@ def main():
             _total += imp.entries
 
             # verify per rrd file
-            if args.verify_mode:
+            if args.verify_credential:
                 imp.verify()
 
     except _Error as e:
