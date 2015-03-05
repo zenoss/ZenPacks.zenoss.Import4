@@ -49,7 +49,7 @@ sync
 
 while read one_rrd
 do
-    "$progdir"/../rrd2tsdb.py -l info -p "$PERFTOP" "$one_rrd" >> "$tsdb_raw"
+    "$progdir"/../rrd2tsdb.py -p "$PERFTOP" "$one_rrd" >> "$tsdb_raw"
     let rc=$?
     if [[ $rc -ne 0 ]] 
     then

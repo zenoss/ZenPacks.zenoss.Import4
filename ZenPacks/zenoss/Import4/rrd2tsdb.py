@@ -10,7 +10,6 @@
 
 import argparse
 import logging
-# import sys
 import subprocess
 import StringIO
 import lxml.etree as ET
@@ -18,6 +17,8 @@ from collections import OrderedDict
 import re
 import os.path
 import json
+import sys
+import traceback
 
 log = logging.getLogger(__name__)
 script_path = os.path.dirname(os.path.realpath(__file__))
@@ -140,6 +141,8 @@ class ImportRRD():
         # output if it is not in the test nor verify mode
         if self.test_mode:
             return
+
+        # if verification mode
         elif self.verify_credential:
             # always keep the last one
             self.verify_points[2] = [self.last_timestamp, _value]
@@ -150,6 +153,8 @@ class ImportRRD():
             if self.entries == 2221:    # 2221 is just a random pick for debuggability
                 self.verify_points[1] = [self.last_timestamp, _value]
             return
+
+        # import/conversion mode
         else:
             print '{} {:d} {:.10e} device={} key={} zenoss_tenant_id={}'.format(
                 self.metric, self.last_timestamp, _value,
@@ -226,8 +231,11 @@ class ImportRRD():
         if not pnt:
             return
 
+        _mtime = pnt[0]
+        _mvalue = pnt[1]
+
         try:
-            _json = (
+            _json_str = (
                 '{'
                 '"start":%d,'
                 '"end":%d,'
@@ -239,8 +247,8 @@ class ImportRRD():
                 '                    "zenoss_tenant_id":["%s"]}'
                 '        }]}'
 
-            ) % (pnt[0]-1,
-                 pnt[0],
+            ) % (_mtime-1,
+                 _mtime,
                  self.metric,
                  self.key.replace(' ', '-'),
                  self.device,
@@ -251,28 +259,36 @@ class ImportRRD():
                         '-d \'%s\' '
                         'http://localhost:8080/api/performance/query') % (
                             self.verify_credential,
-                            _json)
+                            _json_str)
+
             log.debug(_cmd_str)
             _result = subprocess.check_output(_cmd_str, shell=True)
+
             log.debug(_result)
             _json_data = json.loads(_result)
-            log.debug('here')
         except Exception as e:
             log.exception(e)
             raise _Error('E_TSDB')
 
         # verify here, log warning and raise exception
         try:
-            if int(_json_data["results"][0]["datapoints"][0]["timestamp"]) != pnt[0]:
-                log.warning('Timestamp not matching:%d/%d' % (
-                    int(_json_data["results"][0]["datapoints"][0]["timestamp"]), pnt[0]))
+            _tm = int(_json_data["results"][0]["datapoints"][0]["timestamp"])
+            _vl = float(_json_data["results"][0]["datapoints"][0]["value"])
+
+            if _tm != pnt[0]:
+                log.warning('Timestamp not matching:%d/%d' % (_tm, pnt[0]))
                 raise _Error('E_TSDB')
 
             # What is the best way to compare two floating points?
-            if abs(1.0 - float(_json_data["results"][0]["datapoints"][0]["value"])/pnt[1]) > 0.0000001:
-                log.warning('Value not matching:%f/%f' % (
-                    float(_json_data["results"][0]["datapoints"][0]["value"]), pnt[1]))
+            if _mvalue == 0.0:
+                _err = _vl
+            else:
+                _err = abs(1.0 - _vl/_mvalue)
+
+            if _err > 0.0000001:
+                log.warning('Value not matching:%f/%f' % (_vl, _mvalue))
                 raise _Error('E_TSDB')
+
         except Exception as e:
             log.exception(e)
             raise _Error('E_TSDB')
@@ -318,10 +334,12 @@ class ImportRRD():
             log.info('%s verified ...' % self.metric)
         except _Error as e:
             # absorb the exception and continue
+            log.info('FAILED:%s' % self.rrdPath)
             if e.error_tag == 'E_TSDB':
                 log.warning('Error in verification')
+            raise e
 
-        print 'OK'
+        log.info('OK:%s' % self.rrdPath)
         return
 
 
@@ -407,4 +425,10 @@ def main():
         print "%d" % _total
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except:
+        traceback.print_exc(file=sys.stdout)
+        sys.exit(1)
+
+    sys.exit(0)

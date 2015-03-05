@@ -174,7 +174,8 @@ class Migration(MigrationBase):
     def postvalidate(self):
         self._setup_rrd_dir()
         if not self.user or not self.password:
-            self.reportProgress("Warning: username/password not provided")
+            self.reportProgress("Error: username/password not provided")
+            raise PerfDataImportError(Results.COMMAND_ERROR, -1)
 
         _rrd_list = self._get_rrd_list()
         try:
@@ -186,11 +187,11 @@ class Migration(MigrationBase):
                         Config.pkgPath,
                         self.user, self.password,
                         self.perf_top, _one_rrd)
-                    _result = subprocess.check_output(_cmd, shell=True, stderr=None).strip()
-                    if _result == 'OK':
-                        self.reportProgress("verified...")
+                    _result = subprocess.call(_cmd, shell=True, stdout=None, stderr=None)
+                    if _result == 0:
+                        self.reportProgress("%s:. verified" % _one_rrd)
                     else:
-                        self.reportProgress("Error...")
+                        self.reportProgress("%s:. Error..." % _one_rrd)
         except Exception as e:
             print e
             raise PerfDataImportError(Results.INVALID, -1)
