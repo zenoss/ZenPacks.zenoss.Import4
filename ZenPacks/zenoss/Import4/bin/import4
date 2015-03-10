@@ -9,7 +9,8 @@
 ##############################################################################
 
 import argparse
-import sys, traceback
+import sys
+import traceback
 
 from ZenPacks.zenoss.Import4 import migration, model, events, perf
 from ZenPacks.zenoss.Import4.migration import Config
@@ -39,15 +40,20 @@ def run_migration(migration_class, args):
 
     # the prevalidation phase
     try:
-        _migration.prevalidate()
+        # a prep stage
+        if args.check:
+            _migration.prevalidate()
 
-        # we return when it is just a dryrun
-        if args.dryrun:
-            exit(exitCode[migration.Results.SUCCESS])
+        # we don't do wipe anymore
+        # _migration.wipe()
 
-        _migration.wipe()
-        _migration.doImport()
-        _migration.postvalidate()
+        # import stage
+        if args.execute:
+            _migration.doImport()
+
+        # verification stage
+        if args.verify:
+            _migration.postvalidate()
 
     except migration.ImportError as err:
         sys.stderr.write('Error: %s(%d)\n' % (err.error_string, err.return_code))
@@ -82,8 +88,19 @@ def parse_args():
         )
     )
 
-    parser.add_argument('-c', '--check', '--dry-run', action='store_true', dest='dryrun', default=False,
-                        help="Pre-validate only, do not perform any destructive operations")
+    # import is divided into three optional stages:
+    # prevalidate, import, and postvalidate
+    op_group = parser.add_mutually_exclusive_group(required=True)
+    op_group.add_argument('-c', '--check', '--prevalidate', action='store_true', dest='check', default=False,
+                          help="Pre-validate only, do not perform any destructive operations")
+    op_group.add_argument('-v', '--verify', '--postvalidate', action='store_true', dest='verify', default=False,
+                          help="Post-validate only")
+    op_group.add_argument('-x', '--execute', '--import', action='store_true', dest='execute', default=False,
+                          help="Execute the actual import operation")
+    parser.add_argument('-z', '--zenbackup', dest='zenbackup_file',
+                               type=argparse.FileType('r'),
+                               help="4.x archive file to import")
+
     parser.add_argument('-f', '--ignore-warnings', action='store_true', dest='ignorewarnings', default=False,
                         help="Continue with the import even if pre-validation generates warnings")
     parser.add_argument('-d', '--debug', action='store_true', dest='debug', default=False,

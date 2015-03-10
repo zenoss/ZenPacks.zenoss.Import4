@@ -37,8 +37,6 @@ class EventImportError(ImportError):
 def init_command_parser(subparsers):
     # add specific arguments for events migration
     events_parser = subparsers.add_parser('event', help='migrate event data')
-    events_parser.add_argument('file', type=argparse.FileType('r'),
-                               help="4.x archive file to import")
     return events_parser
 
 
@@ -50,16 +48,21 @@ class Migration(MigrationBase):
         self.zep_sql = ''
         self.insert_count = 0
         self.insert_running = 0
-        self.file = args.file
 
     def prevalidate(self):
         # untar the provided zenbackup package
         # exception from this passed upward
-        self._untarZenbackup()
+        if not self.zbfile:
+            self.reportProgress(_stderr_tag + 'No zenbackup package provided..')
+            raise EventImportError(Results.UNTAR_FAIL, -1)
 
+        self._untarZenbackup()
+        self._check_files()
+
+    def _check_files(self):
         # check the untar results
         self.reportProgress(
-            _check_tag+'checking package "%s"..' % self.file.name)
+            _check_tag+'checking package "%s"..' % self.zbfile.name)
 
         if not os.path.isdir(self.zenbackup_dir):
             raise EventImportError(Results.INVALID, -1)
@@ -90,7 +93,7 @@ class Migration(MigrationBase):
                             'A rough scan shows [%d] INSERT statements'
                             % self.insert_count)
         self.reportProgress(
-            _check_tag + 'package "%s" looks OK' % self.file.name)
+            _check_tag + 'package "%s" looks OK' % self.zbfile.name)
 
         # all files in place
         return
@@ -101,6 +104,7 @@ class Migration(MigrationBase):
         return
 
     def doImport(self):
+        self._check_files()
         self._restoreMySqlDb('zenoss_zep')
         return
 
@@ -129,6 +133,8 @@ class Migration(MigrationBase):
 
     def postvalidate(self):
         # we assume the db operations are all correct if no error returned
+        self.reportProgress(
+            _check_tag + 'If previous "-x event" is successful, No post validation needed.')
         return
 
     def _untarZenbackup(self):
@@ -143,7 +149,7 @@ class Migration(MigrationBase):
         if _rc > 0:
             raise EventImportError(Results.COMMAND_ERROR, _rc)
         cmd = 'tar --wildcards-match-slash -C %s -f %s -x %s' % (
-            self.tempDir, self.file.name, Config.zepBackup)
+            self.tempDir, self.zbfile.name, Config.zepBackup)
         _rc = os.system(cmd)
         if _rc:
             raise EventImportError(Results.UNTAR_FAIL, _rc)
