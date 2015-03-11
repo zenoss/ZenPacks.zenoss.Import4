@@ -16,6 +16,15 @@ from ZenPacks.zenoss.Import4 import migration, model, events, perf
 from ZenPacks.zenoss.Import4.migration import Config
 
 exitCode = {
+    # perf module mapping
+    perf.Results.COMMAND_ERROR: 11,
+    perf.Results.UNTAR_FAIL: 10,
+    perf.Results.INVALID: 9,
+
+    perf.Results.FAILURE: 2,
+    perf.Results.WARNING: 1,
+    perf.Results.SUCCESS: 0,
+
     # event module mapping
     events.Results.COMMAND_ERROR: 8,
     events.Results.UNTAR_FAIL: 7,
@@ -63,6 +72,8 @@ def run_migration(migration_class, args):
         elif (_rc == exitCode[migration.Results.WARNING]) and (not args.ignorewarnings):
             exit(_rc)
             # else, we continue
+        else:
+            exit(_rc)
     except Exception as e:
         # unrecognized exception
         print "Huh? unknown exception during import ---", e

@@ -46,7 +46,10 @@ class MigrationBase(object):
         self.tempDir = args.staging_dir
         self.ip = args.ip
         self.user = args.user
-        self.password = args.password
+        if args.password:
+            self.password = args.password
+        else:
+            self.password = ''
         self.zbfile = args.zenbackup_file
 
     def __NOT_YET__(self):
