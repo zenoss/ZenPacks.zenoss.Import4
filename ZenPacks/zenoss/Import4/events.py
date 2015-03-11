@@ -7,7 +7,6 @@
 #
 ##############################################################################
 
-import argparse
 import os
 import subprocess
 import tempfile
@@ -48,6 +47,7 @@ class Migration(MigrationBase):
         self.zep_sql = ''
         self.insert_count = 0
         self.insert_running = 0
+        self.event_migrated = '%s/EVENT_MIGRATED' % Config.stageDir
 
     def prevalidate(self):
         # untar the provided zenbackup package
@@ -58,15 +58,19 @@ class Migration(MigrationBase):
 
         self._untarZenbackup()
         self._check_files()
+        self.reportProgress(Results.SUCCESS)
+        return
 
     def _check_files(self):
         # check the untar results
         self.reportProgress(
-            _check_tag+'checking package "%s"..' % self.zbfile.name)
+            _check_tag+'checking directories - "%s"..' % self.zenbackup_dir)
 
         if not os.path.isdir(self.zenbackup_dir):
+            self.reportProgress(
+                _stderr_tag + 'Backup directory does not exist. Run -c option to extract the backup file.')
             raise EventImportError(Results.INVALID, -1)
-        self.reportProgress(_check_tag + 'zenbackup directory found')
+        self.reportProgress(_check_tag + 'zenbackup directory exists')
 
         # attempt to find the compressed zep.sql file
         self.zep_sql = '%s/%s' % (self.tempDir, Config.zepSQL)
@@ -78,7 +82,6 @@ class Migration(MigrationBase):
             if _rc > 0:
                 raise EventImportError(Results.COMMAND_ERROR, _rc)
 
-        print self.tempDir, self.zep_sql
         if not os.path.isfile(self.zep_sql):
             raise EventImportError(Results.INVALID, -1)
 
@@ -93,7 +96,7 @@ class Migration(MigrationBase):
                             'A rough scan shows [%d] INSERT statements'
                             % self.insert_count)
         self.reportProgress(
-            _check_tag + 'package "%s" looks OK' % self.zbfile.name)
+            _check_tag + 'directory "%s" looks OK' % self.zenbackup_dir)
 
         # all files in place
         return
@@ -104,8 +107,16 @@ class Migration(MigrationBase):
         return
 
     def doImport(self):
+        if os.path.isfile(self.event_migrated):
+            os.remove(self.event_migrated)
+
+        # the check_files is fast so we always do a quick check
         self._check_files()
         self._restoreMySqlDb('zenoss_zep')
+        self._migrateSchema()
+        with open(self.event_migrated, 'a'):
+            pass
+        self.reportProgress(Results.SUCCESS)
         return
 
     def reportProgress(self, raw_line):
@@ -133,8 +144,27 @@ class Migration(MigrationBase):
 
     def postvalidate(self):
         # we assume the db operations are all correct if no error returned
-        self.reportProgress(
-            _check_tag + 'If previous "-x event" is successful, No post validation needed.')
+        if os.path.isfile(self.event_migrated):
+            self.reportProgress(
+                _check_tag + 'Previous "-x event" is successful, No post validation needed.')
+            self.reportProgress(Results.SUCCESS)
+        else:
+            self.reportProgress(
+                _check_tag + 'Previous "-x event" is not successful or not imported yet.')
+            self.reportProgress(Results.FAILURE)
+        return
+
+    def _migrateSchema(self):
+        _cmd = ['/opt/zenoss/bin/zeneventserver-create-db',
+                '--dbtype', 'mysql',
+                '--dbuser', "'%s'" % self.user,
+                '--dbpass', "'%s'" % self.password,
+                '--schemadir', '/opt/zenoss/share/zeneventserver/sql',
+                '--update_schema_only']
+        _cmdstr = subprocess.list2cmdline(_cmd)
+        _rc = subprocess.call(_cmdstr, shell=True)
+        if _rc > 0:
+            raise EventImportError(Results.COMMAND_ERROR, _rc)
         return
 
     def _untarZenbackup(self):
@@ -210,5 +240,4 @@ class Migration(MigrationBase):
             raise EventImportError(Results.FAILURE, proc.returncode)
 
         _errfile.close()
-        self.reportProgress(Results.SUCCESS)
         return

@@ -68,6 +68,7 @@ class Migration(MigrationBase):
         self.rrd_dir_arg = args.rrd_dir
         self.rrd_dir = os.path.abspath(args.rrd_dir)
         self.skip_scan = args.skip_scan
+        self.files_no = 0
 
         # if self.perf_top does not exist, derive it from rrd_dir
         if args.perf_top:
@@ -76,8 +77,11 @@ class Migration(MigrationBase):
             _idx = self.rrd_dir.find("Devices/")
             self.perf_top = self.rrd_dir[:_idx+7]
 
+        self.data_checked = '%s/DATA_CHECKED' % Config.stageDir
+        self.data_migrated = '%s/DATA_MIGRATED' % Config.stageDir
+
         if not os.path.exists(_import4_vol):
-            self.reportProgress("%s does not exist" % _import4_vol)
+            self.reportProgress("%s does not exist." % _import4_vol)
             raise PerfDataImportError(Results.RUNTIME_ERROR, -1)
 
         # always copy the small pkg for the imp4mariadb and imp4opentsdb services
@@ -94,22 +98,19 @@ class Migration(MigrationBase):
             raise PerfDataImportError(Results.RUNTIME_ERROR, _rc)
 
     def _setup_rrd_dir(self):
-        # check if tarball is ok by untar it to the /import4
-        # only untar when a target rrd_dir is not specified
         if not self.rrd_dir_arg:
             self.rrd_dir = '%s/Devices' % Config.perfDir
             self.perf_top = self.rrd_dir
         else:
-            self.reportProgress("%s provided. unpacking process skipped..." % self.rrd_dir)
+            # else, rrd_dir is the one derived from provided rrd_dir_arg
+            self.reportProgress("Use %s provided ..." % self.rrd_dir)
 
-        # else, rrd_dir is the one derived from provided rrd_dir_arg
         # check if the rrd_dir is valid
         if not os.path.exists(self.rrd_dir):
-            self.reportProgress("%s does not exist" % self.rrd_dir)
+            self.reportProgress("%s does not exist. May need to run -c option to extract the backup file first." % self.rrd_dir)
             raise PerfDataImportError(Results.INVALID, -1)
 
     def _get_rrd_list(self):
-        # here we do a single-process check of the rrdfiles
         try:
             _rrd_list = '%s/rrd.list' % Config.perfDir
             _cmd = 'find %s -type f -name "*.rrd"' % self.rrd_dir
@@ -118,11 +119,11 @@ class Migration(MigrationBase):
                 subprocess.check_call(_cmd, shell=True, stdout=_rlfile, stderr=_errfile)
 
             _cmd = 'cat %s | wc -l' % _rrd_list
-            _files_no = int(subprocess.check_output('cat %s | wc -l' % _rrd_list, shell=True))
+            self.files_no = int(subprocess.check_output('cat %s | wc -l' % _rrd_list, shell=True))
         except Exception as e:
             print e
             raise PerfDataImportError(Results.INVALID, -1)
-        self.reportProgress("rrd files to work:%s" % _files_no)
+        self.reportProgress("rrd files to work on:%s" % self.files_no)
         return _rrd_list
 
     def prevalidate(self):
@@ -138,16 +139,19 @@ class Migration(MigrationBase):
             self.reportProgress("rrd scanning skip option specified - skipped")
             return
 
+        # here we do a single-process check of the rrdfiles
         # we go thru each rrdfile and do a dryrun
         self.reportProgress("Scanning rrdfiles ...")
         _total_dr = 0
         _total_dp = 0
         _total_ds = 0
+        _i = 0
         try:
             with open(_rrd_list, "r") as f:
                 for _aline in f:
                     _one_rrd = _aline.strip()
-                    self.reportProgress("%s ..." % _one_rrd)
+                    _i = _i+1
+                    self.reportProgress("%s ...[%d/%d]" % (_one_rrd, _i, self.files_no))
                     _cmd = '%s/rrd2tsdb.py -t -p "%s" "%s"' % (Config.pkgPath, self.perf_top, _one_rrd)
                     _result = subprocess.check_output(_cmd, shell=True, stderr=None).strip()
                     self.reportProgress("%s datapoints..." % _result)
@@ -169,29 +173,48 @@ class Migration(MigrationBase):
         self.reportProgress("DS#: %d" % _total_ds)
         self.reportProgress("DR#: %d" % _total_dr)
         self.reportProgress("DP#: %d" % _total_dp)
+
+        # mark the checked file
+        with open(self.data_checked, 'a'):
+            pass
         return
 
     def postvalidate(self):
         self._setup_rrd_dir()
-        if not self.user or not self.password:
-            self.reportProgress("Error: username/password not provided")
+        if not os.path.isfile(self.data_migrated):
+            self.reportProgress("Error: Performance data not imported yet")
+            raise PerfDataImportError(Results.INVALID, -1)
+
+        # self.password is either '' or something
+        if not self.user:
+            self.reportProgress("Error: username not provided")
             raise PerfDataImportError(Results.COMMAND_ERROR, -1)
 
         _rrd_list = self._get_rrd_list()
         try:
+            _no = 0
+            _eno = 0
             with open(_rrd_list, "r") as f:
                 for _aline in f:
                     _one_rrd = _aline.strip()
                     self.reportProgress("%s ..." % _one_rrd)
-                    _cmd = '%s/rrd2tsdb.py -v %s:%s -p "%s" "%s"' % (
-                        Config.pkgPath,
-                        self.user, self.password,
-                        self.perf_top, _one_rrd)
+
+                    if self.user and (self.password != ""):
+                        _cre = "-v %s:%s" % (self.user, self.password)
+                    elif self.user:
+                        _cre = "-v %s" % self.user
+                    else:
+                        _cre = ""
+
+                    _cmd = '%s/rrd2tsdb.py %s -p "%s" "%s"' % (
+                        Config.pkgPath, _cre, self.perf_top, _one_rrd)
                     _result = subprocess.call(_cmd, shell=True, stdout=None, stderr=None)
                     if _result == 0:
-                        self.reportProgress("%s:. verified" % _one_rrd)
+                        _no += 1
+                        self.reportProgress("%s:. [%d/%d] verified" % (_one_rrd, _no, self.files_no))
                     else:
-                        self.reportProgress("%s:. Error..." % _one_rrd)
+                        _eno += 1
+                        self.reportProgress("%s:. [%d/%d] Error..." % (_one_rrd, _eno, self.files_no))
         except Exception as e:
             print e
             raise PerfDataImportError(Results.INVALID, -1)
@@ -206,6 +229,13 @@ class Migration(MigrationBase):
 
     def doImport(self):
         self._setup_rrd_dir()
+
+        if not os.path.exists(self.data_checked):
+            self.reportProgress("rrdfiles not validated yet. Run -c option first.")
+            raise PerfDataImportError(Results.INVALID, -1)
+
+        if os.path.isfile(self.data_migrated):
+            os.remove(self.data_migrated)
 
         # cleanup the shared directories for the services
         _args = ["%s/cleanup_jobs.sh" % sys.path[0]]
@@ -256,6 +286,9 @@ class Migration(MigrationBase):
             print sys.exc_info()[0]
             raise PerfDataImportError(Results.FAILURE, -1)
 
+        with open(self.data_migrated, 'a'):
+            pass
+
         self.reportProgress("Performance data import complete!")
         return
 
@@ -279,6 +312,10 @@ class Migration(MigrationBase):
             raise PerfDataImportError(Results.COMMAND_ERROR, _rc)
 
         # untar the zenbackup file for perf.tar file
+        if not self.zbfile:
+            self.reportProgress('No zenbackup package provided..')
+            raise PerfDataImportError(Results.UNTAR_FAIL, -1)
+
         _cmd = 'tar -v --totals -R --wildcards-match-slash -C %s -f %s -x %s' % (
             Config.stageDir, self.zbfile.name, Config.perfBackup)
         _rc = os.system(_cmd)
@@ -290,5 +327,11 @@ class Migration(MigrationBase):
         _rc = os.system(_cmd)
         if _rc > 0:
             raise PerfDataImportError(Results.COMMAND_ERROR, _rc)
+
+        if os.path.isfile(self.data_checked):
+            os.remove(self.data_checked)
+
+        if os.path.isfile(self.data_migrated):
+            os.remove(self.data_migrated)
 
         return

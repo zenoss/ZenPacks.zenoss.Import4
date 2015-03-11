@@ -150,7 +150,7 @@
        "Prereqs": [
          {
            "Name": "MariaDB Availability",
-           "Script": "mysql -uroot -hlocalhost -P3306 -e 'select 1' > /dev/null"
+           "Script": "su - zenoss -c '/opt/zenoss/bin/python /opt/zenoss/Products/ZenUtils/ZenDB.py --usedb zodb --execsql=\";\"'"
          }
        ],
        "MonitoringProfile": {
