@@ -49,7 +49,7 @@ setup(
 
     # The MANIFEST.in file is the recommended way of including additional files
     # in your ZenPack. package_data is another.
-    package_data={'scripts': ['bin/*']},
+    package_data={'': ['bin/*']},
 
     # Indicate dependencies on other python modules or ZenPacks.  This line
     # is modified by zenoss when the ZenPack edit page is submitted.  Zenoss
