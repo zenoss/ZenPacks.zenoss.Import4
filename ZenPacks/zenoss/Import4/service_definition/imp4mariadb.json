@@ -22,10 +22,25 @@
         "Context": null,
         "Endpoints": [
          {
-           "Name": "mariadb",
+           "Name": "zep_mariadb",
            "Purpose": "import",
            "Protocol": "tcp",
            "PortNumber": 3306,
+           "PortTemplate": "",
+           "VirtualAddress": "",
+           "Application": "zep_mariadb",
+           "ApplicationTemplate": "",
+           "AddressConfig": {
+             "Port": 0,
+             "Protocol": ""
+           },
+           "VHosts": null
+         },
+         {
+           "Name": "zodb_mariadb",
+           "Purpose": "import",
+           "Protocol": "tcp",
+           "PortNumber": 3307,
            "PortTemplate": "",
            "VirtualAddress": "",
            "Application": "zodb_mariadb",
@@ -80,7 +95,14 @@
          {
            "Owner": "mysql:mysql",
            "Permission": "0755",
-           "ResourcePath": "mariadb",
+           "ResourcePath": "mariadb-model",
+           "ContainerPath": "/var/lib/mysql.model",
+           "Type": ""
+         },
+         {
+           "Owner": "mysql:mysql",
+           "Permission": "0755",
+           "ResourcePath": "mariadb-events",
            "ContainerPath": "/var/lib/mysql",
            "Type": ""
          },
@@ -143,14 +165,14 @@
        "Actions": null,
        "HealthChecks": {
          "running": {
-           "Script": "mysql -uroot -hlocalhost -P3306 -e 'select 1' > /dev/null",
+           "Script": "mysql --socket=/var/lib/mysql/mysql.sock -uroot -hlocalhost -P3306 -e 'select 1' && mysql --socket=/var/lib/mysql.model/mysql.sock -uroot -hlocalhost -P3307 -e 'select 1' > /dev/null",
            "Interval": 5.0
          }
        },
        "Prereqs": [
          {
-           "Name": "MariaDB Availability",
-           "Script": "su - zenoss -c '/opt/zenoss/bin/python /opt/zenoss/Products/ZenUtils/ZenDB.py --usedb zodb --execsql=\";\"'"
+           "Name": "MariaDB zodb and zep Availability",
+           "Script": "su - zenoss -c '/opt/zenoss/bin/python /opt/zenoss/Products/ZenUtils/ZenDB.py --dbport 3306 --usedb zep --execsql=\";\"' && su - zenoss -c '/opt/zenoss/bin/python /opt/zenoss/Products/ZenUtils/ZenDB.py --dbport 3307 --usedb zodb --execsql=\";\"' "
          }
        ],
        "MonitoringProfile": {
