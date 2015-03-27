@@ -3,10 +3,10 @@
 # or saved.  Do not modify them directly here.
 # NB: PACKAGES is deprecated
 NAME = "ZenPacks.zenoss.Import4"
-VERSION = "1.0.0dev"
+VERSION = "0.0.9-dev"
 AUTHOR = "Zenoss"
 LICENSE = "GPLv2"
-NAMESPACE_PACKAGES = ['ZenPacks', 'ZenPacks.zenoss']
+NAMESPACE_PACKAGES = ['ZenPacks', 'ZenPacks.zenoss', 'ZenPacks.zenoss.Import4']
 PACKAGES = ['ZenPacks', 'ZenPacks.zenoss', 'ZenPacks.zenoss.Import4']
 INSTALL_REQUIRES = []
 COMPAT_ZENOSS_VERS = ">= 5.0" # todo: == 5.1
@@ -49,7 +49,7 @@ setup(
 
     # The MANIFEST.in file is the recommended way of including additional files
     # in your ZenPack. package_data is another.
-    package_data={'': ['bin/*']},
+    package_data={'ZenPacks.zenoss.Import4': ['bin/*', 'service_definition/*.json']},
 
     # Indicate dependencies on other python modules or ZenPacks.  This line
     # is modified by zenoss when the ZenPack edit page is submitted.  Zenoss

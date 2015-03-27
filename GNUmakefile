@@ -11,10 +11,12 @@ ESAHOME=$(PWD)
 
 default: egg
 
-egg:
+egg: clean
+	@rm -f dist/*.egg
 	@python setup.py bdist_egg
 
 clean:
 	@rm -rf $(ESAHOME)/dist
 	@rm -rf $(ESAHOME)/build
+	@rm -rf $(ESAHOME)/*.egg-info
 
