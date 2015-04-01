@@ -1,5 +1,6 @@
 #!/usr/bin/bash
 
+# this is supposed to execute as a root
 tmpdir="/import4/tmp/rrdtool"
 rm -rf "$tmpdir"
 mkdir -p "$tmpdir"
@@ -7,7 +8,7 @@ cd "$tmpdir"
 
 Prereq="libdbi ruby xorg-x11-fonts-Type1 gettext libpng12 perl-Time-HiRes"
 echo Installing $Prereq
-sudo /usr/bin/yum install $Prereq -y
+/usr/bin/yum install $Prereq -y
 
 let rc=$?
 if [ 0 -ne $rc ]
@@ -41,9 +42,9 @@ do
     echo -e "\t[OK]"
 done
 
-sudo /usr/bin/yum erase rrdtool -y
+/usr/bin/yum erase rrdtool -y
 
-sudo /usr/bin/rpm -Uvh $packages
+/usr/bin/rpm -Uvh $packages
 let rc=$?
 if [ 0 -ne $rc ]
 then

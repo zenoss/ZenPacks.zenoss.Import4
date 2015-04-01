@@ -61,7 +61,7 @@
        "Volumes": [
          {
            "Owner": "zenoss:zenoss",
-           "Permission": "0775",
+           "Permission": "0777",
            "ResourcePath": "import4",
            "ContainerPath": "/import4"
          }

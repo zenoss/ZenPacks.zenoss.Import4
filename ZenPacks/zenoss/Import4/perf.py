@@ -87,15 +87,18 @@ class Migration(MigrationBase):
         # always copy the small pkg for the imp4mariadb and imp4opentsdb services
         # this call should not execute under '/import4/pkg'
         # instead, via <zenpack_path>/bin/import4
+        '''
+        # this is already done before the service starts
         _rc = subprocess.call(["%s/install_pkg.sh" % sys.path[0]],
                               shell=True, stderr=subprocess.STDOUT)
         if _rc > 0:
             raise PerfDataImportError(Results.RUNTIME_ERROR, _rc)
+        '''
 
         if not os.path.exists('%s/imp4mariadb.sh' % _import4_pkg_bin):
-            raise PerfDataImportError(Results.RUNTIME_ERROR, _rc)
+            raise PerfDataImportError(Results.RUNTIME_ERROR, -1)
         if not os.path.exists('%s/imp4opentsdb.sh' % _import4_pkg_bin):
-            raise PerfDataImportError(Results.RUNTIME_ERROR, _rc)
+            raise PerfDataImportError(Results.RUNTIME_ERROR, -1)
 
     def _setup_rrd_dir(self):
         if not self.rrd_dir_arg:

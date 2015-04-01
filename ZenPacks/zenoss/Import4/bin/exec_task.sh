@@ -48,13 +48,6 @@ mkdir -p "$tsdb_tmp_dir"
 rm -f "$tsdb_raw"   # cleanup first
 sync
 
-function recover_job
-{
-    # search the job dir and forcefully move back the jobs stuck more than 5 min
-    dead_jobs=$(find "$job_dir" -maxdepth 1 -type f -mmin +5)
-    [[ -z "$dead_jobs" ]] && mv "$dead_jobs" "$task_dir"
-}
-
 while read one_rrd
 do
     "$progdir"/../rrd2tsdb.py -p "$PERFTOP" "$one_rrd" >> "$tsdb_raw"
@@ -70,8 +63,6 @@ do
 
         exit 1
     fi
-    # check for stuck job from other workers
-    recover_job
 done < "$job"
 
 # if successful

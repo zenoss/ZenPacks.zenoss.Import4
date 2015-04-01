@@ -18,5 +18,7 @@ read PERFTOP < "$task_dir/PERFTOP"
 [[ -d "$job_dir" ]]     || err_exit "Job directory not available"
 
 # search the job dir and forcefully move back the jobs stuck more than 5 min
-dead_jobs=$(find "$job_dir" -maxdepth 1 -type f -mmin +5)
-[[ ! -z "$dead_jobs" ]] && mv "$dead_jobs" "$task_dir" && sync
+find "$job_dir" -maxdepth 1 -type f -mmin +5 | while read fname
+do
+    [[ -n "fname" ]]  && mv "$fname" "$task_dir"
+done

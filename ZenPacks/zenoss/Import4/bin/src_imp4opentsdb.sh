@@ -19,15 +19,21 @@ source "$progdir/utils.sh"
 while true
 do
     echo 'Rescanning tsdb files ...'
-    tsdbs=$(find /import4/Q.tsdb -maxdepth 1 -name "task*.tsdb" -print)
-    if [[ -z "$tsdbs" ]]
-    then
-            sleep 5
-    else
-        for tfile in "$tsdbs"
-        do
+    (( tno = 0 ))
+    find /import4/Q.tsdb -maxdepth 1 -type f -name "task*.tsdb" -print | while read tfile
+    do
+        if [[ -n "$tfile" ]]
+        then
             echo "Importing $tfile ..."
+            (( tno += 1 ))
             /import4/pkg/bin/import_tsdb.sh "$tfile"
-        done
+        fi
+    done
+
+    if [[ $tno -eq 0 ]]
+    then
+	        # check and revive the stuck tsdb
+            /import4/pkg/bin/check_tsdb.sh
+            sleep 5
     fi
 done

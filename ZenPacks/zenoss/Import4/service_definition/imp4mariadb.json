@@ -4,7 +4,7 @@
         "Name": "Imp4MariaDB",
         "Description": "MariaDB (mysql) environment for import4",
         "Launch": "manual",
-        "Command": "bash -c \"while echo 'Starting ..'; do if [[ -f /import4/pkg/bin/imp4mariadb.sh ]]; then /import4/pkg/bin/imp4mariadb.sh; else echo 'Startup script not ready ...'; sleep 7; fi; done;\"",
+        "Command": "bash -c \"while echo 'Starting ..'; do if [[ -f /import4/pkg/bin/imp4mariadb.sh ]]; then /import4/pkg/bin/imp4mariadb.sh; else echo 'Startup script not ready, install ...'; /opt/zenoss/ZenPacks/ZenPacks.zenoss.Import4*/ZenPacks/zenoss/Import4/bin/install_pkg.sh; fi; done;\"",
         "ImageID": "",
         "Tags": [
             "daemon"
@@ -149,7 +149,7 @@
          },
          {
            "Owner": "zenoss:zenoss",
-           "Permission": "0775",
+           "Permission": "0777",
            "ResourcePath": "import4",
            "ContainerPath": "/import4"
          }
