@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash -x
 #
 # The script is the starter script for imp4mariadb container
 # It runs as root
@@ -25,13 +25,20 @@ which rrdtool || ( [[ -f /import4/pkg/bin/install_rrdtool.sh ]] && /import4/pkg/
 runuser -l zenoss -c /import4/pkg/bin/get_dmduuid.sh
 
 # find the available task and execute it
-while read task
+while true
 do
-    if [[ "$task" == "" ]]
+    echo 'Rescan tasks...'
+    tasks=$(find /import4/Q.tasks -maxdepth 1 -name "task*" -print)
+    if [[ -z "$tasks" ]]
     then
+	# check and revive the stuck tasks
+        runuser -l zenoss -c "/import4/pkg/bin/check_task.sh"
         sleep 5
     else
-        echo "Trying $task ..."
-        runuser -l zenoss -c "/import4/pkg/bin/exec_task.sh \"$task\""
+	    for task in "$tasks"
+	    do
+            echo "Trying $task ..."
+            runuser -l zenoss -c "/import4/pkg/bin/exec_task.sh \"$task\""
+	    done
     fi
-done < <(ls -1 /import4/Q.tasks/task* | head -n 1) 
+done

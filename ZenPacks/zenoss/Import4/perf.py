@@ -273,11 +273,12 @@ class Migration(MigrationBase):
                 if _num:
                     self.reportProgress(_progress)
                     _tno = int(_num.group(1))
+                    _cno = int(_num.group(3))
                     _dno = int(_num.group(4))
                     _cents = int(_num.group(5))
                     self.reportProgress("[%s/%s] %s%%" %
                                         (_dno, _tno, _cents))
-                    if _dno == _tno:
+                    if (_dno == _tno) and (_cno == _tno):
                         break
                 else:
                     # cannot recognize the progress output string

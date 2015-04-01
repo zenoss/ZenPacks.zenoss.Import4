@@ -16,13 +16,18 @@ source "$progdir/utils.sh"
 
 #
 # find the converted input file and import it
-while read tfile
+while true
 do
-    echo "Importing $tfile ..."
-    if [[ "$tfile" != "" ]]
+    echo 'Rescanning tsdb files ...'
+    tsdbs=$(find /import4/Q.tsdb -maxdepth 1 -name "task*.tsdb" -print)
+    if [[ -z "$tsdbs" ]]
     then
-        /import4/pkg/bin/import_tsdb.sh "$tfile"
+            sleep 5
     else
-        sleep 5
+        for tfile in "$tsdbs"
+        do
+            echo "Importing $tfile ..."
+            /import4/pkg/bin/import_tsdb.sh "$tfile"
+        done
     fi
-done < <(ls -1 /import4/Q.tsdb/task*.tsdb 2>/dev/null | head -n 1) 
+done

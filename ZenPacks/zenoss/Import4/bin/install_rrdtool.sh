@@ -1,8 +1,9 @@
 #!/usr/bin/bash
 
-rm -rf /tmp/rrdtool
-mkdir -p /tmp/rrdtool
-cd /tmp/rrdtool
+tmpdir="/import4/tmp/rrdtool"
+rm -rf "$tmpdir"
+mkdir -p "$tmpdir"
+cd "$tmpdir"
 
 Prereq="libdbi ruby xorg-x11-fonts-Type1 gettext libpng12 perl-Time-HiRes"
 echo Installing $Prereq
