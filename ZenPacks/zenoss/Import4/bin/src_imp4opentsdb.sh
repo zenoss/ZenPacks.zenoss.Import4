@@ -16,13 +16,24 @@ source "$progdir/utils.sh"
 
 #
 # find the converted input file and import it
-while read tfile
+while true
 do
-    echo "Importing $tfile ..."
-    if [[ "$tfile" != "" ]]
+    echo 'Rescanning tsdb files ...'
+    (( tno = 0 ))
+    find /import4/Q.tsdb -maxdepth 1 -type f -name "task*.tsdb" -print | while read tfile
+    do
+        if [[ -n "$tfile" ]]
+        then
+            echo "Importing $tfile ..."
+            (( tno += 1 ))
+            /import4/pkg/bin/import_tsdb.sh "$tfile"
+        fi
+    done
+
+    if [[ $tno -eq 0 ]]
     then
-        /import4/pkg/bin/import_tsdb.sh "$tfile"
-    else
-        sleep 5
+	        # check and revive the stuck tsdb
+            /import4/pkg/bin/check_tsdb.sh
+            sleep 5
     fi
-done < <(ls -1 /import4/Q.tsdb/task*.tsdb 2>/dev/null | head -n 1) 
+done

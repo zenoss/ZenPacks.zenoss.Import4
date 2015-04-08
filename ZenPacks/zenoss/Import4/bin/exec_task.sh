@@ -35,6 +35,7 @@ read PERFTOP < "$task_dir/PERFTOP"
 
 # double attempts for an atomic ownership
 ln "$task" "$job" >/dev/null 2>&1  || err_exit "someone else got $task - ln" 
+touch "$job"      >/dev/null 2>&1  || err_exit "someone else got $task - touch" 
 sync
 rm "$task"        >/dev/null 2>&1  || err_exit "someone else got $task - rm"
 sync

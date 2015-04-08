@@ -19,17 +19,16 @@ source "$progdir/utils.sh"
 
 # check parameters and environment
 mkdir -p "$tsdb_tmp_dir" 
+
 [[ -f "$tsdb_file" ]]    || err_exit "import file:$tsdb_file not available anymore"
 [[ -d "$tsdb_tmp_dir" ]] || err_exit "Working directory $tsdb_tmp_dir not available"
 
 # double attempts for an atomic ownership
-ln "$tsdb_file" "$tsdb_imp_file" >/dev/null 2>&1 || err_exit "someone else got $tsdb_file - ln" 
+ln "$tsdb_file" "$tsdb_imp_file"    >/dev/null 2>&1 || err_exit "someone else got $tsdb_file - ln" 
+touch "$tsdb_imp_file"              >/dev/null 2>&1 || err_exit "someone else got $tsdb_file - touch" 
 sync
 rm "$tsdb_file"             >/dev/null 2>&1 || err_exit "someone else got $tsdb_file - rm"
 sync
-
-# Not likely but we can further monitor tsdb and restart crashed ones
-# for <tsdb_imp_file> no being completed for a while
 
 # now this process owns the $tsdb file
 /opt/opentsdb/build/tsdb import --config=/opt/zenoss/etc/opentsdb/opentsdb.conf "$tsdb_imp_file"
@@ -48,3 +47,4 @@ fi
 mkdir -p "$tsdb_done_dir"
 mv "$tsdb_imp_file" "$tsdb_done_dir/$tsdb_base"
 sync
+

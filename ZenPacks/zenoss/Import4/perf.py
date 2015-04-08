@@ -87,15 +87,18 @@ class Migration(MigrationBase):
         # always copy the small pkg for the imp4mariadb and imp4opentsdb services
         # this call should not execute under '/import4/pkg'
         # instead, via <zenpack_path>/bin/import4
+        '''
+        # this is already done before the service starts
         _rc = subprocess.call(["%s/install_pkg.sh" % sys.path[0]],
                               shell=True, stderr=subprocess.STDOUT)
         if _rc > 0:
             raise PerfDataImportError(Results.RUNTIME_ERROR, _rc)
+        '''
 
         if not os.path.exists('%s/imp4mariadb.sh' % _import4_pkg_bin):
-            raise PerfDataImportError(Results.RUNTIME_ERROR, _rc)
+            raise PerfDataImportError(Results.RUNTIME_ERROR, -1)
         if not os.path.exists('%s/imp4opentsdb.sh' % _import4_pkg_bin):
-            raise PerfDataImportError(Results.RUNTIME_ERROR, _rc)
+            raise PerfDataImportError(Results.RUNTIME_ERROR, -1)
 
     def _setup_rrd_dir(self):
         if not self.rrd_dir_arg:
@@ -273,11 +276,12 @@ class Migration(MigrationBase):
                 if _num:
                     self.reportProgress(_progress)
                     _tno = int(_num.group(1))
+                    _cno = int(_num.group(3))
                     _dno = int(_num.group(4))
                     _cents = int(_num.group(5))
                     self.reportProgress("[%s/%s] %s%%" %
                                         (_dno, _tno, _cents))
-                    if _dno == _tno:
+                    if (_dno == _tno) and (_cno == _tno):
                         break
                 else:
                     # cannot recognize the progress output string

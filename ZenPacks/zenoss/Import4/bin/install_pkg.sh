@@ -22,6 +22,7 @@ chmod +x "$progdir"/../*.py         || err_exit "Error chmod python scripts"
 cp -p "$progdir"/../*.py "$PKG_D"   || err_exit "Error copying python scripts"
 chmod +x "$progdir"/*.sh            || err_exit "Error chmod bash scripts"
 cp -p "$progdir"/*.sh "$BIN_D"      || err_exit "Error copying bash scripts"
+sync
 
 # now move the worker scripts so the services can start
 mv "$BIN_D/src_imp4mariadb.sh"    "$BIN_D/imp4mariadb.sh"   || err_exit "Error copying perfdata converter worker script"
