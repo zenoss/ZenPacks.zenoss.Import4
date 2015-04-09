@@ -6,7 +6,7 @@ NAME = "ZenPacks.zenoss.Import4"
 VERSION = "0.0.9dev"
 AUTHOR = "Zenoss"
 LICENSE = "GPLv2"
-NAMESPACE_PACKAGES = ['ZenPacks', 'ZenPacks.zenoss', 'ZenPacks.zenoss.Import4']
+NAMESPACE_PACKAGES = ['ZenPacks', 'ZenPacks.zenoss']
 PACKAGES = ['ZenPacks', 'ZenPacks.zenoss', 'ZenPacks.zenoss.Import4']
 INSTALL_REQUIRES = []
 COMPAT_ZENOSS_VERS = ">= 5.0" # todo: == 5.1
