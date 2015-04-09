@@ -1,4 +1,4 @@
-#!/bin/bash -x
+#!/bin/bash
 #
 # The script is the starter script for imp4mariadb container
 # It runs as root
