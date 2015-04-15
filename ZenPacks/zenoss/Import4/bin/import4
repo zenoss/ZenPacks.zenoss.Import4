@@ -85,7 +85,7 @@ def run_migration(migration_class, args):
 
 
 def progress_report_callback(msg):
-    sys.stdout.write(msg)
+    sys.stdout.write(msg + "\n")
 
 
 def parse_args():
@@ -109,13 +109,12 @@ def parse_args():
     op_group.add_argument('-x', '--execute', '--import', action='store_true', dest='execute', default=False,
                           help="Execute the actual import operation")
     parser.add_argument('-z', '--zenbackup', dest='zenbackup_file',
-                               type=argparse.FileType('r'),
-                               help="4.x archive file to import")
-
+                        type=argparse.FileType('r'),
+                        help="4.x archive file to import")
     parser.add_argument('-f', '--ignore-warnings', action='store_true', dest='ignorewarnings', default=False,
                         help="Continue with the import even if pre-validation generates warnings")
-    parser.add_argument('-d', '--debug', action='store_true', dest='debug', default=False,
-                        help="Log at debug level")
+    parser.add_argument('-l', '--log-level', dest='log_level', default='info',
+                        help="Specify the logging level - default:info")
     parser.add_argument('-s', '--stage', dest='staging_dir', default=Config.stageDir,
                         help="Location to use for file staging during the import process")
     parser.add_argument('-i', '--ip', dest='ip', default="localhost",

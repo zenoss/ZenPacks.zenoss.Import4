@@ -47,7 +47,7 @@ class Migration(MigrationBase):
         self.zep_sql = ''
         self.insert_count = 0
         self.insert_running = 0
-        self.event_migrated = '%s/EVENT_MIGRATED' % Config.stageDir
+        self.event_migrated = '%s/EVENT_MIGRATED' % self.tempDir
 
     def prevalidate(self):
         # untar the provided zenbackup package
@@ -96,7 +96,7 @@ class Migration(MigrationBase):
                             'A rough scan shows [%d] INSERT statements'
                             % self.insert_count)
         self.reportProgress(
-            _check_tag + 'directory "%s" looks OK' % self.zenbackup_dir)
+            _check_tag + 'directory "%s" for events looks OK' % self.zenbackup_dir)
 
         # all files in place
         return

@@ -7,6 +7,7 @@
 #
 ##############################################################################
 
+import logging
 
 class Results(object):
     SUCCESS = 'SUCCESS'
@@ -25,9 +26,10 @@ class Config(object):
     # content of a 4.x zenbackup file
     zepBackup =     'zenbackup/zep.sql.gz'
     zepSQL =        'zenbackup/zep.sql'
+    zodbBackup =    'zenbackup/zodb.sql.gz'
+    zodbSQL =       'zenbackup/zodb.sql'
     zenpackBackup = 'zenbackup/ZenPacks.tar'
     perfBackup =    'zenbackup/perf.tar'
-    zodbBackup =    'zenbackup/zodb.sql.gz'
 
 
 import inspect
@@ -41,6 +43,7 @@ class ImportError(Exception):
 
 class MigrationBase(object):
     def __init__(self, args, progressCallback):
+        log = logging.getLogger(__name__)
         self.args = args
         self.progress = progressCallback
         self.tempDir = args.staging_dir
@@ -51,36 +54,38 @@ class MigrationBase(object):
         else:
             self.password = ''
         self.zbfile = args.zenbackup_file
+        if args.log_level:
+            logging.basicConfig(level=getattr(logging, args.log_level.upper()))
 
     def __NOT_YET__(self):
         caller = inspect.stack()[1]
-        print "-- %s:%s:%s not implemented! --" % \
-            (inspect.getmodule(caller[0]).__name__,
-             self.__class__.__name__, caller[3])
+        logging.warning("-- %s:%s:%s not implemented! --" %
+            (inspect.getmodule(caller[0]).__name__, self.__class__.__name__, caller[3]))
         # raise NotImplementedError
         return
 
     def prevalidate(self):
         self.__NOT_YET__()
-        print "-- To be overriden!"
+        logging.warning("-- To be overriden!" )
         return
 
     def wipe(self):
         self.__NOT_YET__()
-        print "-- To be overriden!"
+        logging.warning("-- To be overriden!")
         return
 
     def doImport(self):
         self.__NOT_YET__()
-        print "-- To be overriden!"
+        logging.warning("-- To be overriden!")
         return
 
     def reportProgress(self, progress):
         # callback to self.progress if register at creation
+        logging.debug(progress)
         if self.progress:
             self.progress(progress)
 
     def postvalidate(self):
         self.__NOT_YET__()
-        print "-- To be overriden!"
+        logging.warning("-- To be overriden!")
         return
