@@ -9,7 +9,6 @@
 
 import os
 import subprocess
-import tempfile
 
 from ZenPacks.zenoss.Import4.migration import MigrationBase, ImportError, Config
 
@@ -33,12 +32,6 @@ class EventImportError(ImportError):
         super(EventImportError, self).__init__(error_string, return_code)
 
 
-def init_command_parser(subparsers):
-    # add specific arguments for events migration
-    events_parser = subparsers.add_parser('event', help='migrate event data')
-    return events_parser
-
-
 class Migration(MigrationBase):
     def __init__(self, args, progressCallback):
         # common setup setup
@@ -48,6 +41,12 @@ class Migration(MigrationBase):
         self.insert_count = 0
         self.insert_running = 0
         self.event_migrated = '%s/EVENT_MIGRATED' % self.tempDir
+
+    @classmethod
+    def init_command_parser(cls, m_parser):
+        pass
+        # MigrationBase.init_command_parser(m_parser)
+        # add specific arguments for events migration
 
     def prevalidate(self):
         # untar the provided zenbackup package
@@ -78,9 +77,7 @@ class Migration(MigrationBase):
 
         # if compressed file found, uncompressed it to zep.sql
         if os.path.isfile(_gzfile):
-            _rc = os.system('gunzip %s' % _gzfile)
-            if _rc > 0:
-                raise EventImportError(Results.COMMAND_ERROR, _rc)
+            self.exec_cmd('gunzip %s' % _gzfile)
 
         if not os.path.isfile(self.zep_sql):
             raise EventImportError(Results.INVALID, -1)
@@ -112,10 +109,22 @@ class Migration(MigrationBase):
 
         # the check_files is fast so we always do a quick check
         self._check_files()
+
+        # stop services accessing zenoss_zep
+        self.reportProgress('Stopping services ...')
+        _cmd = "%s/imp4util.py --log-level=%s stop_svcs" % (self.binpath, self.args.log_level)
+        self.exec_cmd(_cmd)
+
         self._restoreMySqlDb('zenoss_zep')
         self._migrateSchema()
         with open(self.event_migrated, 'a'):
             pass
+
+        # restart services
+        self.reportProgress('Stopping services ...')
+        _cmd = "%s/imp4util.py --log-level=%s start_all_svcs" % (self.binpath, self.args.log_level)
+        self.exec_cmd(_cmd)
+
         self.reportProgress(Results.SUCCESS)
         return
 
@@ -175,69 +184,8 @@ class Migration(MigrationBase):
         if not os.path.exists(self.tempDir):
             os.makedirs(self.tempDir)
         cmd = 'cd %s; rm -f %s %s' % (self.tempDir, Config.zepBackup, Config.zepSQL)
-        _rc = os.system(cmd)
-        if _rc > 0:
-            raise EventImportError(Results.COMMAND_ERROR, _rc)
+        self.exec_cmd(cmd)
         cmd = 'tar --wildcards-match-slash -C %s -f %s -x %s' % (
             self.tempDir, self.zbfile.name, Config.zepBackup)
-        _rc = os.system(cmd)
-        if _rc:
-            raise EventImportError(Results.UNTAR_FAIL, _rc)
-        return
-
-    def _restoreMySqlDb(self, db):
-        """
-        Create MySQL database if it doesn't exist.
-        """
-        mysql_cmd = ['mysql', '-u%s' % self.user]
-        mysql_cmd.extend(['--verbose'])
-        if self.password:
-            mysql_cmd.extend(['--password=%s' % self.password])
-
-        if self.ip and self.ip != 'localhost':
-            mysql_cmd.extend(['--host', self.ip])
-
-        mysql_cmd = subprocess.list2cmdline(mysql_cmd)
-
-        cmd = 'echo "create database if not exists %s" | %s' % (db, mysql_cmd)
-        _rc = os.system(cmd)
-        if _rc:
-            raise EventImportError(Results.COMMAND_ERROR, _rc)
-
-        sql_path = self.zep_sql
-        if sql_path.endswith('.gz'):
-            cmd_fmt = "gzip -dc {sql_path}"
-        else:
-            cmd_fmt = "cat {sql_path}"
-        cmd_fmt += " | {mysql_cmd} {db}"
-        cmd = cmd_fmt.format(**locals())
-
-        # prep for the error log file for the restoration command
-        _errfile = tempfile.NamedTemporaryFile(
-            mode='w+b', dir=self.tempDir, prefix='_zen', delete=True)
-        proc = subprocess.Popen(cmd, shell=True,
-                                stdout=subprocess.PIPE, stderr=_errfile)
-        while True:
-            raw_line = proc.stdout.readline()
-            if raw_line != '':
-                self.reportProgress(raw_line)
-            else:
-                break
-
-        proc.wait()
-        if proc.returncode != 0:
-            # report the stderr of the subprocess
-            # only if the return code is not success
-            _errfile.seek(0)
-            while True:
-                raw_line = _errfile.readline()
-                if raw_line != '':
-                    self.reportProgress(_stderr_tag+raw_line)
-                else:
-                    break
-            _errfile.close()
-            self.reportProgress(Results.FAILURE)
-            raise EventImportError(Results.FAILURE, proc.returncode)
-
-        _errfile.close()
+        self.exec_cmd(cmd)
         return

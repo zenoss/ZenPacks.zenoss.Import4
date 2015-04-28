@@ -20,8 +20,10 @@ mkdir -p "$BIN_D"     || err_exit "Cannot create the pkg directories"
 # copy the scripts
 chmod +x "$progdir"/../*.py         || err_exit "Error chmod python scripts"
 cp -p "$progdir"/../*.py "$PKG_D"   || err_exit "Error copying python scripts"
-chmod +x "$progdir"/*.sh            || err_exit "Error chmod bash scripts"
-cp -p "$progdir"/*.sh "$BIN_D"      || err_exit "Error copying bash scripts"
+chmod +x "$progdir"/*               || err_exit "Error chmod bash scripts"
+cp -p "$progdir"/*    "$BIN_D"      || err_exit "Error copying bash scripts"
+
+chmod -R a+w "$PKG_D"
 sync
 
 # now move the worker scripts so the services can start
