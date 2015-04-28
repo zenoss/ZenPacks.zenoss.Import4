@@ -189,6 +189,7 @@
        "RAMCommitment": "256M",
        "CPUCommitment": 1,
        "Runs": {
+           "initialize": "cd $(dirname $(readlink /opt/zenoss/bin/import4)); ./install_pkg.sh && ./install_rrdtool.sh",
            "import4": "/import4/pkg/bin/imp4_run.sh"
        },
        "Actions": null,

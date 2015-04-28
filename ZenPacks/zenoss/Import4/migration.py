@@ -75,8 +75,6 @@ class MigrationBase(object):
                             help="Post-validate only")
         op_group.add_argument('-x', '--execute', '--import', action='store_true', dest='execute', default=False,
                             help="Execute the actual import operation")
-        op_group.add_argument('-r', '--run-zenoss', action='store_true', dest='run_zenoss', default=False,
-                            help="Restart the zenoss services")
         parser.add_argument('-z', '--zenbackup', dest='zenbackup_file',
                             type=argparse.FileType('r'),
                             help="4.x archive file to import")
@@ -92,6 +90,8 @@ class MigrationBase(object):
                             help="The username for MariaDB access")
         parser.add_argument('-p', '--password', dest='password', default=None,
                             help="The password for MariaDB access")
+        parser.add_argument('--cc-ip', dest='control_center_ip', default=None,
+                            help="The IP address for Control Center")
 
     def __NOT_YET__(self):
         caller = inspect.stack()[1]

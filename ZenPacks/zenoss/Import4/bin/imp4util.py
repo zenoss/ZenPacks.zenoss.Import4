@@ -17,25 +17,27 @@ import subprocess
 import re
 import time
 
-import Globals
+# import Globals
 # import Zope2
-from Products.ZenUtils import controlplane
-from Products.ZenUtils.controlplane import ControlPlaneClient
-from Products.ZenUtils.controlplane import ControlPlaneClient
-from Products.ZenUtils.controlplane.application import getConnectionSettings
-from Products.ZenUtils.Utils import load_config, load_config_override
+# from Products.ZenUtils import controlplane
+# from Products.ZenUtils.controlplane import ControlPlaneClient
+# from Products.ZenUtils.controlplane import ControlPlaneClient
+# from Products.ZenUtils.controlplane.application import getConnectionSettings
+# from Products.ZenUtils.Utils import load_config, load_config_override
 
 conf_file = os.path.join(os.environ['ZENHOME'], 'etc', 'zope.conf')
 log = logging.getLogger("Imp4Util")
 
+
 def _svc_cmd():
-    _host_ips = os.environ['CONTROLPLANE_HOST_IPS'].split()
+    _host_ips = os.environ['CONTROLPLANE_HOST_IPS'].split(', ')
     if not _host_ips:
         log.error('Cannot find control center host')
         sys.exit(1)
 
     _cmd = '/serviced/serviced --endpoint=%s:4979 service ' % _host_ips[0]
     return _cmd
+
 
 # find the services whoes name containing the substrings in the list
 def _find_svcs(inlist):
@@ -57,6 +59,7 @@ def _find_svcs(inlist):
                 log.debug('found %s ...' % _rs[0])
                 break
     return _list
+
 
 # list all services excluding those names containing the substrings in the list
 def _list_svcs_ex(exlist):
@@ -83,13 +86,15 @@ def _list_svcs_ex(exlist):
 
     return _list
 
+
 def _tokens(_line):
     return re.sub("[\s,]", " ", _line).split()
+
 
 def _is_stopped(slist):
     for svc in slist:
         _line = subprocess.check_output(_svc_cmd() + " status %s | grep %s" % (svc, svc),
-                                          shell=True)
+                                        shell=True)
         _rs = _tokens(_line)
         log.debug(_rs)
 
@@ -106,10 +111,11 @@ def _is_stopped(slist):
             return False
     return True
 
+
 def _is_running(slist):
     for svc in slist:
         _line = subprocess.check_output(_svc_cmd() + " status %s | grep %s" % (svc, svc),
-                                          shell=True)
+                                        shell=True)
         _rs = _tokens(_line)
         # ignore wrong services
         if len(_rs) < 3:
@@ -124,14 +130,17 @@ def _is_running(slist):
             return False
     return True
 
+
 def _stop_svc(id):
     log.info('Stopping %s ...' % id)
     subprocess.call(_svc_cmd() + " stop %s" % id, shell=True)
+
 
 def _start_svc(svc_name):
     log.info('Staring %s ...' % svc_name)
     subprocess.call(_svc_cmd() + " start %s" % svc_name, shell=True)
     pass
+
 
 # stop all services except the root service, Imp4Mariadb, and mariadb*
 def stop_services(args):
@@ -141,7 +150,7 @@ def stop_services(args):
     for svc in slist:
         _stop_svc(svc)
 
-    _time=0
+    _time = 0
     while (_time < 600 and
            not _is_stopped(slist)):
         log.debug('Waiting services to stop...')
@@ -152,6 +161,7 @@ def stop_services(args):
         log.error('Service stop failed ...')
         sys.exit(1)
 
+
 # start all services in the control center
 def start_all_services(args):
     log.info('Start services')
@@ -160,7 +170,7 @@ def start_all_services(args):
     for svc in slist:
         _start_svc(svc)
 
-    _time=0
+    _time = 0
     while (_time < 600 and
            not _is_running(slist)):
         log.debug('Waiting services to run...')
@@ -175,6 +185,7 @@ def start_all_services(args):
         log.info('Services all started. Wait 30 more seconds ...')
         time.sleep(30)
 
+
 def start_model_services(args):
     log.info('Start model services')
 
@@ -182,7 +193,7 @@ def start_model_services(args):
     for svc in slist:
         _start_svc(svc)
 
-    _time=0
+    _time = 0
     while (_time < 600 and
            not _is_running(slist)):
         log.debug('Waiting model services to run...')
@@ -196,6 +207,7 @@ def start_model_services(args):
         # wait 30 more seconds
         log.debug('Wait 30 more seconds ...')
         time.sleep(30)
+
 
 def global_init(args):
     logging.basicConfig(level=getattr(logging, args.log_level.upper()))

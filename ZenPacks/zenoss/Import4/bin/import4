@@ -58,15 +58,12 @@ def run_migration(migration_class, args):
 
         # import stage
         if args.execute:
-            _migration.prevalidate()
+            # _migration.prevalidate()
             _migration.doImport()
 
         # verification stage
         if args.verify:
             _migration.postvalidate()
-
-        if args.run_zenoss:
-            _migration.startZenoss()
 
     except migration.ImportError as err:
         sys.stderr.write('Error: %s(%d)\n' % (err.error_string, err.return_code))

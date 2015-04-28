@@ -10,4 +10,4 @@ zps_dir='/import4/staging/ZenPacks'
 # for each egg dir, create an egg for it
 find /import4/staging/ZenPacks -maxdepth 1 -type d -name "*.egg" -exec $progdir/zip_an_egg.sh {} \; 
 # copy it to the .ZenPack dir
-find /import4/staging/ZenPacks -type f -name "*.egg" -exec cp -v {} /opt/zenoss/.ZenPack \; 
+find /import4/staging/ZenPacks -type f -name "*.egg" -exec cp -v {} /opt/zenoss/.ZenPacks \; 

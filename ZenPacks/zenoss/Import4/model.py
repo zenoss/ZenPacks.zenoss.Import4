@@ -40,6 +40,7 @@ class Migration(MigrationBase):
         self.zenpack_count = 0
         self.insert_count = 0
         self.insert_running = 0
+        self.model_checked = '%s/MODEL_CHECKED' % self.tempDir
         self.model_migrated = '%s/MODEL_MIGRATED' % self.tempDir
 
     @classmethod
@@ -54,7 +55,12 @@ class Migration(MigrationBase):
 
         self._untarBackup()
         self._check_files()
+
+        # mark the checked file
+        with open(self.model_checked, 'a'):
+            pass
         self.reportProgress('...Success...')
+
         return
 
     def reportProgress(self, raw_line):
@@ -75,14 +81,23 @@ class Migration(MigrationBase):
         self.reportProgress('Wipe is done while importing zodb')
 
     def doImport(self):
+        if not os.path.exists(self.model_checked):
+            self.reportProgress("Model backup file not validated yet. Run -c option first.")
+            raise ModelImportError(Results.INVALID, -1)
+
         if os.path.isfile(self.model_migrated):
             os.remove(self.model_migrated)
 
         self._check_files()
 
         # stop services accessing zodb
+        # use the provided control center IP for service controls
+        _util_cmd = "%s/imp4util.py" % self.binpath
+        if self.args.control_center_ip:
+            _util_cmd = "CONTROLPLANE_HOST_IPS=%s " % self.args.control_center_ip + _util_cmd
+
         self.reportProgress('Stopping services ...')
-        _cmd = "%s/imp4util.py --log-level=%s stop_svcs" % (self.binpath, self.args.log_level)
+        _cmd = "%s --log-level=%s stop_svcs" % (_util_cmd, self.args.log_level)
         self.exec_cmd(_cmd)
 
         # restore zodb
@@ -100,8 +115,8 @@ class Migration(MigrationBase):
 
         # bring back zep, zcs, rabbit redis services
         self.reportProgress('Restaring necessary services for model import...')
-        _cmd = "%s/imp4util.py --log-level=%s start_model_svcs" % (
-            self.binpath, self.args.log_level)
+        _cmd = "%s --log-level=%s start_model_svcs" % (
+            _util_cmd, self.args.log_level)
         self.exec_cmd(_cmd)
 
         # dmd del black list zenpacks (commit)
