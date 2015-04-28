@@ -121,7 +121,7 @@ class Migration(MigrationBase):
         _cmd = "%s --log-level=%s stop_svcs" % (_util_cmd, self.args.log_level)
         self.exec_cmd(_cmd)
 
-        self._restoreMySqlDb('zenoss_zep')
+        self.restoreMySqlDb(self.zep_sql, 'zenoss_zep', Config.zepSocket)
         self._migrateSchema()
         with open(self.event_migrated, 'a'):
             pass
