@@ -110,9 +110,15 @@ class Migration(MigrationBase):
         # the check_files is fast so we always do a quick check
         self._check_files()
 
+        # stop services accessing zodb
+        # use the provided control center IP for service controls
+        _util_cmd = "%s/imp4util.py" % self.binpath
+        if self.args.control_center_ip:
+            _util_cmd = "CONTROLPLANE_HOST_IPS=%s " % self.args.control_center_ip + _util_cmd
+
         # stop services accessing zenoss_zep
         self.reportProgress('Stopping services ...')
-        _cmd = "%s/imp4util.py --log-level=%s stop_svcs" % (self.binpath, self.args.log_level)
+        _cmd = "%s --log-level=%s stop_svcs" % (_util_cmd, self.args.log_level)
         self.exec_cmd(_cmd)
 
         self._restoreMySqlDb('zenoss_zep')
@@ -122,7 +128,7 @@ class Migration(MigrationBase):
 
         # restart services
         self.reportProgress('Stopping services ...')
-        _cmd = "%s/imp4util.py --log-level=%s start_all_svcs" % (self.binpath, self.args.log_level)
+        _cmd = "%s --log-level=%s start_all_svcs" % (_util_cmd, self.args.log_level)
         self.exec_cmd(_cmd)
 
         self.reportProgress(Results.SUCCESS)

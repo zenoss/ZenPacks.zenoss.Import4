@@ -30,12 +30,19 @@ log = logging.getLogger("Imp4Util")
 
 
 def _svc_cmd():
-    _host_ips = os.environ['CONTROLPLANE_HOST_IPS'].split(', ')
-    if not _host_ips:
-        log.error('Cannot find control center host')
+    # get the host ip for serviced
+    try:
+        _host_ips = os.environ['CONTROLPLANE_HOST_IPS']
+    except:
+        log.error('CONTROLPLANE_HOST_IPS not available')
         sys.exit(1)
 
-    _cmd = '/serviced/serviced --endpoint=%s:4979 service ' % _host_ips[0]
+    _host_ips_lst = _host_ips.split(', ')
+    if not _host_ips_lst:
+        log.error('CONTROLPLANE_HOST_IPS:"%s" not available' % _host_ips)
+        sys.exit(1)
+
+    _cmd = '/serviced/serviced --endpoint=%s:4979 service ' % _host_ips_lst[0]
     return _cmd
 
 
