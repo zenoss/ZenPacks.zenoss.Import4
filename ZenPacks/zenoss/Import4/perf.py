@@ -47,18 +47,6 @@ class PerfDataImportError(ImportError):
         super(PerfDataImportError, self).__init__(error_string, return_code)
 
 
-def init_command_parser(subparsers):
-    perf_parser = subparsers.add_parser('perf', help='migrate performance data')
-    # if rrd_dir is specified, it will only import the selected
-    perf_parser.add_argument('-r', '--rrd_dir', dest='rrd_dir', default="",
-                             help="Top directory for a existing 4.x rrd tree")
-    perf_parser.add_argument('-t', '--perf_top', dest='perf_top', default="",
-                             help="Parent directory of the rrd trees")
-    perf_parser.add_argument('-n', '--skip-scan', action='store_true', dest='skip_scan', default=False,
-                             help="Skip the scanning of rrdfiles' content")
-    return perf_parser
-
-
 class Migration(MigrationBase):
     def __init__(self, args, progressCallback):
         # common setup
@@ -77,8 +65,8 @@ class Migration(MigrationBase):
             _idx = self.rrd_dir.find("Devices/")
             self.perf_top = self.rrd_dir[:_idx+7]
 
-        self.data_checked = '%s/DATA_CHECKED' % Config.stageDir
-        self.data_migrated = '%s/DATA_MIGRATED' % Config.stageDir
+        self.data_checked = '%s/DATA_CHECKED' % self.tempDir
+        self.data_migrated = '%s/DATA_MIGRATED' % self.tempDir
 
         if not os.path.exists(_import4_vol):
             self.reportProgress("%s does not exist." % _import4_vol)
@@ -89,7 +77,7 @@ class Migration(MigrationBase):
         # instead, via <zenpack_path>/bin/import4
         '''
         # this is already done before the service starts
-        _rc = subprocess.call(["%s/install_pkg.sh" % sys.path[0]],
+        _rc = subprocess.call(["%s/install_pkg.sh" % self.binpath,
                               shell=True, stderr=subprocess.STDOUT)
         if _rc > 0:
             raise PerfDataImportError(Results.RUNTIME_ERROR, _rc)
@@ -99,6 +87,16 @@ class Migration(MigrationBase):
             raise PerfDataImportError(Results.RUNTIME_ERROR, -1)
         if not os.path.exists('%s/imp4opentsdb.sh' % _import4_pkg_bin):
             raise PerfDataImportError(Results.RUNTIME_ERROR, -1)
+
+    @classmethod
+    def init_command_parser(cls, m_parser):
+        # if rrd_dir is specified, it will only import the selected
+        m_parser.add_argument('--rrd_dir', dest='rrd_dir', default="",
+                                help="Top directory for a existing 4.x rrd tree")
+        m_parser.add_argument('-t', '--perf_top', dest='perf_top', default="",
+                                help="Parent directory of the rrd trees")
+        m_parser.add_argument('-n', '--skip-scan', action='store_true', dest='skip_scan', default=False,
+                                help="Skip the scanning of rrdfiles' content")
 
     def _setup_rrd_dir(self):
         if not self.rrd_dir_arg:
@@ -241,7 +239,7 @@ class Migration(MigrationBase):
             os.remove(self.data_migrated)
 
         # cleanup the shared directories for the services
-        _args = ["%s/cleanup_jobs.sh" % sys.path[0]]
+        _args = ["%s/cleanup_jobs.sh" % self.binpath]
         _rc = subprocess.call(
             _args, shell=False, stderr=subprocess.STDOUT)
         if _rc != 0:
@@ -253,7 +251,7 @@ class Migration(MigrationBase):
         text_file.close()
 
         # dispatch the work into task lists
-        _args = ["%s/dispatch.sh" % sys.path[0], self.rrd_dir, _tasks_Q]
+        _args = ["%s/dispatch.sh" % self.binpath, self.rrd_dir, _tasks_Q]
         _rc = subprocess.call(
             _args, shell=False, stderr=subprocess.STDOUT)
         if _rc != 0:
@@ -306,14 +304,12 @@ class Migration(MigrationBase):
     def _untarZenbackup(self):
         # unpack the backup page to perf.tar
         # remove the target dir
-        if not os.path.exists(Config.stageDir):
-            os.makedirs(Config.stageDir)
+        if not os.path.exists(self.tempDir):
+            os.makedirs(self.tempDir)
 
         # clean up
         _cmd = 'rm -rf %s' % Config.perfDir
-        _rc = os.system(_cmd)
-        if _rc > 0:
-            raise PerfDataImportError(Results.COMMAND_ERROR, _rc)
+        self.exec_cmd(_cmd)
 
         # untar the zenbackup file for perf.tar file
         if not self.zbfile:
@@ -321,16 +317,12 @@ class Migration(MigrationBase):
             raise PerfDataImportError(Results.UNTAR_FAIL, -1)
 
         _cmd = 'tar -v --totals -R --wildcards-match-slash -C %s -f %s -x %s' % (
-            Config.stageDir, self.zbfile.name, Config.perfBackup)
-        _rc = os.system(_cmd)
-        if _rc > 0:
-            raise PerfDataImportError(Results.COMMAND_ERROR, _rc)
+            self.tempDir, self.zbfile.name, Config.perfBackup)
+        self.exec_cmd(_cmd)
 
         _cmd = 'tar -v --totals -R -C %s -xf %s/%s' % (
-            Config.zenbackupDir, Config.stageDir, Config.perfBackup)
-        _rc = os.system(_cmd)
-        if _rc > 0:
-            raise PerfDataImportError(Results.COMMAND_ERROR, _rc)
+            Config.zenbackupDir, self.tempDir, Config.perfBackup)
+        self.exec_cmd(_cmd)
 
         if os.path.isfile(self.data_checked):
             os.remove(self.data_checked)

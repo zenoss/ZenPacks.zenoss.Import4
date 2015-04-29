@@ -4,7 +4,7 @@
         "Name": "Imp4MariaDB",
         "Description": "MariaDB (mysql) environment for import4",
         "Launch": "manual",
-        "Command": "bash -c \"while echo 'Starting ..'; do if [[ -f /import4/pkg/bin/imp4mariadb.sh ]]; then /import4/pkg/bin/imp4mariadb.sh; else echo 'Startup script not ready, install ...'; /opt/zenoss/ZenPacks/ZenPacks.zenoss.Import4*/ZenPacks/zenoss/Import4/bin/install_pkg.sh; fi; done;\"",
+        "Command": "bash -c \"touch /etc/default/serviced; while echo 'Starting ..'; do if [[ -f /import4/pkg/bin/imp4mariadb.sh ]]; then /import4/pkg/bin/imp4mariadb.sh; else echo 'Startup script not ready, install ...'; /opt/zenoss/ZenPacks/ZenPacks.zenoss.Import4*/ZenPacks/zenoss/Import4/bin/install_pkg.sh; fi; done;\"",
         "ImageID": "",
         "Tags": [
             "daemon"
@@ -31,11 +31,19 @@
         },
         "Endpoints": [
          {
+          "Name": "controlplane_consumer",
+          "Application": "controlplane_consumer",
+          "PortNumber": 8444,
+          "Protocol": "tcp",
+          "Purpose": "import"
+         },
+         {
            "Name": "zencatalogservice",
            "Application": "zodb_zencatalogservice",
+           "PortNumber": 8085,
+           "Protocol": "tcp",
            "Purpose": "import"
          },
-
          {
            "Name": "rabbitmq",
            "Application": "rabbitmq.*",
@@ -92,21 +100,6 @@
            "PortNumber": 8080,
            "Protocol": "tcp",
            "Purpose": "import"
-         },
-         {
-           "Name": "controlplane_consumer",
-           "Purpose": "import",
-           "Protocol": "tcp",
-           "PortNumber": 8444,
-           "PortTemplate": "",
-           "VirtualAddress": "",
-           "Application": "controlplane_consumer",
-           "ApplicationTemplate": "",
-           "AddressConfig": {
-             "Port": 0,
-             "Protocol": ""
-           },
-           "VHosts": null
          }
        ],
        "Tasks": null,
@@ -195,7 +188,10 @@
        },
        "RAMCommitment": "256M",
        "CPUCommitment": 1,
-       "Runs": null,
+       "Runs": {
+           "initialize": "cd $(dirname $(readlink /opt/zenoss/bin/import4)); ./install_pkg.sh && ./install_rrdtool.sh",
+           "import4": "/import4/pkg/bin/imp4_run.sh"
+       },
        "Actions": null,
        "HealthChecks": {
          "running": {

@@ -12,8 +12,8 @@ Import the models backed up in the zenbackup tarball
 '''
 
 import os
+import sys
 import subprocess
-import logging
 
 from ZenPacks.zenoss.Import4.migration import MigrationBase, ImportError, Config
 
@@ -31,12 +31,6 @@ class ModelImportError(ImportError):
     def __init__(self, error_string, return_code):
         super(ModelImportError, self).__init__(error_string, return_code)
 
-
-def init_command_parser(subparsers):
-    model_parser = subparsers.add_parser('model', help='migrate model data')
-    return model_parser
-
-
 class Migration(MigrationBase):
     def __init__(self, args, progressCallback):
         super(Migration, self).__init__(args, progressCallback)
@@ -46,68 +40,147 @@ class Migration(MigrationBase):
         self.zenpack_count = 0
         self.insert_count = 0
         self.insert_running = 0
-        self.model_mirated = '%s/MODEL_MIGRATED' % self.tempDir
+        self.model_checked = '%s/MODEL_CHECKED' % self.tempDir
+        self.model_migrated = '%s/MODEL_MIGRATED' % self.tempDir
+        if args.execute and not args.control_center_ip:
+            self.log.error('Control_center_ip missing, need --cc-ip')
+            self.reportProgress('Control_center_ip missing, need --cc-ip')
+            raise ModelImportError(Results.COMMAND_ERROR, -1)
+
+    @classmethod
+    def init_command_parser(cls, m_parser):
+        pass
 
     def prevalidate(self):
         if not self.zbfile:
-            logging.warning('No zenbackup package provided..')
+            self.log.warning('No zenbackup package provided..')
             self.reportProgress('No zenbackup package provided..')
             raise ModelImportError(Results.UNTAR_FAIL, -1)
 
         self._untarBackup()
-        self._checkFiles()
+        self._check_files()
+
+        # mark the checked file
+        with open(self.model_checked, 'a'):
+            pass
         self.reportProgress('...Success...')
+
         return
 
     def reportProgress(self, raw_line):
-        super(Migration, self).reportProgress(raw_line)
+        # process output lines if it contains certain pattern
+        self.log.debug(raw_line)
+        _msg =  raw_line
+        if (_msg.find('STDERR') == 0 or
+            _msg.find('LOCK TABLES') == 0 or
+            _msg.find('DROP TABLE') == 0 or
+            _msg.find('INSERT INTO ') == 0 or
+            _msg.find('CREATE TABLE') == 0):
+            _msg = _msg.split('(', 1)[0]
+        if len(_msg) > 255:
+            _msg = _msg[:255]
+        super(Migration, self).reportProgress(_msg)
 
     def wipe(self):
-        self.__NOT_YET__()
+        self.reportProgress('Wipe is done while importing zodb')
 
     def doImport(self):
-        self.__NOT_YET__()
+        if not os.path.exists(self.model_checked):
+            self.reportProgress("Model backup file not validated yet. Run -c option first.")
+            raise ModelImportError(Results.INVALID, -1)
+
+        if os.path.isfile(self.model_migrated):
+            os.remove(self.model_migrated)
+
+        self._check_files()
+
+        # stop services accessing zodb
+        # use the provided control center IP for service controls
+        _util_cmd = "%s/imp4util.py" % self.binpath
+        if self.args.control_center_ip:
+            _util_cmd = "CONTROLPLANE_HOST_IPS=%s " % self.args.control_center_ip + _util_cmd
+
+        self.reportProgress('Stopping services ...')
+        _cmd = "%s --log-level=%s stop_svcs" % (_util_cmd, self.args.log_level)
+        self.exec_cmd(_cmd)
+
+        # restore zodb
+        self.reportProgress('Restoring zodb ...')
+        self.restoreMySqlDb(self.zodb_sql, 'zodb', Config.zodbSocket)
+
+        # fix schema if needed
+        # self.reportProgress('No ZODB schema changes ...')
+
+        # zip up the zenpacks in the backup ZenPack dir
+        # copy it to /opt/zenoss/.ZenPack
+        self.reportProgress('Create and copying the 4.x zenpacks eggs ...')
+        _cmd = "%s/get_eggs.sh" % self.binpath
+        self.exec_cmd(_cmd)
+
+        # bring back zep, zcs, rabbit redis services
+        self.reportProgress('Restaring necessary services for model import...')
+        _cmd = "%s --log-level=%s start_model_svcs" % (
+            _util_cmd, self.args.log_level)
+        self.exec_cmd(_cmd)
+
+        # dmd del black list zenpacks (commit)
+        self.reportProgress('Removing the non 5.x compatible zenpacks from zodb ...')
+        _cmd = "zendmd --script=%s/del_dmdobjs.dmd --commit" % self.binpath
+        self.exec_cmd(_cmd)
+
+        # zenpack --restore AND --ignore-services and --keep-pack
+        self.reportProgress('Fixing zenpack in zodb and files on the image ...')
+        _cmd = "zenpack --restore --keep-pack=ZenPacks.zenoss.Import4"
+        self.exec_cmd(_cmd)
+
+        # zencatalog
+        self.reportProgress('Recatalog zodb ...')
+        _cmd = "%s/recat.sh" % self.binpath
+        self.exec_cmd(_cmd)
+
+        # mark migration done
+        with open(self.model_migrated, 'a'):
+            pass
+
+        self.reportProgress(Results.SUCCESS)
+        # commit image is done by the run command from serviced
+
+        return
 
     def postvalidate(self):
         self.__NOT_YET__()
 
     def _untarBackup(self):
         '''
-        unpack the backup backage
+        unpack the backup package
         '''
         if not os.path.exists(self.tempDir):
             os.makedirs(self.tempDir)
-        cmd = 'cd %s; rm -f %s %s' % (self.tempDir, Config.zodbBackup, Config.zodbSQL)
-        _rc = os.system(cmd)
-        if _rc > 0:
-            raise ModelImportError(Results.COMMAND_ERROR, _rc)
+
+        self.exec_cmd('/usr/bin/rm -f %s/%s %s/%s' % (self.tempDir, Config.zodbBackup,
+                                                      self.tempDir, Config.zodbSQL))
+        self.exec_cmd('/usr/bin/rm -rf %s/%s' % (self.tempDir, Config.zenpackDir))
 
         # get zodb.sql.gz and ZenPacks.tar
         cmd = 'tar --wildcards-match-slash -C %s -f %s -x %s -x %s' % (
             self.tempDir, self.zbfile.name, Config.zodbBackup, Config.zenpackBackup)
-        logging.debug(cmd)
-        _rc = os.system(cmd)
-        if _rc:
-            logging.error("Fail to get %s or %s", Config.zodbBackup, Config.zenpackBackup)
-            raise ModelImportError(Results.UNTAR_FAIL, _rc)
+        self.log.debug(cmd)
+        self.exec_cmd(cmd)
 
         # get the ZenPacks dir from ZenPacks.tar
         cmd = 'tar --wildcards-match-slash -C %s -xf %s/%s' % (
             self.tempDir, self.tempDir, Config.zenpackBackup)
-        logging.debug(cmd)
-        _rc = os.system(cmd)
-        if _rc:
-            logging.error("Fail to extract ZenPacks directory in %s" % Config.zenpackBackup)
-            raise ModelImportError(Results.UNTAR_FAIL, _rc)
+        self.log.debug(cmd)
+        self.exec_cmd(cmd)
 
         return
 
-    def _checkFiles(self):
+    def _check_files(self):
         self.reportProgress('checking directories ...')
 
         if not os.path.isdir(self.zenbackup_dir):
-            logging.error('Backup directory does not exist. Run -c option to extract the backupfiles.')
-            raise ModelImportError(Result.INVALID, -1)
+            self.log.error('Backup directory does not exist. Run -c option to extract the backupfiles.')
+            raise ModelImportError(Results.INVALID, -1)
 
         self.zodb_sql = '%s/%s' % (self.tempDir, Config.zodbSQL)
         _gzfile = '%s/%s' % (self.tempDir, Config.zodbBackup)
@@ -115,16 +188,16 @@ class Migration(MigrationBase):
         if os.path.isfile(_gzfile):
             _rc = os.system('gunzip %s' % _gzfile)
             if _rc > 0:
-                logging.error("Fail to unzip %s" % _gzfile)
+                self.log.error('Failed to unzip %s' % _gzfile)
                 raise ModelImportError(Results.INVALID, -1)
 
         if not os.path.isfile(self.zodb_sql):
                 raise ModelImportError(Results.INVALID, -1)
 
         self.insert_count = int(subprocess.check_output(
-            'egrep "^INSERT INTO" %s|wc -l' % self.zodb_sql, shell=True))
+            'egrep "^INSERT INTO" %s | wc -l' % self.zodb_sql, shell=True))
         if self.insert_count <= 0:
-            logging.error("Cannot find any INSERT statement in %s" % self.zodb_sql)
+            self.log.error("Cannot find any INSERT statement in %s" % self.zodb_sql)
             raise ModelImportError(Results.INVALID, -1)
 
         self.reportProgress('%s file is OK' % self.zodb_sql)
@@ -135,7 +208,7 @@ class Migration(MigrationBase):
         self.zenpack_count = int(subprocess.check_output(
             'find %s/ZenPacks -type d -name "*.egg" | wc -l' % self.tempDir, shell=True))
         if self.zenpack_count <= 0:
-            logging.error("No zenpack found in %s/ZenPacks!" % self.tempDir)
+            self.log.error("No zenpack found in %s/ZenPacks!" % self.tempDir)
             raise ModelImportError(Results.INVALID, -1)
         self.reportProgress('%d zenpack directories in "%s/ZenPacks"' % (self.zenpack_count, self.tempDir))
 

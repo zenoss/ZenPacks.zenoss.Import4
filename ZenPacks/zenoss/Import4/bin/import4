@@ -58,6 +58,7 @@ def run_migration(migration_class, args):
 
         # import stage
         if args.execute:
+            # _migration.prevalidate()
             _migration.doImport()
 
         # verification stage
@@ -85,7 +86,7 @@ def run_migration(migration_class, args):
 
 
 def progress_report_callback(msg):
-    sys.stdout.write(msg + "\n")
+    sys.stdout.write(msg)
 
 
 def parse_args():
@@ -98,36 +99,14 @@ def parse_args():
             "Events and Performance data migration may be run simultaneously."
         )
     )
-
-    # import is divided into three optional stages:
-    # prevalidate, import, and postvalidate
-    op_group = parser.add_mutually_exclusive_group(required=True)
-    op_group.add_argument('-c', '--check', '--prevalidate', action='store_true', dest='check', default=False,
-                          help="Pre-validate only, do not perform any destructive operations")
-    op_group.add_argument('-v', '--verify', '--postvalidate', action='store_true', dest='verify', default=False,
-                          help="Post-validate only")
-    op_group.add_argument('-x', '--execute', '--import', action='store_true', dest='execute', default=False,
-                          help="Execute the actual import operation")
-    parser.add_argument('-z', '--zenbackup', dest='zenbackup_file',
-                        type=argparse.FileType('r'),
-                        help="4.x archive file to import")
-    parser.add_argument('-f', '--ignore-warnings', action='store_true', dest='ignorewarnings', default=False,
-                        help="Continue with the import even if pre-validation generates warnings")
-    parser.add_argument('-l', '--log-level', dest='log_level', default='info',
-                        help="Specify the logging level - default:info")
-    parser.add_argument('-s', '--stage', dest='staging_dir', default=Config.stageDir,
-                        help="Location to use for file staging during the import process")
-    parser.add_argument('-i', '--ip', dest='ip', default="localhost",
-                        help="The ip address for MariaDB host")
-    parser.add_argument('-u', '--user', dest='user', default='root',
-                        help="The username for MariaDB access")
-    parser.add_argument('-p', '--password', dest='password', default=None,
-                        help="The password for MariaDB access")
+    # add the global options
+    migration.MigrationBase.init_command_parser(parser)
 
     subparsers = parser.add_subparsers(help='Group of migration functions')
-
     for module in (model, events, perf):
-        m_parser = module.init_command_parser(subparsers)
+        m_name = module.__name__.split(".")[-1]
+        m_parser = subparsers.add_parser(m_name, help='migrate %s data' % m_name)
+        module.Migration.init_command_parser(m_parser)
         m_parser.set_defaults(functor=lambda args, mclass=module.Migration: run_migration(mclass, args))
 
     args = parser.parse_args()
@@ -138,7 +117,6 @@ def parse_args():
 def main():
     args = parse_args()
     args.functor(args)
-
 
 if __name__ == "__main__":
     main()

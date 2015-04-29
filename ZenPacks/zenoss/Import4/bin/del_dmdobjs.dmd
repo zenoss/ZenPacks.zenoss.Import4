@@ -1,0 +1,8 @@
+for zp in ['AutoTune', 'WebScale', 'ZenHoltWinters']:
+    zp_name = 'ZenPacks.zenoss.' + zp
+    if zp_name in dmd.ZenPackManager.packs._objects:
+        print "deleting " + zp_name
+        del dmd.ZenPackManager.packs._objects[zp_name]
+    else:
+        print zp_name + " is not in zodb..."
+commit()
