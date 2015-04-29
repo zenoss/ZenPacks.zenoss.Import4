@@ -17,13 +17,6 @@ import subprocess
 import re
 import time
 
-# import Globals
-# import Zope2
-# from Products.ZenUtils import controlplane
-# from Products.ZenUtils.controlplane import ControlPlaneClient
-# from Products.ZenUtils.controlplane import ControlPlaneClient
-# from Products.ZenUtils.controlplane.application import getConnectionSettings
-# from Products.ZenUtils.Utils import load_config, load_config_override
 
 conf_file = os.path.join(os.environ['ZENHOME'], 'etc', 'zope.conf')
 log = logging.getLogger("Imp4Util")
