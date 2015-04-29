@@ -21,6 +21,3 @@ trace_opt=''
 # use the mounted directory as the current directory
 cmd="DESIRED_USER=$DESIRED_USER cd /mnt/pwd; /opt/zenoss/bin/python $trace_opt /import4/pkg/bin/import4 $*"
 su - "$DESIRED_USER" -c "$cmd"
-
-# don't commit images for now
-exit 1
