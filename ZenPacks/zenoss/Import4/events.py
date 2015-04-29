@@ -41,6 +41,10 @@ class Migration(MigrationBase):
         self.insert_count = 0
         self.insert_running = 0
         self.event_migrated = '%s/EVENT_MIGRATED' % self.tempDir
+        if args.execute and not args.control_center_ip:
+            self.log.error('Control_center_ip missing, need --cc-ip')
+            self.reportProgress('Control_center_ip missing, need --cc-ip')
+            raise EventImportError(Results.COMMAND_ERROR, -1)
 
     @classmethod
     def init_command_parser(cls, m_parser):
@@ -127,9 +131,9 @@ class Migration(MigrationBase):
             pass
 
         # restart services
-        self.reportProgress('Stopping services ...')
-        _cmd = "%s --log-level=%s start_all_svcs" % (_util_cmd, self.args.log_level)
-        self.exec_cmd(_cmd)
+        # self.reportProgress('Starting services ...')
+        # _cmd = "%s --log-level=%s start_all_svcs" % (_util_cmd, self.args.log_level)
+        # self.exec_cmd(_cmd)
 
         self.reportProgress(Results.SUCCESS)
         return

@@ -42,6 +42,10 @@ class Migration(MigrationBase):
         self.insert_running = 0
         self.model_checked = '%s/MODEL_CHECKED' % self.tempDir
         self.model_migrated = '%s/MODEL_MIGRATED' % self.tempDir
+        if args.execute and not args.control_center_ip:
+            self.log.error('Control_center_ip missing, need --cc-ip')
+            self.reportProgress('Control_center_ip missing, need --cc-ip')
+            raise ModelImportError(Results.COMMAND_ERROR, -1)
 
     @classmethod
     def init_command_parser(cls, m_parser):
