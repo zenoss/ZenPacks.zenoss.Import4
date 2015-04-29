@@ -139,8 +139,7 @@ def _stop_svc(id):
 def _start_svc(svc_name):
     log.info('Staring %s ...' % svc_name)
     subprocess.call(_svc_cmd() + " start %s" % svc_name, shell=True)
-    pass
-
+  
 
 # stop all services except the root service, Imp4Mariadb, and mariadb*
 def stop_services(args):
