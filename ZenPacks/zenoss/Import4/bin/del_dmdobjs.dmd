@@ -1,4 +1,4 @@
-for zp in ['AutoTune', 'WebScale', 'ZenHoltWinters']:
+for zp in ['AutoTune', 'WebScale', 'ZenHoltWinters', 'DeviceSearch']:
     zp_name = 'ZenPacks.zenoss.' + zp
     if zp_name in dmd.ZenPackManager.packs._objects:
         print "deleting " + zp_name
