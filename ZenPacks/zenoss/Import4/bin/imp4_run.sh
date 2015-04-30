@@ -8,15 +8,15 @@
 #
 ##############################################################################
 
-# Parse the arguments
-
-# temporary line to copy /import4 from development code to the zenpack egg image
-cmd="cp -rp /import4/pkg/* /opt/zenoss/ZenPacks/ZenPacks.zenoss.Import4-0.0.9dev-py2.7.egg/ZenPacks/zenoss/Import4"
-su - zenoss -c "$cmd"
-
-# trace_opt='-m trace --trace --ignore-module=$(cat /mnt/dos/ignore.lst)'
-trace_opt=''
-
 # use the mounted directory as the current directory
-cmd="cd /mnt/pwd; /opt/zenoss/bin/python $trace_opt /import4/pkg/bin/import4 $*"
+cmd="cd /mnt/pwd; /opt/zenoss/bin/python /import4/pkg/bin/import4 $*"
 su - zenoss -c "$cmd"
+let rc=$?
+
+# if successful, patch the special conf file back to default port:3306
+# before it is committed back to image
+if [[ rc -eq 0 ]]
+then
+        sed -i -e 's/3307/3306/g' /opt/zenoss/etc/zodb_db_main.conf
+fi
+exit $rc
