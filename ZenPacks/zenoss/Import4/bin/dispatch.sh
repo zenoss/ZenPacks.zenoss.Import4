@@ -1,4 +1,13 @@
 #!/bin/bash
+##############################################################################
+#
+# Copyright (C) Zenoss, Inc. 2014-2015, all rights reserved.
+#
+# This content is made available according to terms specified in
+# License.zenoss under the directory where your Zenoss product is installed.
+#
+##############################################################################
+
 #
 # This script starts the processing of rrdfiles by placing
 # chunks of tasks (files containing list of rrdfile names)
