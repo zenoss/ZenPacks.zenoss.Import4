@@ -34,6 +34,7 @@ do
         [[ "$options" != *" model"* ]] && continue
         # patch the special conf file back to default port:3306
         sed -i -e 's/3307/3306/g' /opt/zenoss/etc/zodb_db_main.conf
+        # allow serviced service run to commit
         exit 0
     fi
 done
