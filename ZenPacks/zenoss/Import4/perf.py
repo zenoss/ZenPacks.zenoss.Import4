@@ -65,8 +65,8 @@ class Migration(MigrationBase):
             _idx = self.rrd_dir.find("Devices/")
             self.perf_top = self.rrd_dir[:_idx+7]
 
-        self.data_checked = '%s/DATA_CHECKED' % self.tempDir
-        self.data_migrated = '%s/DATA_MIGRATED' % self.tempDir
+        self.data_checked = '%s/PERF_CHECKED' % self.tempDir
+        self.data_migrated = '%s/PERF_MIGRATED' % self.tempDir
 
         if not os.path.exists(_import4_vol):
             self.reportProgress("%s does not exist." % _import4_vol)
@@ -269,7 +269,7 @@ class Migration(MigrationBase):
             while True:
                 # self.reportProgress(".")
                 time.sleep(10)
-                _progress = subprocess.check_output(["%s/perf_progress.sh" % sys.path[0]])
+                _progress = subprocess.check_output(["%s/perf_progress.sh" % self.binpath])
                 _num = _repattern.search(_progress)
                 if _num:
                     self.reportProgress(_progress)
