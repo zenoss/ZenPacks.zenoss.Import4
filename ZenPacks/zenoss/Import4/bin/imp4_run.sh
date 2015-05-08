@@ -8,10 +8,17 @@
 #
 ##############################################################################
 
+# prep the config for the running environment for zencommands (zodb)
+cp  -p /opt/zenoss/etc/zodb_db_main.conf /tmp/zodb_db_main.conf.sav
+cp  -p /opt/zenoss/etc/zodb_db_imp4.conf /opt/zenoss/etc/zodb_db_main.conf
+
 # use the mounted directory as the current directory
 cmd="cd /mnt/pwd; /opt/zenoss/bin/python /import4/pkg/bin/import4 $*"
 su - zenoss -c "$cmd"
 let rc=$?
+
+# restore the config file
+cp  -p /tmp/zodb_db_main.conf.sav /opt/zenoss/etc/zodb_db_main.conf
 
 # check to see if we need to commit the image
 [[ $rc != 0 ]] && exit $rc
@@ -32,9 +39,6 @@ do
     if [[ "$options" == *"$op"* ]]
     then
         [[ "$options" != *" model"* ]] && continue
-        # patch the special conf file back to default port:3306
-        sed -i -e 's/3307/3306/g' /opt/zenoss/etc/zodb_db_main.conf
-        # allow serviced service run to commit
         exit 0
     fi
 done

@@ -24,6 +24,9 @@ export PATH=$PATH:$VOL_D/pkg/bin
 progdir=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 source "$progdir/utils.sh"
 
+# set the correct ports for zodb
+cp  -p /opt/zenoss/etc/zodb_db_imp4.conf /opt/zenoss/etc/zodb_db_main.conf
+
 # after a cycle
 # depending on serviced to restart the service
 
