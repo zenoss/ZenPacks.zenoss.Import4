@@ -34,7 +34,7 @@ do
 done
 
 # commit only when it is for successful model import operation
-for op in ' -x ' ' --import' 
+for op in ' -x ' ' --import' ' --execute' 
 do
     if [[ "$options" == *"$op"* ]]
     then
