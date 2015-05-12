@@ -63,7 +63,7 @@ class ImportRRD():
         self.entries = 0
         self.verify_points = [None, None, None]
         self.tbl = string.maketrans(' !"#$%&\'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\]^_`abcdefghijklmnopqrstuvwxyz{|}~',
-                                    ' ------\-------.-0123456789-------ABCDEFGHIJKLMNOPQRSTUVWXYZ----_-abcdefghijklmnopqrstuvwxyz----')
+                                    ' -------------.-0123456789-------ABCDEFGHIJKLMNOPQRSTUVWXYZ----_-abcdefghijklmnopqrstuvwxyz----')
         # timeseries timestamp regex
         self.ts_re = re.compile('\d{4}-\d\d-\d\d \d\d:\d\d:\d\d UTC / \d{8,15}')
         # LINUX time regex
