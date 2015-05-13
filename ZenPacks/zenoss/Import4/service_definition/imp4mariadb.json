@@ -195,7 +195,7 @@
        "Actions": null,
        "HealthChecks": {
          "running": {
-           "Script": "which rrdtool && mysql --socket=/var/lib/mysql/mysql.sock -uroot -e 'select 1' && mysql --socket=/var/lib/mysql.model/mysql.sock -uroot -e 'select 1' > /dev/null",
+           "Script": "which rrdtool && [ 1 -eq $(pgrep -fla '/bin/bash /import4/pkg/bin/imp4mariadb.sh' | wc -l) ] > /dev/null",
            "Interval": 5.0
          }
        },
