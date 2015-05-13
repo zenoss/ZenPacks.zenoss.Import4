@@ -128,6 +128,11 @@ class Migration(MigrationBase):
         _cmd = "zendmd --script=%s/del_dmdobjs.dmd --commit" % self.binpath
         self.exec_cmd(_cmd)
 
+        # zenmigrate
+        self.reportProgress('Running zenmigrate')
+        _cmd = "zenmigrate"
+        self.exec_cmd(_cmd)
+
         # zenpack --restore AND --ignore-services and --keep-pack
         self.reportProgress('Fixing zenpack in zodb and files on the image ...')
         _cmd = "zenpack --restore --keep-pack=ZenPacks.zenoss.Import4"
