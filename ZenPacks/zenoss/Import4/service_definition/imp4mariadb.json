@@ -195,7 +195,7 @@
        "Actions": null,
        "HealthChecks": {
          "running": {
-           "Script": "which rrdtool && [ 2 -eq $(ps -ef | grep '/bin/bash /import4/pkg/bin/imp4mariadb.sh' | wc -l) ] > /dev/null",
+           "Script": "which rrdtool && [ 1 -eq $(pgrep -fla '/bin/bash /import4/pkg/bin/imp4mariadb.sh' | wc -l) ] > /dev/null",
            "Interval": 5.0
          }
        },
