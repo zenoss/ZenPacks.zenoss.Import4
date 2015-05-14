@@ -19,6 +19,7 @@ import os.path
 import json
 import sys
 import traceback
+import string
 
 log = logging.getLogger(__name__)
 script_path = os.path.dirname(os.path.realpath(__file__))
@@ -61,7 +62,8 @@ class ImportRRD():
         self.verify_credential = args.verify_credential
         self.entries = 0
         self.verify_points = [None, None, None]
-
+        self.tbl = string.maketrans(' !"#$%&\'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\]^_`abcdefghijklmnopqrstuvwxyz{|}~',
+                                     '--------------.-0123456789-------ABCDEFGHIJKLMNOPQRSTUVWXYZ----_-abcdefghijklmnopqrstuvwxyz----')
         # timeseries timestamp regex
         self.ts_re = re.compile('\d{4}-\d\d-\d\d \d\d:\d\d:\d\d UTC / \d{8,15}')
         # LINUX time regex
@@ -158,7 +160,7 @@ class ImportRRD():
         else:
             print '{} {:d} {:.10e} device={} key={} zenoss_tenant_id={}'.format(
                 self.metric, self.last_timestamp, _value,
-                self.device, self.key.replace(' ', '-'), self.dmd_uuid)
+                self.device, self.key.translate(self.tbl), self.dmd_uuid)
             return
 
     def _find_context_uid(self, context_key):

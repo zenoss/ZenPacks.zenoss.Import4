@@ -136,8 +136,13 @@ class Migration(MigrationBase):
         self._setup_rrd_dir()
         _rrd_list = self._get_rrd_list()
 
+        # this allows an user to skip the lengthy validation is
+        # that was validated offline before
         if self.skip_scan:
             self.reportProgress("rrd scanning skip option specified - skipped")
+            # mark the checked file
+            with open(self.data_checked, 'a'):
+                pass
             return
 
         # here we do a single-process check of the rrdfiles
