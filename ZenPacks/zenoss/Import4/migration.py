@@ -12,7 +12,6 @@ import inspect
 import logging
 import subprocess
 import tempfile
-import argparse
 
 
 class Results(object):
@@ -25,20 +24,22 @@ class Config(object):
     volume =        '/import4'
     pkgPath =       '/import4/pkg'
     pkgBinPath =    '/import4/pkg/bin'
-    stageDir =      '/import4/staging'
-    zenbackupDir =  '/import4/staging/zenbackup'
-    perfDir =       '/import4/staging/zenbackup/perf'
-    rrdTop =        '/import4/staging/zenbackup/perf/Devices'
+    # place of the default input data files
+    stageDir =      '/mnt/pwd'
     # content of a 4.x zenbackup file
-    zepBackup =     'zenbackup/zep.sql.gz'
-    zepSQL =        'zenbackup/zep.sql'
+    backupDir =       'zenbackup'
+    zodbBackup =        'zodb.sql.gz'
+    zodbSQL =           'zodb.sql'
+    zenpackBackup =     'ZenPacks.tar'
+    zenpackDir =        'ZenPacks'
+    zepBackup =         'zep.sql.gz'
+    zepSQL =            'zep.sql'
+    perfBackup =        'perf.tar'
+    perfDir =           'perf'
+    # other locations
+    rrdTop =        '/mnt/pwd/zenbackup/perf/Devices'
     zepSocket =     '/var/lib/mysql/mysql.sock'
-    zodbBackup =    'zenbackup/zodb.sql.gz'
-    zodbSQL =       'zenbackup/zodb.sql'
     zodbSocket =    '/var/lib/mysql.model/mysql.sock'
-    zenpackBackup = 'zenbackup/ZenPacks.tar'
-    zenpackDir =    'ZenPacks'
-    perfBackup =    'zenbackup/perf.tar'
 
 
 class ImportError(Exception):
@@ -54,13 +55,14 @@ class MigrationBase(object):
         self.args = args
         self.progress = progressCallback
         self.tempDir = args.staging_dir
+        self.zenbackup_dir = "%s/%s" % (self.tempDir, Config.backupDir)
+        self.perf_dir = "%s/%s" % (self.zenbackup_dir, Config.perfDir)
         self.ip = args.ip
         self.user = args.user
         if args.password:
             self.password = args.password
         else:
             self.password = ''
-        self.zbfile = args.zenbackup_file
         if args.log_level:
             logging.basicConfig(level=getattr(logging, args.log_level.upper()))
 
@@ -75,9 +77,6 @@ class MigrationBase(object):
                             help="Post-validate only")
         op_group.add_argument('-x', '--execute', '--import', action='store_true', dest='execute', default=False,
                             help="Execute the actual import operation")
-        parser.add_argument('-z', '--zenbackup', dest='zenbackup_file',
-                            type=argparse.FileType('r'),
-                            help="4.x archive file to import")
         parser.add_argument('-f', '--ignore-warnings', action='store_true', dest='ignorewarnings', default=False,
                             help="Continue with the import even if pre-validation generates warnings")
         parser.add_argument('-l', '--log-level', dest='log_level', default='info',

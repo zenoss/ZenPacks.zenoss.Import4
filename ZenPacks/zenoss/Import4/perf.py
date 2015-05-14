@@ -100,7 +100,7 @@ class Migration(MigrationBase):
 
     def _setup_rrd_dir(self):
         if not self.rrd_dir_arg:
-            self.rrd_dir = '%s/Devices' % Config.perfDir
+            self.rrd_dir = '%s/Devices' % self.perf_dir
             self.perf_top = self.rrd_dir
         else:
             # else, rrd_dir is the one derived from provided rrd_dir_arg
@@ -108,12 +108,12 @@ class Migration(MigrationBase):
 
         # check if the rrd_dir is valid
         if not os.path.exists(self.rrd_dir):
-            self.reportProgress("%s does not exist. May need to run -c option to extract the backup file first." % self.rrd_dir)
+            self.reportProgress("%s does not exist. Need to extract the backup file first." % self.rrd_dir)
             raise PerfDataImportError(Results.INVALID, -1)
 
     def _get_rrd_list(self):
         try:
-            _rrd_list = '%s/rrd.list' % Config.perfDir
+            _rrd_list = '%s/rrd.list' % self.perf_dir
             _cmd = 'find %s -type f -name "*.rrd"' % self.rrd_dir
 
             with open(_rrd_list, "w") as _rlfile, open('%s.err' % _rrd_list, "w") as _errfile:
@@ -128,15 +128,10 @@ class Migration(MigrationBase):
         return _rrd_list
 
     def prevalidate(self):
-        # check if tarball is ok by untar it to the /import4
-        # only untar when a target rrd_dir is not specified
-        if not self.rrd_dir_arg:
-            self._untarZenbackup()
-
         self._setup_rrd_dir()
         _rrd_list = self._get_rrd_list()
 
-        # this allows an user to skip the lengthy validation is
+        # this allows an user to skip the lengthy validation
         # that was validated offline before
         if self.skip_scan:
             self.reportProgress("rrd scanning skip option specified - skipped")
@@ -304,35 +299,4 @@ class Migration(MigrationBase):
         if _msg:
             _msg = _import_prefix + '%s\n' % _msg.strip()
             super(Migration, self).reportProgress(_msg)
-        return
-
-    def _untarZenbackup(self):
-        # unpack the backup page to perf.tar
-        # remove the target dir
-        if not os.path.exists(self.tempDir):
-            os.makedirs(self.tempDir)
-
-        # clean up
-        _cmd = 'rm -rf %s' % Config.perfDir
-        self.exec_cmd(_cmd)
-
-        # untar the zenbackup file for perf.tar file
-        if not self.zbfile:
-            self.reportProgress('No zenbackup package provided..')
-            raise PerfDataImportError(Results.UNTAR_FAIL, -1)
-
-        _cmd = 'tar -v --totals -R --wildcards-match-slash -C %s -f %s -x %s' % (
-            self.tempDir, self.zbfile.name, Config.perfBackup)
-        self.exec_cmd(_cmd)
-
-        _cmd = 'tar -v --totals -R -C %s -xf %s/%s' % (
-            Config.zenbackupDir, self.tempDir, Config.perfBackup)
-        self.exec_cmd(_cmd)
-
-        if os.path.isfile(self.data_checked):
-            os.remove(self.data_checked)
-
-        if os.path.isfile(self.data_migrated):
-            os.remove(self.data_migrated)
-
         return

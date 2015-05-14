@@ -190,6 +190,10 @@
        "CPUCommitment": 1,
        "Runs": {
            "initialize": "cd $(dirname $(readlink /opt/zenoss/bin/import4)); ./install_pkg.sh && ./install_rrdtool.sh",
+           "check" : "/import4/pkg/bin/imp4_check.sh",
+           "model": "/import4/pkg/bin/imp4_run.sh -x model",
+           "events": "/import4/pkg/bin/imp4_run.sh -x events",
+           "perf": "/import4/pkg/bin/imp4_run.sh -x perf",
            "import4": "/import4/pkg/bin/imp4_run.sh"
        },
        "Actions": null,
@@ -199,12 +203,7 @@
            "Interval": 5.0
          }
        },
-       "Prereqs": [
-         {
-           "Name": "MariaDB zodb and zep Availability",
-           "Script": "su - zenoss -c '/opt/zenoss/bin/python /opt/zenoss/Products/ZenUtils/ZenDB.py --dbport 3306 --usedb zep --execsql=\";\"' && su - zenoss -c '/opt/zenoss/bin/python /opt/zenoss/Products/ZenUtils/ZenDB.py --dbport 3307 --usedb zodb --execsql=\";\"' "
-         }
-       ],
+       "Prereqs": [],
        "MonitoringProfile": {
          "MetricConfigs": null,
          "GraphConfigs": null,
