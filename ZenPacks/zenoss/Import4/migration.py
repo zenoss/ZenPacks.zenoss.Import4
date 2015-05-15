@@ -25,7 +25,8 @@ class Config(object):
     pkgPath =       '/import4/pkg'
     pkgBinPath =    '/import4/pkg/bin'
     # place of the default input data files
-    stageDir =      '/mnt/pwd'
+    mntPwdDir =     '/mnt/pwd'
+    stageDir =      '/import4/staging'
     # content of a 4.x zenbackup file
     backupDir =       'zenbackup'
     zodbBackup =        'zodb.sql.gz'
@@ -37,7 +38,7 @@ class Config(object):
     perfBackup =        'perf.tar'
     perfDir =           'perf'
     # other locations
-    rrdTop =        '/mnt/pwd/zenbackup/perf/Devices'
+    rrdTop =        '/import4/staging/zenbackup/perf/Devices'
     zepSocket =     '/var/lib/mysql/mysql.sock'
     zodbSocket =    '/var/lib/mysql.model/mysql.sock'
 
@@ -54,9 +55,10 @@ class MigrationBase(object):
         self.log = logging.getLogger("Imp4")
         self.args = args
         self.progress = progressCallback
-        self.tempDir = args.staging_dir
+        self.tempDir = Config.mntPwdDir
         self.zenbackup_dir = "%s/%s" % (self.tempDir, Config.backupDir)
-        self.perf_dir = "%s/%s" % (self.zenbackup_dir, Config.perfDir)
+        # performance directory is extracted on the staging area
+        self.perf_dir = "%s/%s/%s" % (Config.stageDir, Config.backupDir, Config.perfDir)
         self.ip = args.ip
         self.user = args.user
         if args.password:
@@ -81,8 +83,6 @@ class MigrationBase(object):
                             help="Continue with the import even if pre-validation generates warnings")
         parser.add_argument('-l', '--log-level', dest='log_level', default='info',
                             help="Specify the logging level - default:info")
-        parser.add_argument('-s', '--stage', dest='staging_dir', default=Config.stageDir,
-                            help="Location to use for file staging during the import process")
         parser.add_argument('-i', '--ip', dest='ip', default="localhost",
                             help="The ip address for MariaDB host")
         parser.add_argument('-u', '--user', dest='user', default='root',
