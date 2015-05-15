@@ -122,6 +122,10 @@ class Migration(MigrationBase):
         _cmd = "zendmd --script=%s/del_dmdobjs.dmd --commit" % self.binpath
         self.exec_cmd(_cmd)
 
+        self.reportProgress('Obtain and Cache dmd uuid...')
+        _cmd = "%s/get_dmduuid.sh" % self.binpath
+        self.exec_cmd(_cmd)
+
         # zenmigrate
         self.reportProgress('Running zenmigrate')
         _cmd = "zenmigrate"

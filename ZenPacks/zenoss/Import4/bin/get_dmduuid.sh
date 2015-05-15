@@ -8,7 +8,7 @@
 #
 ##############################################################################
 
-UUID_CACHE="/tmp/dmd_uuid.txt"
+UUID_CACHE="/import4/dmd_uuid.txt"
 
 if [ ! -f "$UUID_CACHE" ]
 then

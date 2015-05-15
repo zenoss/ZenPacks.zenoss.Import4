@@ -40,5 +40,11 @@ mv "$BIN_D/src_imp4mariadb.sh"    "$BIN_D/imp4mariadb.sh"   || err_exit "Error c
 mv "$BIN_D/src_imp4opentsdb.sh"   "$BIN_D/imp4opentsdb.sh"  || err_exit "Error copying opentsdb import worker script"
 sync
 
+# clean up staging areas
+for i in 'Q.jobs'  'Q.tasks'  'Q.tsdb'  'staging'  'tmp' 'dmd_uuid.txt'
+do
+    rm -rf "/import4/$i"
+done
+
 echo "Installed!"
 exit 0
