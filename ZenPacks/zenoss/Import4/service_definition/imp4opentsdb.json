@@ -3,7 +3,7 @@
    "serviceDefinition": {
         "Name": "Imp4OpenTSDB",
         "Launch": "manual",
-        "Command": "bash -c \"while echo 'Starting ..'; do if [[ -f /import4/pkg/bin/imp4opentsdb.sh ]]; then /import4/pkg/bin/imp4opentsdb.sh; else  echo 'Startup script not ready ...'; sleep 7; fi; done;\"",
+        "Command": "bash -c \"([[ -f /import4/pkg/bin/imp4opentsdb.sh ]] && /import4/pkg/bin/imp4opentsdb.sh || echo 'Startup script not ready ...') && exit 1\"",
         "Description": "OpenTSDB environment for import4",
         "Services": [],
         "Tags": [
@@ -83,8 +83,8 @@
        "Runs": null,
        "Actions": null,
        "HealthChecks": {
-         "answering": {
-           "Script": "/opt/opentsdb/build/tsdb uid --config=/opt/zenoss/etc/opentsdb/opentsdb.conf grep metrics jvm.uptime",
+         "Script_OK": {
+           "Script": "[ 1 -eq $(pgrep -fla '/bin/bash /import4/pkg/bin/imp4opentsdb.sh' | wc -l) ]",
            "Interval": 15,
            "Timeout": 0
          }
@@ -93,6 +93,10 @@
          {
            "Name": "HBase Regionservers up",
            "Script": "{{with $rss := (child (child (parent .) \"HBase\") \"RegionServer\").Instances }}wget -q -O- http://localhost:61000/status/cluster | grep '{{$rss}} live servers'{{end}}"
+         },
+         {
+           "Name": "OpenTSDB up",
+           "Script": "/opt/opentsdb/build/tsdb uid --config=/opt/zenoss/etc/opentsdb/opentsdb.conf grep metrics jvm.uptime"
          }
        ],
        "MonitoringProfile": {

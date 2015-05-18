@@ -4,7 +4,7 @@
         "Name": "Imp4MariaDB",
         "Description": "MariaDB (mysql) environment for import4",
         "Launch": "manual",
-        "Command": "bash -c \"touch /etc/default/serviced; while echo 'Starting ..'; do if [[ -f /import4/pkg/bin/imp4mariadb.sh ]]; then /import4/pkg/bin/imp4mariadb.sh; else echo 'Startup script not ready, install ...'; /opt/zenoss/ZenPacks/ZenPacks.zenoss.Import4*/ZenPacks/zenoss/Import4/bin/install_pkg.sh; fi; done;\"",
+        "Command": "bash -c \"([[ -f /import4/pkg/bin/imp4mariadb.sh ]] && /import4/pkg/bin/imp4mariadb.sh || echo 'imp4mariadb.sh not installed, do initialize first') && exit 1\"",
         "ImageID": "",
         "Tags": [
             "daemon"
@@ -199,7 +199,7 @@
        "Actions": null,
        "HealthChecks": {
          "running": {
-           "Script": "which rrdtool && [[ -f /import4/pkg/bin/imp4mariadb.sh ]]",
+           "Script": "which rrdtool && [ 1 -eq $(pgrep -fla '/bin/bash /import4/pkg/bin/imp4mariadb.sh' | wc -l) ]",
            "Interval": 5.0
          }
        },
