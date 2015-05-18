@@ -4,7 +4,7 @@
         "Name": "Imp4MariaDB",
         "Description": "Mariadb environment and RRD converter worker for import4",
         "Launch": "manual",
-        "Command": "bash -c \"/import4/pkg/bin/imp4mariadb.sh\"",
+        "Command": "bash -c \"which rrdtool && [ -f /import4/pkg/bin/imp4mariadb.sh ] && /import4/pkg/bin/imp4mariadb.sh\"",
         "ImageID": "",
         "Tags": [
             "daemon"
