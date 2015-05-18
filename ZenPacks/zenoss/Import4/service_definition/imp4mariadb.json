@@ -207,16 +207,7 @@
            "Interval": 5.0
          }
        },
-       "Prereqs": [
-         {
-           "Name": "RRDTool",
-           "Script": "which rrdtool"
-         },
-         { 
-           "Name": "imp4mariadb script",
-           "Script": "[ -f /import4/pkg/bin/imp4mariadb.sh ]"
-         }
-       ],
+       "Prereqs": [],
        "MonitoringProfile": {
          "MetricConfigs": null,
          "GraphConfigs": null,
