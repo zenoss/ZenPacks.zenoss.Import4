@@ -2,9 +2,9 @@
     "servicePath": "/",
     "serviceDefinition" : {
         "Name": "Imp4MariaDB",
-        "Description": "MariaDB (mysql) environment for import4",
+        "Description": "Mariadb environment and RRD converter worker for import4",
         "Launch": "manual",
-        "Command": "bash -c \"([[ -f /import4/pkg/bin/imp4mariadb.sh ]] && /import4/pkg/bin/imp4mariadb.sh || echo 'imp4mariadb.sh not installed, do initialize first') && exit 1\"",
+        "Command": "bash -c \"/import4/pkg/bin/imp4mariadb.sh\"",
         "ImageID": "",
         "Tags": [
             "daemon"
@@ -199,11 +199,24 @@
        "Actions": null,
        "HealthChecks": {
          "running": {
-           "Script": "which rrdtool && [ 1 -eq $(pgrep -fla '/bin/bash /import4/pkg/bin/imp4mariadb.sh' | wc -l) ]",
+           "Script": "[ 1 -eq $(pgrep -fla '/bin/bash /import4/pkg/bin/imp4mariadb.sh' | wc -l) ]",
+           "Interval": 5.0
+         },
+         "dmd_ready": {
+           "Script": "[ -f /import4/dmd_uuid.txt ]",
            "Interval": 5.0
          }
        },
-       "Prereqs": [],
+       "Prereqs": [
+         {
+           "Name": "RRDTool",
+           "Script": "which rrdtool"
+         },
+         { 
+           "Name": "imp4mariadb script",
+           "Script": "[ -f /import4/pkg/bin/imp4mariadb.sh ]"
+         }
+       ],
        "MonitoringProfile": {
          "MetricConfigs": null,
          "GraphConfigs": null,

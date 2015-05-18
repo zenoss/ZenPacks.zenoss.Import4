@@ -123,7 +123,7 @@ class Migration(MigrationBase):
         self.exec_cmd(_cmd)
 
         self.reportProgress('Obtain and Cache dmd uuid...')
-        _cmd = "%s/get_dmduuid.sh" % self.binpath
+        _cmd = "%s/set_dmduuid.sh" % self.binpath
         self.exec_cmd(_cmd)
 
         # zenmigrate

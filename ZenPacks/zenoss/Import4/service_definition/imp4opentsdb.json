@@ -2,8 +2,9 @@
    "servicePath": "/",
    "serviceDefinition": {
         "Name": "Imp4OpenTSDB",
+        "Description": "OpenTSDB and perf data import worker for import4",
         "Launch": "manual",
-        "Command": "bash -c \"([[ -f /import4/pkg/bin/imp4opentsdb.sh ]] && /import4/pkg/bin/imp4opentsdb.sh || echo 'Startup script not ready ...') && exit 1\"",
+        "Command": "bash -c \"/import4/pkg/bin/imp4opentsdb.sh\"",
         "Description": "OpenTSDB environment for import4",
         "Services": [],
         "Tags": [
@@ -97,6 +98,14 @@
          {
            "Name": "OpenTSDB up",
            "Script": "/opt/opentsdb/build/tsdb uid --config=/opt/zenoss/etc/opentsdb/opentsdb.conf grep metrics jvm.uptime"
+         },
+         {
+           "Name": "DMD UUID obtained",
+           "Script": "[ -f /import4/dmd_uuid.txt ]"
+         },
+         { 
+           "Name": "imp4opentsdb script",
+           "Script": "[ -f /import4/pkg/bin/imp4opentsdb.sh ]"
          }
        ],
        "MonitoringProfile": {
