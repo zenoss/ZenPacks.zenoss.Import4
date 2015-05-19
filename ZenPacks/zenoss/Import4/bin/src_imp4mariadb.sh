@@ -41,7 +41,7 @@ do
    fi
 done
 
-# cache the uuid first
+# cache the uuid first. This needs to be 'after' model import
 runuser -l zenoss -c /import4/pkg/bin/get_dmduuid.sh
 
 # find the available task and execute it

@@ -366,7 +366,7 @@ def parse_args():
     parser.add_argument('rrd_files', nargs='+', type=argparse.FileType('r'),
                         help="a list of rrd files (absolute path)")
     parser.add_argument('-p', '--perf',
-                        dest='perfPath', default='/import4/staging/perf/Devices',
+                        dest='perfPath', default='/mnt/pwd/zenbackup/perf/Devices',
                         help='The absolute path of the root to device rrd tree\
                         <first level nodes are the device ids>')
 

@@ -16,6 +16,15 @@ from ZenPacks.zenoss.Import4 import migration, model, events, perf
 from ZenPacks.zenoss.Import4.migration import Config
 
 exitCode = {
+    # model module mapping
+    model.Results.COMMAND_ERROR: 14,
+    model.Results.UNTAR_FAIL: 13,
+    model.Results.INVALID: 12,
+
+    model.Results.FAILURE: 2,
+    model.Results.WARNING: 1,
+    model.Results.SUCCESS: 0,
+
     # perf module mapping
     perf.Results.COMMAND_ERROR: 11,
     perf.Results.UNTAR_FAIL: 10,

@@ -36,7 +36,6 @@ class Migration(MigrationBase):
     def __init__(self, args, progressCallback):
         # common setup setup
         super(Migration, self).__init__(args, progressCallback)
-        self.zenbackup_dir = Config.zenbackupDir
         self.zep_sql = ''
         self.insert_count = 0
         self.insert_running = 0
@@ -53,13 +52,6 @@ class Migration(MigrationBase):
         # add specific arguments for events migration
 
     def prevalidate(self):
-        # untar the provided zenbackup package
-        # exception from this passed upward
-        if not self.zbfile:
-            self.reportProgress(_stderr_tag + 'No zenbackup package provided..')
-            raise EventImportError(Results.UNTAR_FAIL, -1)
-
-        self._untarZenbackup()
         self._check_files()
         self.reportProgress(Results.SUCCESS)
         return
@@ -76,8 +68,8 @@ class Migration(MigrationBase):
         self.reportProgress(_check_tag + 'zenbackup directory exists')
 
         # attempt to find the compressed zep.sql file
-        self.zep_sql = '%s/%s' % (self.tempDir, Config.zepSQL)
-        _gzfile = '%s/%s' % (self.tempDir, Config.zepBackup)
+        self.zep_sql = '%s/%s' % (self.zenbackup_dir, Config.zepSQL)
+        _gzfile = '%s/%s' % (self.zenbackup_dir, Config.zepBackup)
 
         # if compressed file found, uncompressed it to zep.sql
         if os.path.isfile(_gzfile):
@@ -184,18 +176,4 @@ class Migration(MigrationBase):
         _rc = subprocess.call(_cmdstr, shell=True)
         if _rc > 0:
             raise EventImportError(Results.COMMAND_ERROR, _rc)
-        return
-
-    def _untarZenbackup(self):
-        """
-        unpack the backup package to sql files
-        """
-        # remove the target dir
-        if not os.path.exists(self.tempDir):
-            os.makedirs(self.tempDir)
-        cmd = 'cd %s; rm -f %s %s' % (self.tempDir, Config.zepBackup, Config.zepSQL)
-        self.exec_cmd(cmd)
-        cmd = 'tar --wildcards-match-slash -C %s -f %s -x %s' % (
-            self.tempDir, self.zbfile.name, Config.zepBackup)
-        self.exec_cmd(cmd)
         return
