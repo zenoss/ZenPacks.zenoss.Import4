@@ -21,6 +21,25 @@ export staging_dir="/import4/staging/zenbackup"
 export zbk="zenbackup"
 export awk_cmd='{ if (NR%10 == 0) printf "." }'
 
+# removing previous artifacts
+for i in \
+        MODEL_* \
+        PERF_* \
+        EVENTS_* \
+        _zen* \
+        componentList.txt \
+        zenbackup_*.tgz \
+        zep.sql* \
+        zodb.sql* \
+        ZenPacks* \
+        zencatalogservice* \
+        perf.tar \
+        "$staging_dir"
+do
+    echo "Removing $i"
+    rm -rf "$i"
+done
+
 # extracting known data files from the tar ball
 echo -e "\nExtract zenbackup files..."
 ! tar -vxf "$1"              && echo "Extracting zenbackup failed!"         && exit 2
@@ -28,6 +47,7 @@ echo -e "\nExtract zenbackup files..."
 
 ! cd "$zbk" && echo "Invalid zenbackup file!" && exit 2
 
+# cleanup target files
 ! gunzip -vf "zep.sql.gz"   && echo "Uncompressing zep.sql failed!"   && exit 2
 ! gunzip -vf "zodb.sql.gz"  && echo "Uncompressing zodb.sql failed!"  && exit 2
 
