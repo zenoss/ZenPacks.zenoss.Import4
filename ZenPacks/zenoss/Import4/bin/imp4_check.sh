@@ -77,10 +77,10 @@ find . -type d -exec chmod a+rwx {} \;
 find . -type f -exec chmod a+rw {} \;
 
 # use the mounted directory as the current directory
-cmd="cd /mnt/pwd; /opt/zenoss/bin/python /import4/pkg/bin/import4 -c "
-! su - zenoss -c "$cmd model"            && echo "Model files not valid!"            && exit 2
-! su - zenoss -c "$cmd events"           && echo "Events files not valid!"           && exit 2
-! su - zenoss -c "$cmd perf --skip-scan" && echo "Performance data files not valid!" && exit 2
+cmd="cd /mnt/pwd; /opt/zenoss/bin/python /import4/pkg/bin/import4 "
+! su - zenoss -c "$cmd model check"            && echo "Model files not valid!"            && exit 2
+! su - zenoss -c "$cmd events check"           && echo "Events files not valid!"           && exit 2
+! su - zenoss -c "$cmd perf --skip-scan check" && echo "Performance data files not valid!" && exit 2
 
 echo "Migration files checked OK..."
 echo "No need to commit image for this operation..."
