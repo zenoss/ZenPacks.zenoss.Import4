@@ -28,7 +28,8 @@ class Config(object):
     mntPwdDir =     '/mnt/pwd'
     stageDir =      '/import4/staging'
     # content of a 4.x zenbackup file
-    backupDir =       'zenbackup'
+    backupDir =         'zenbackup'
+    catalogSvcDir =     'zencatalogservice/global_catalog/index'
     zodbBackup =        'zodb.sql.gz'
     zodbSQL =           'zodb.sql'
     zenpackBackup =     'ZenPacks.tar'

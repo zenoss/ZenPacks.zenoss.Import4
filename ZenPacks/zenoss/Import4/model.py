@@ -13,6 +13,8 @@ Import the models backed up in the zenbackup tarball
 
 import os
 import subprocess
+import shutil
+from distutils.dir_util import copy_tree
 
 from ZenPacks.zenoss.Import4.migration import MigrationBase, ImportError, Config
 
@@ -52,6 +54,7 @@ class Migration(MigrationBase):
         super(Migration, self).__init__(args, progressCallback)
         # all the args is in self.args
         self.zodb_sql = ''
+        self.catalog_dir = ''
         self.zenpack_count = 0
         self.insert_count = 0
         self.insert_running = 0
@@ -124,7 +127,18 @@ class Migration(MigrationBase):
 
     def catalog(self):
         self._ready_to_import()
-        # TODO: Actually do this.
+        if self.catalog_dir:
+            zcs_index = "/opt/zenoss/var/zencatalogservice/global_catalog/index"
+            shutil.rmtree(zcs_index, ignore_errors=True)
+            self.reportProgress("Successfully removed existing global catalog index")
+
+            copy_tree(
+                    self.catalog_dir,
+                    zcs_index
+            )
+            self.reportProgress("Successfully copied catalog from backup to {}".format(zcs_index))
+        else:
+            self.reportProgress("Skipping external catalog restore")
 
         self.reportProgress(Results.SUCCESS)
         return
@@ -187,6 +201,14 @@ class Migration(MigrationBase):
         self.reportProgress('%s file is OK' % self.zodb_sql)
         self.reportProgress('A rough scan shows [%d] INSERT statements'
                             % self.insert_count)
+
+        # check catalog
+        catalogDir = os.path.join(self.zenbackup_dir, Config.catalogSvcDir)
+        if os.path.isdir(catalogDir):
+            self.catalog_dir = catalogDir
+            self.log.info("Found catalog dir %s", self.catalog_dir)
+        else:
+            self.log.info("No external catalog backup found")
 
         # check egg directories
         self.zenpack_count = int(subprocess.check_output(
