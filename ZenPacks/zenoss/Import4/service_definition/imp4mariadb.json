@@ -162,6 +162,20 @@
          },
          {
            "Owner": "zenoss:zenoss",
+           "Permission": "0755",
+           "ResourcePath": "zencatalogservice",
+           "ContainerPath": "/opt/zenoss/var/zencatalogservice",
+           "Type": ""
+         },
+         {
+           "Owner": "zenoss:zenoss",
+           "Permission": "0775",
+           "ResourcePath": "zeneventserver",
+           "ContainerPath": "/opt/zenoss/var/zeneventserver",
+           "Type": ""
+         },
+         {
+           "Owner": "zenoss:zenoss",
            "Permission": "0777",
            "ResourcePath": "import4",
            "ContainerPath": "/import4"
@@ -192,7 +206,7 @@
            "initialize": "cd $(dirname $(readlink /opt/zenoss/bin/import4)); ./install_pkg.sh && ./install_rrdtool.sh",
            "check" : "/import4/pkg/bin/imp4_check.sh",
            "model-database": "/import4/pkg/bin/imp4_run.sh model import --database",
-           "model-cataloge": "/import4/pkg/bin/imp4_run.sh model import --catalog",
+           "model-catalog": "/import4/pkg/bin/imp4_run.sh model import --catalog",
            "model-zenmigrate": "/import4/pkg/bin/imp4_run.sh model import --zenmigrate",
            "model-zenpack": "/import4/pkg/bin/imp4_run.sh model import --zenpack",
            "events-import": "/import4/pkg/bin/imp4_run.sh events import",

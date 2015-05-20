@@ -33,9 +33,8 @@ do
     fi
 done
 
-# commit only when it is for successful model import operation
-if [[ "$options" == *" import "* ]]; then
-    [[ "$options" != *" model"* ]] && continue
+# commit only when it is for successful 'model import --zenpack'
+if [[ "$options" == *" import "* && "$options" == *"model "* && "$options" == *" --zenpack"* ]]; then
     exit 0
 fi
 

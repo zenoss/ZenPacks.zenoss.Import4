@@ -18,7 +18,7 @@ cd /mnt/pwd
 [[ ! -f "$1" ]] && echo "Migration file not found!" && exit 2
 
 # make sure /mnt/pwd is world r/w/x
-if [[ $(find /mnt/pwd -maxdepth 0 -perm 777 | wc -l) != 1 ]]; then
+if [[ $(find /mnt/pwd -maxdepth 0 -perm -777 | wc -l) != 1 ]]; then
     echo "Backup's parent directory is not world r/w/x - exiting"
     exit 2
 fi
