@@ -33,6 +33,21 @@ class ModelImportError(ImportError):
 
 class Migration(MigrationBase):
 
+    importFuncs = {
+            'database': {
+                'desc': 'Import zodb',
+            },
+            'catalog': {
+                'desc': 'Import the global catalog',
+            },
+            'zenmigrate': {
+                'desc': 'Run zenmigrate',
+            },
+            'zenpack': {
+                'desc' : 'Run zenpack --restore',
+            }
+    }
+
     def __init__(self, args, progressCallback):
         super(Migration, self).__init__(args, progressCallback)
         # all the args is in self.args
@@ -41,15 +56,14 @@ class Migration(MigrationBase):
         self.insert_count = 0
         self.insert_running = 0
         self.model_checked = '%s/MODEL_CHECKED' % self.tempDir
-        self.model_migrated = '%s/MODEL_MIGRATED' % self.tempDir
-        if args.execute and not args.control_center_ip:
-            self.log.error('Control_center_ip missing, need --cc-ip')
-            self.reportProgress('Control_center_ip missing, need --cc-ip')
-            raise ModelImportError(Results.COMMAND_ERROR, -1)
+
+    @staticmethod
+    def init_command_parser(m_parser):
+        pass
 
     @classmethod
-    def init_command_parser(cls, m_parser):
-        pass
+    def init_command_parsers(cls, check_parser, verify_parser, import_parser):
+        super(Migration, cls).init_command_parsers(check_parser, verify_parser, import_parser)
 
     def prevalidate(self):
         self._check_files()
@@ -78,44 +92,23 @@ class Migration(MigrationBase):
     def wipe(self):
         self.reportProgress('Wipe is done while importing zodb')
 
-    def doImport(self):
+    # TOTO: Make this a decorator
+    def _ready_to_import(self):
         if not os.path.exists(self.model_checked):
             self.reportProgress("Model backup file not validated yet. Run -c option first.")
             raise ModelImportError(Results.INVALID, -1)
 
-        if os.path.isfile(self.model_migrated):
-            os.remove(self.model_migrated)
-
         self._check_files()
 
-        # stop services accessing zodb
-        # use the provided control center IP for service controls
-        _util_cmd = "%s/imp4util.py" % self.binpath
-        if self.args.control_center_ip:
-            _util_cmd = "CONTROLPLANE_HOST_IPS=%s " % self.args.control_center_ip + _util_cmd
+    #==========================================================================
+    # Import methods
+    #==========================================================================
 
-        self.reportProgress('Stopping services ...')
-        _cmd = "%s --log-level=%s stop_svcs" % (_util_cmd, self.args.log_level)
-        self.exec_cmd(_cmd)
-
+    def database(self):
+        self._ready_to_import()
         # restore zodb
         self.reportProgress('Restoring zodb ...')
         self.restoreMySqlDb(self.zodb_sql, 'zodb', Config.zodbSocket)
-
-        # fix schema if needed
-        # self.reportProgress('No ZODB schema changes ...')
-
-        # zip up the zenpacks in the backup ZenPack dir
-        # copy it to /opt/zenoss/.ZenPack
-        self.reportProgress('Create and copying the 4.x zenpacks eggs ...')
-        _cmd = '%s/get_eggs.sh "%s/ZenPacks"' % (self.binpath, self.zenbackup_dir)
-        self.exec_cmd(_cmd)
-
-        # bring back zep, zcs, rabbit redis services
-        self.reportProgress('Restaring necessary services for model import...')
-        _cmd = "%s --log-level=%s start_model_svcs" % (
-            _util_cmd, self.args.log_level)
-        self.exec_cmd(_cmd)
 
         # dmd del black list zenpacks (commit)
         self.reportProgress('Removing the non 5.x compatible zenpacks from zodb ...')
@@ -126,29 +119,41 @@ class Migration(MigrationBase):
         _cmd = "%s/set_dmduuid.sh" % self.binpath
         self.exec_cmd(_cmd)
 
-        # zenmigrate
+        self.reportProgress(Results.SUCCESS)
+        return
+
+    def catalog(self):
+        self._ready_to_import()
+        # TODO: Actually do this.
+
+        self.reportProgress(Results.SUCCESS)
+        return
+
+    def zenmigrate(self):
+        self._ready_to_import()
         self.reportProgress('Running zenmigrate')
         _cmd = "zenmigrate"
         self.exec_cmd(_cmd)
 
+        self.reportProgress(Results.SUCCESS)
+        return
+
+    def zenpack(self):
+        self._ready_to_import()
+        # zip up the zenpacks in the backup ZenPack dir
+        # copy it to /opt/zenoss/.ZenPack
+        self.reportProgress('Create and copying the 4.x zenpacks eggs ...')
+        _cmd = '%s/get_eggs.sh "%s/ZenPacks"' % (self.binpath, self.zenbackup_dir)
+        self.exec_cmd(_cmd)
         # zenpack --restore AND --ignore-services and --keep-pack
         self.reportProgress('Fixing zenpack in zodb and files on the image ...')
         _cmd = "zenpack --restore --keep-pack=ZenPacks.zenoss.Import4"
         self.exec_cmd(_cmd)
 
-        # zencatalog
-        self.reportProgress('Recatalog zodb ...')
-        _cmd = "%s/recat.sh" % self.binpath
-        self.exec_cmd(_cmd)
-
-        # mark migration done
-        with open(self.model_migrated, 'a'):
-            pass
-
         self.reportProgress(Results.SUCCESS)
-        # commit image is done by the run command from serviced
-
         return
+
+    #==========================================================================
 
     def postvalidate(self):
         self.__NOT_YET__()

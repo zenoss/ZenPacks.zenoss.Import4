@@ -48,6 +48,9 @@ class PerfDataImportError(ImportError):
 
 
 class Migration(MigrationBase):
+
+    importFuncs = {}
+
     def __init__(self, args, progressCallback):
         # common setup
         super(Migration, self).__init__(args, progressCallback)
@@ -88,8 +91,8 @@ class Migration(MigrationBase):
         if not os.path.exists('%s/imp4opentsdb.sh' % _import4_pkg_bin):
             raise PerfDataImportError(Results.RUNTIME_ERROR, -1)
 
-    @classmethod
-    def init_command_parser(cls, m_parser):
+    @staticmethod
+    def init_command_parser(m_parser):
         # if rrd_dir is specified, it will only import the selected
         m_parser.add_argument('--rrd_dir', dest='rrd_dir', default="",
                                 help="Top directory for a existing 4.x rrd tree")
@@ -97,6 +100,10 @@ class Migration(MigrationBase):
                                 help="Parent directory of the rrd trees")
         m_parser.add_argument('-n', '--skip-scan', action='store_true', dest='skip_scan', default=False,
                                 help="Skip the scanning of rrdfiles' content")
+
+    @classmethod
+    def init_command_parsers(cls, check_parser, verify_parser, import_parser):
+        super(Migration, cls).init_command_parsers(check_parser, verify_parser, import_parser)
 
     def _setup_rrd_dir(self):
         if not self.rrd_dir_arg:

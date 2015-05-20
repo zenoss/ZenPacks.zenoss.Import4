@@ -14,6 +14,12 @@ cp  -p /opt/zenoss/etc/zodb_db_imp4.conf /opt/zenoss/etc/zodb_db_main.conf
 
 cd /mnt/pwd
 
+# make sure /mnt/pwd is world r/w/x
+if [[ $(find /mnt/pwd -maxdepth 0 -perm 777 | wc -l) != 1 ]]; then
+    echo "Backup's parent directory is not world r/w/x - exiting"
+    exit 2
+fi
+
 # check if the backup file is available
 [[ ! -f "$1" ]] && echo "Migration file not found!" && exit 2
 
