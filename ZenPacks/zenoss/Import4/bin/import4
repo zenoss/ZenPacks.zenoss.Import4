@@ -56,23 +56,12 @@ def run_migration(migration_class, args):
     # The main control running a migration process
     _migration = migration_class(args, progress_report_callback)
 
-    # the prevalidation phase
     try:
-        # a prep stage
-        if args.check:
-            _migration.prevalidate()
-
-        # we don't do wipe anymore
-        # _migration.wipe()
-
-        # import stage
-        if args.execute:
-            # _migration.prevalidate()
-            _migration.doImport()
-
-        # verification stage
-        if args.verify:
-            _migration.postvalidate()
+        {
+            'check' : _migration.prevalidate,
+            'verify': _migration.postvalidate,
+            'import': _migration.importFunc
+        }[args.pname]() # Run it
 
     except migration.ImportError as err:
         sys.stderr.write('Error: %s(%d)\n' % (err.error_string, err.return_code))
@@ -104,8 +93,6 @@ def parse_args():
             "Import data from a 4.x Zenoss instance. These imports are destructive - "
             "the relevant datastores on this instance will be destroyed, and the 4.x "
             "data imported in its place.\n\n"
-            "Model data migration must be run first, and only by itself.\n"
-            "Events and Performance data migration may be run simultaneously."
         )
     )
     # add the global options
@@ -114,8 +101,17 @@ def parse_args():
     subparsers = parser.add_subparsers(help='Group of migration functions')
     for module in (model, events, perf):
         m_name = module.__name__.split(".")[-1]
-        m_parser = subparsers.add_parser(m_name, help='migrate %s data' % m_name)
+        m_parser = subparsers.add_parser(m_name, description='Tool to migrate %s data' % m_name)
+        m_subparser = m_parser.add_subparsers()
+        # Add action-specific parsers
+        check_parser = m_subparser.add_parser('check', description='Run pre-validation on 4x backup artifact prior to import')
+        check_parser.set_defaults(pname='check')
+        import_parser = m_subparser.add_parser('import', description='Perform an import')
+        import_parser.set_defaults(pname='import')
+        verify_parser = m_subparser.add_parser('verify', description='Run post-validation on new system')
+        verify_parser.set_defaults(pname='verify')
         module.Migration.init_command_parser(m_parser)
+        module.Migration.init_command_parsers(check_parser, verify_parser, import_parser)
         m_parser.set_defaults(functor=lambda args, mclass=module.Migration: run_migration(mclass, args))
 
     args = parser.parse_args()

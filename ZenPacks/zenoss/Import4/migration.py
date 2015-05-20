@@ -50,6 +50,21 @@ class ImportError(Exception):
 
 
 class MigrationBase(object):
+
+    # To be used in subclasses to define specific functions used for the 'import' step.
+    # It is assumed that any dependent services for a given import step are already running
+    # (or not running) when you run the import step.  Said another way, the caller needs to 
+    # ensure that the environment is sane.
+    importFuncs = { 
+        """
+        # The name of the function you want to provide.  Will be directly given to parser.
+        theFunction: {
+            # Description
+            'desc': 'Description'
+        }
+        """
+    }
+
     def __init__(self, args, progressCallback):
         self.binpath = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe()))) + '/bin'
         self.log = logging.getLogger("Imp4")
@@ -67,18 +82,18 @@ class MigrationBase(object):
             self.password = ''
         if args.log_level:
             logging.basicConfig(level=getattr(logging, args.log_level.upper()))
+        
+        if args.pname != 'import':
+            self.importFunc = None
+        else:
+            self.importFunc = filter(None, [func for func in self.importFuncs.keys() if getattr(args, func, False)])
+            self.importFunc = self.importFunc[0] if self.importFunc else 'doImport' # fall back to general import method
+            self.importFunc = getattr(self, self.importFunc)
 
     @classmethod
     def init_command_parser(cls, parser):
         # import is divided into three optional stages:
         # check, import, and validate
-        op_group = parser.add_mutually_exclusive_group(required=True)
-        op_group.add_argument('-c', '--check', '--prevalidate', action='store_true', dest='check', default=False,
-                            help="Pre-validate only, do not perform any destructive operations")
-        op_group.add_argument('-v', '--verify', '--postvalidate', action='store_true', dest='verify', default=False,
-                            help="Post-validate only")
-        op_group.add_argument('-x', '--execute', '--import', action='store_true', dest='execute', default=False,
-                            help="Execute the actual import operation")
         parser.add_argument('-f', '--ignore-warnings', action='store_true', dest='ignorewarnings', default=False,
                             help="Continue with the import even if pre-validation generates warnings")
         parser.add_argument('-l', '--log-level', dest='log_level', default='info',
@@ -91,6 +106,13 @@ class MigrationBase(object):
                             help="The password for MariaDB access")
         parser.add_argument('--cc-ip', dest='control_center_ip', default=None,
                             help="The IP address for Control Center")
+
+    @classmethod
+    def init_command_parsers(cls, check_parser, verify_parser, import_parser):
+        if cls.importFuncs:
+            group = import_parser.add_mutually_exclusive_group(required=True)
+            for func, details in cls.importFuncs.iteritems():
+                group.add_argument('--{}'.format(func), action='store_true', help=details['desc'])
 
     def __NOT_YET__(self):
         caller = inspect.stack()[1]

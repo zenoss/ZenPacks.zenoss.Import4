@@ -33,6 +33,9 @@ class EventImportError(ImportError):
 
 
 class Migration(MigrationBase):
+
+    importFuncs = {}
+
     def __init__(self, args, progressCallback):
         # common setup setup
         super(Migration, self).__init__(args, progressCallback)
@@ -40,16 +43,14 @@ class Migration(MigrationBase):
         self.insert_count = 0
         self.insert_running = 0
         self.event_migrated = '%s/EVENT_MIGRATED' % self.tempDir
-        if args.execute and not args.control_center_ip:
-            self.log.error('Control_center_ip missing, need --cc-ip')
-            self.reportProgress('Control_center_ip missing, need --cc-ip')
-            raise EventImportError(Results.COMMAND_ERROR, -1)
+
+    @staticmethod
+    def init_command_parser(m_parser):
+        pass
 
     @classmethod
-    def init_command_parser(cls, m_parser):
-        pass
-        # MigrationBase.init_command_parser(m_parser)
-        # add specific arguments for events migration
+    def init_command_parsers(cls, check_parser, verify_parser, import_parser):
+        super(Migration, cls).init_command_parsers(check_parser, verify_parser, import_parser)
 
     def prevalidate(self):
         self._check_files()
@@ -106,26 +107,10 @@ class Migration(MigrationBase):
         # the check_files is fast so we always do a quick check
         self._check_files()
 
-        # stop services accessing zodb
-        # use the provided control center IP for service controls
-        _util_cmd = "%s/imp4util.py" % self.binpath
-        if self.args.control_center_ip:
-            _util_cmd = "CONTROLPLANE_HOST_IPS=%s " % self.args.control_center_ip + _util_cmd
-
-        # stop services accessing zenoss_zep
-        self.reportProgress('Stopping services ...')
-        _cmd = "%s --log-level=%s stop_svcs" % (_util_cmd, self.args.log_level)
-        self.exec_cmd(_cmd)
-
         self.restoreMySqlDb(self.zep_sql, 'zenoss_zep', Config.zepSocket)
         self._migrateSchema()
         with open(self.event_migrated, 'a'):
             pass
-
-        # restart services
-        # self.reportProgress('Starting services ...')
-        # _cmd = "%s --log-level=%s start_all_svcs" % (_util_cmd, self.args.log_level)
-        # self.exec_cmd(_cmd)
 
         self.reportProgress(Results.SUCCESS)
         return
