@@ -191,9 +191,12 @@
        "Runs": {
            "initialize": "cd $(dirname $(readlink /opt/zenoss/bin/import4)); ./install_pkg.sh && ./install_rrdtool.sh",
            "check" : "/import4/pkg/bin/imp4_check.sh",
-           "model": "/import4/pkg/bin/imp4_run.sh -x model",
-           "events": "/import4/pkg/bin/imp4_run.sh -x events",
-           "perf": "/import4/pkg/bin/imp4_run.sh -x perf",
+           "model-database": "/import4/pkg/bin/imp4_run.sh model import --database",
+           "model-cataloge": "/import4/pkg/bin/imp4_run.sh model import --catalog",
+           "model-zenmigrate": "/import4/pkg/bin/imp4_run.sh model import --zenmigrate",
+           "model-zenpack": "/import4/pkg/bin/imp4_run.sh model import --zenpack",
+           "events-import": "/import4/pkg/bin/imp4_run.sh events import",
+           "perf-import": "/import4/pkg/bin/imp4_run.sh perf import",
            "import4": "/import4/pkg/bin/imp4_run.sh"
        },
        "Actions": null,

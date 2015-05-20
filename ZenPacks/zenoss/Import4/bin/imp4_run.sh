@@ -34,14 +34,10 @@ do
 done
 
 # commit only when it is for successful model import operation
-for op in ' -x ' ' --import' ' --execute' 
-do
-    if [[ "$options" == *"$op"* ]]
-    then
-        [[ "$options" != *" model"* ]] && continue
-        exit 0
-    fi
-done
+if [[ "$options" == *" import "* ]]; then
+    [[ "$options" != *" model"* ]] && continue
+    exit 0
+fi
 
 echo "No need to commit image for this operation..."
 exit 1
