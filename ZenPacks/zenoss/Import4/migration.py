@@ -215,8 +215,8 @@ class MigrationBase(object):
                 else:
                     break
             _errfile.close()
-            self.reportProgress(Results.FAILURE)
-            raise ImportError(Results.FAILURE, proc.returncode)
+            self.reportProgress(codeString[Results.CMD_ERROR])
+            raise ImportError(Results.CMD_ERROR)
 
         _errfile.close()
         return
