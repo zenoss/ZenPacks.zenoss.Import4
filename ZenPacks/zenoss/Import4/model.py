@@ -14,21 +14,7 @@ Import the models backed up in the zenbackup tarball
 import os
 import subprocess
 
-from ZenPacks.zenoss.Import4.migration import MigrationBase, ImportError, Config
-
-
-class Results(object):
-    COMMAND_ERROR = 'MODELMIGRATION_COMMAND_ERROR'
-    UNTAR_FAIL = 'MODELMIGRATION_UNTAR_FAILED'
-    INVALID = 'MODELMIGRATION_INVALID'
-    WARNING = 'MODELMIGRATION_WARNING'
-    FAILURE = 'MODELMIGRATION_FAILURE'
-    SUCCESS = 'MODELMIGRATION_SUCCESS'
-
-
-class ModelImportError(ImportError):
-    def __init__(self, error_string, return_code):
-        super(ModelImportError, self).__init__(error_string, return_code)
+from ZenPacks.zenoss.Import4.migration import MigrationBase, ImportError, Config, ExitCode, codeString
 
 
 class Migration(MigrationBase):
@@ -44,7 +30,7 @@ class Migration(MigrationBase):
                 'desc': 'Run zenmigrate',
             },
             'zenpack': {
-                'desc' : 'Run zenpack --restore',
+                'desc': 'Run zenpack --restore',
             }
     }
 
@@ -96,7 +82,7 @@ class Migration(MigrationBase):
     def _ready_to_import(self):
         if not os.path.exists(self.model_checked):
             self.reportProgress("Model backup file not validated yet. Run `model check` command first.")
-            raise ModelImportError(Results.INVALID, -1)
+            raise ImportError(ExitCode.INVALID)
 
         self._check_files()
 
@@ -119,14 +105,14 @@ class Migration(MigrationBase):
         _cmd = "%s/set_dmduuid.sh" % self.binpath
         self.exec_cmd(_cmd)
 
-        self.reportProgress(Results.SUCCESS)
+        self.reportProgress(codeString[ExitCode.SUCCESS])
         return
 
     def catalog(self):
         self._ready_to_import()
         # TODO: Actually do this.
 
-        self.reportProgress(Results.SUCCESS)
+        self.reportProgress(codeString[ExitCode.SUCCESS])
         return
 
     def zenmigrate(self):
@@ -135,7 +121,7 @@ class Migration(MigrationBase):
         _cmd = "zenmigrate"
         self.exec_cmd(_cmd)
 
-        self.reportProgress(Results.SUCCESS)
+        self.reportProgress(codeString[ExitCode.SUCCESS])
         return
 
     def zenpack(self):
@@ -150,7 +136,7 @@ class Migration(MigrationBase):
         _cmd = "zenpack --restore --keep-pack=ZenPacks.zenoss.Import4"
         self.exec_cmd(_cmd)
 
-        self.reportProgress(Results.SUCCESS)
+        self.reportProgress(codeString[ExitCode.SUCCESS])
         return
 
     #==========================================================================
@@ -163,7 +149,7 @@ class Migration(MigrationBase):
 
         if not os.path.isdir(self.zenbackup_dir):
             self.log.error('Backup directory does not exist. Must be extracted first.')
-            raise ModelImportError(Results.INVALID, -1)
+            raise ImportError(ExitCode.INVALID)
 
         self.zodb_sql = '%s/%s' % (self.zenbackup_dir, Config.zodbSQL)
         _gzfile = '%s/%s' % (self.zenbackup_dir, Config.zodbBackup)
@@ -172,17 +158,17 @@ class Migration(MigrationBase):
             _rc = os.system('gunzip %s' % _gzfile)
             if _rc > 0:
                 self.log.error('Failed to unzip %s' % _gzfile)
-                raise ModelImportError(Results.INVALID, -1)
+                raise ImportError(ExitCode.INVALID)
 
         if not os.path.isfile(self.zodb_sql):
                 self.log.error('Failed to find %s' % self.zodb_sql)
-                raise ModelImportError(Results.INVALID, -1)
+                raise ImportError(ExitCode.INVALID)
 
         self.insert_count = int(subprocess.check_output(
             'egrep "^INSERT INTO" %s | wc -l' % self.zodb_sql, shell=True))
         if self.insert_count <= 0:
             self.log.error("Cannot find any INSERT statement in %s" % self.zodb_sql)
-            raise ModelImportError(Results.INVALID, -1)
+            raise ImportError(ExitCode.INVALID)
 
         self.reportProgress('%s file is OK' % self.zodb_sql)
         self.reportProgress('A rough scan shows [%d] INSERT statements'
@@ -193,7 +179,7 @@ class Migration(MigrationBase):
             'find %s/ZenPacks -type d -name "*.egg" | wc -l' % self.zenbackup_dir, shell=True))
         if self.zenpack_count <= 0:
             self.log.error("No zenpack found in %s/ZenPacks!" % self.zenbackup_dir)
-            raise ModelImportError(Results.INVALID, -1)
+            raise ImportError(ExitCode.INVALID)
         self.reportProgress('%d zenpack directories in "%s/ZenPacks"' % (self.zenpack_count, self.zenbackup_dir))
 
         self.reportProgress('directory "%s" for models looks OK' % self.zenbackup_dir)

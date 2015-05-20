@@ -14,6 +14,31 @@ import subprocess
 import tempfile
 
 
+class ExitCode(object):
+    # exit code used by the migration operations
+    SUCCESS =     0
+    WARNING =     1
+    FAILURE =     2
+    INVALID =     3
+    CMD_ERROR =   4
+    UNTAR_ERROR =  5
+    RUNTIME_ERROR = 6
+    UNKNOWN = -1
+
+
+# mapping of exit codes to human readable strings
+codeString = {
+    ExitCode.SUCCESS: 'Success',
+    ExitCode.WARNING: 'Warning',
+    ExitCode.FAILURE: 'Failure',
+    ExitCode.INVALID: 'Invalid',
+    ExitCode.CMD_ERROR: 'System command executation error',
+    ExitCode.UNTAR_ERROR: 'Untar error',
+    ExitCode.RUNTIME_ERROR: 'Runtime error',
+    ExitCode.UNKNOWN: 'Unknown error'
+}
+
+
 class Results(object):
     SUCCESS = 'SUCCESS'
     WARNING = 'WARNING'
@@ -44,18 +69,17 @@ class Config(object):
 
 
 class ImportError(Exception):
-    def __init__(self, error_string, return_code):
+    def __init__(self, return_code):
         self.return_code = return_code
-        self.error_string = error_string
+        self.error_string = codeString[return_code]
 
 
 class MigrationBase(object):
-
     # To be used in subclasses to define specific functions used for the 'import' step.
     # It is assumed that any dependent services for a given import step are already running
-    # (or not running) when you run the import step.  Said another way, the caller needs to 
+    # (or not running) when you run the import step.  Said another way, the caller needs to
     # ensure that the environment is sane.
-    importFuncs = { 
+    importFuncs = {
         """
         # The name of the function you want to provide.  Will be directly given to parser.
         theFunction: {
@@ -82,12 +106,13 @@ class MigrationBase(object):
             self.password = ''
         if args.log_level:
             logging.basicConfig(level=getattr(logging, args.log_level.upper()))
-        
+
         if args.pname != 'import':
             self.importFunc = None
         else:
             self.importFunc = filter(None, [func for func in self.importFuncs.keys() if getattr(args, func, False)])
-            self.importFunc = self.importFunc[0] if self.importFunc else 'doImport' # fall back to general import method
+            # fall back to general import method
+            self.importFunc = self.importFunc[0] if self.importFunc else 'doImport'
             self.importFunc = getattr(self, self.importFunc)
 
     @classmethod
