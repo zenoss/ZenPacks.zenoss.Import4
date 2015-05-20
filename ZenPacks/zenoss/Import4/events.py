@@ -64,7 +64,7 @@ class Migration(MigrationBase):
 
         if not os.path.isdir(self.zenbackup_dir):
             self.reportProgress(
-                _stderr_tag + 'Backup directory does not exist. Run -c option to extract the backup file.')
+                _stderr_tag + 'Backup directory does not exist. Run `events check` command to extract the backup file.')
             raise EventImportError(Results.INVALID, -1)
         self.reportProgress(_check_tag + 'zenbackup directory exists')
 
@@ -142,11 +142,11 @@ class Migration(MigrationBase):
         # we assume the db operations are all correct if no error returned
         if os.path.isfile(self.event_migrated):
             self.reportProgress(
-                _check_tag + 'Previous "-x event" is successful, No post validation needed.')
+                _check_tag + 'Previous "event import" is successful, No post validation needed.')
             self.reportProgress(Results.SUCCESS)
         else:
             self.reportProgress(
-                _check_tag + 'Previous "-x event" is not successful or not imported yet.')
+                _check_tag + 'Previous "event import" is not successful or not imported yet.')
             self.reportProgress(Results.FAILURE)
         return
 

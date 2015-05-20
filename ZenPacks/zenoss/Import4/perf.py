@@ -239,7 +239,7 @@ class Migration(MigrationBase):
         self._setup_rrd_dir()
 
         if not os.path.exists(self.data_checked):
-            self.reportProgress("rrdfiles not validated yet. Run -c option first.")
+            self.reportProgress("rrdfiles not validated yet. Run `perf check` command first.")
             raise PerfDataImportError(Results.INVALID, -1)
 
         if os.path.isfile(self.data_migrated):

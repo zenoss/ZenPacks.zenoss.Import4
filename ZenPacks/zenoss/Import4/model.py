@@ -95,7 +95,7 @@ class Migration(MigrationBase):
     # TOTO: Make this a decorator
     def _ready_to_import(self):
         if not os.path.exists(self.model_checked):
-            self.reportProgress("Model backup file not validated yet. Run -c option first.")
+            self.reportProgress("Model backup file not validated yet. Run `model check` command first.")
             raise ModelImportError(Results.INVALID, -1)
 
         self._check_files()
