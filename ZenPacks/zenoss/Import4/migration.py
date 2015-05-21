@@ -51,6 +51,7 @@ class Config(object):
     # content of a 4.x zenbackup file
     backupDir =         'zenbackup'
     catalogSvcDir =     'zencatalogservice/global_catalog/index'
+    zepIndexDir =       'zeneventserver/index'
     zodbBackup =        'zodb.sql.gz'
     zodbSQL =           'zodb.sql'
     zenpackBackup =     'ZenPacks.tar'

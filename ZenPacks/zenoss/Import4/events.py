@@ -9,6 +9,8 @@
 
 import os
 import subprocess
+import shutil
+from distutils.dir_util import copy_tree
 
 from ZenPacks.zenoss.Import4.migration import MigrationBase, ImportError, Config, ExitCode, codeString, log
 
@@ -20,7 +22,14 @@ _import_prefix = 'Event: '
 
 class Migration(MigrationBase):
 
-    importFuncs = {}
+    importFuncs = {
+        'database': {
+            'desc': 'Import the events database'
+        },
+        'index': {
+            'desc': 'Import the zeneventserver index'
+        }
+    }
 
     def __init__(self, args, progressCallback):
         # common setup setup
@@ -28,7 +37,7 @@ class Migration(MigrationBase):
         self.zep_sql = ''
         self.insert_count = 0
         self.insert_running = 0
-        self.event_migrated = '%s/EVENT_MIGRATED' % self.tempDir
+        self.index_dir = ''
 
     @staticmethod
     def init_command_parser(m_parser):
@@ -71,6 +80,14 @@ class Migration(MigrationBase):
         if self.insert_count <= 0:
             raise ImportError(ExitCode.INVALID)
 
+        # find zep indicies
+        indexDir = os.path.join(self.zenbackup_dir, Config.zepIndexDir)
+        if os.path.isdir(indexDir):
+            self.index_dir = indexDir
+            log.info("Found zeneventserver index dir %s", self.index_dir)
+        else:
+            log.info("No zeneventserver indexes found")
+
         self.reportProgress(_check_tag + '%s file is OK' % self.zep_sql)
         self.reportProgress(_check_tag +
                             'A rough scan shows [%d] INSERT statements'
@@ -86,20 +103,32 @@ class Migration(MigrationBase):
         self.reportProgress(_check_tag + 'Wipe is done by the import')
         return
 
-    def doImport(self):
-        if os.path.isfile(self.event_migrated):
-            os.remove(self.event_migrated)
-
-        # the check_files is fast so we always do a quick check
+    #==========================================================================
+    # Import methods
+    #==========================================================================
+    def database(self):
         self._check_files()
-
         self.restoreMySqlDb(self.zep_sql, 'zenoss_zep', Config.zepSocket)
         self._migrateSchema()
-        with open(self.event_migrated, 'a'):
-            pass
+        self.reportProgress(codeString[ExitCode.SUCCESS])
+        return
+
+    def index(self):
+        self._check_files()
+        # Always remove this, even if there's no new one
+        zep_index = "/opt/zenoss/var/zeneventserver/index"
+        shutil.rmtree(zep_index, ignore_errors=True)
+        self.reportProgress("Successfully removed existing zeneventserver indexes")
+        if self.index_dir:
+            copy_tree(self.index_dir, zep_index)
+            self.reportProgress("Successfully copied zeneventserver indexes from backup to {}".format(zep_index))
+        else:
+            self.reportProgress("Zeneventserver index backup not found, so skipping restore")
 
         self.reportProgress(codeString[ExitCode.SUCCESS])
         return
+
+    #==========================================================================
 
     def reportProgress(self, raw_line):
         # filtering the lines

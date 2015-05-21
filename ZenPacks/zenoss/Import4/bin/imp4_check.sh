@@ -67,6 +67,11 @@ echo -e "\nExtracting zencatalogservice.tar..."
 tar -vxf zencatalogservice.tar | awk "$awk_cmd"
 [[ ${PIPESTATUS[0]} -ne 0 ]] && echo "Extracting zencatalogservice.tar failed!" && exit 2
 
+echo -e "\nExtracting zep.tar..."
+tar -vxf zep.tar 2>/dev/null | awk "$awk_cmd"
+[[ ${PIPESTATUS[0]} -ne 0 ]] && echo "Zeneventserver indexes not found, skipping"
+
+
 # extract the perf into the shared staging volume
 ! mkdir -p "$staging_dir"   && echo "Cannot create staging directory in the containter!" && exit 2
 
