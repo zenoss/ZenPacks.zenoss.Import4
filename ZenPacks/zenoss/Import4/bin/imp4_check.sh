@@ -23,7 +23,8 @@ if [[ $(find /mnt/pwd -maxdepth 0 -perm -777 | wc -l) != 1 ]]; then
     exit 2
 fi
 
-export staging_dir="/import4/staging/zenbackup"
+export imp4dir="/import4"
+export staging_dir="$imp4dir/staging/zenbackup"
 export zbk="zenbackup"
 export awk_cmd='{ if (NR%10 == 0) printf "." }'
 
@@ -40,6 +41,7 @@ for i in \
         ZenPacks* \
         zencatalogservice* \
         perf.tar \
+        dmd_uuid.txt \
         "$staging_dir"
 do
     echo "Removing $i"

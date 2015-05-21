@@ -8,7 +8,8 @@
 #
 ##############################################################################
 
-UUID_CACHE="/import4/dmd_uuid.txt"
+# this script is to be no-op'd once this file is included in the expor4 output
+UUID_CACHE="/mnt/pwd/dmd_uuid.txt"
 
 # updates the dmd uuid to the cache location
 /opt/zenoss/bin/zendmd --script=<(echo -e "ofile=open('$UUID_CACHE','w')\nofile.write(dmd.uuid)\nofile.close()" )

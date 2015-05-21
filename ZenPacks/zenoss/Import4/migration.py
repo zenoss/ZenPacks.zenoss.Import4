@@ -11,38 +11,34 @@ import os
 import inspect
 import logging
 import subprocess
-import tempfile
+import sys
+
+log = logging.getLogger("Imp4")
 
 
 class ExitCode(object):
     # exit code used by the migration operations
-    SUCCESS =     0
-    WARNING =     1
-    FAILURE =     2
-    INVALID =     3
-    CMD_ERROR =   4
-    UNTAR_ERROR =  5
+    SUCCESS =       0
+    WARNING =       1
+    FAILURE =       2
+    INVALID =       3
+    CMD_ERROR =     4
+    UNTAR_ERROR =   5
     RUNTIME_ERROR = 6
-    UNKNOWN = -1
+    UNKNOWN =      -1
 
 
 # mapping of exit codes to human readable strings
 codeString = {
+    ExitCode.UNKNOWN: 'Unknown error',
     ExitCode.SUCCESS: 'Success',
     ExitCode.WARNING: 'Warning',
     ExitCode.FAILURE: 'Failure',
     ExitCode.INVALID: 'Invalid',
     ExitCode.CMD_ERROR: 'System command executation error',
     ExitCode.UNTAR_ERROR: 'Untar error',
-    ExitCode.RUNTIME_ERROR: 'Runtime error',
-    ExitCode.UNKNOWN: 'Unknown error'
+    ExitCode.RUNTIME_ERROR: 'Runtime error'
 }
-
-
-class Results(object):
-    SUCCESS = 'SUCCESS'
-    WARNING = 'WARNING'
-    FAILURE = 'FAILURE'
 
 
 class Config(object):
@@ -92,7 +88,6 @@ class MigrationBase(object):
 
     def __init__(self, args, progressCallback):
         self.binpath = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe()))) + '/bin'
-        self.log = logging.getLogger("Imp4")
         self.args = args
         self.progress = progressCallback
         self.tempDir = Config.mntPwdDir
@@ -105,8 +100,19 @@ class MigrationBase(object):
             self.password = args.password
         else:
             self.password = ''
+
+        # setup the log output to stderr for migration
+        _sh = logging.StreamHandler(stream=sys.stderr)
+        _fm = logging.Formatter(fmt='%(asctime)s [%(name)s]%(filename)s:%(lineno)s [%(levelname)s] %(message)s',
+                                datefmt='%m/%d/%Y %H:%M:%S')
+        _sh.setFormatter(_fm)
         if args.log_level:
-            logging.basicConfig(level=getattr(logging, args.log_level.upper()))
+            _sh.setLevel(getattr(logging, args.log_level.upper()))
+            log.setLevel(getattr(logging, args.log_level.upper()))
+        else:
+            _sh.setLevel(logging.INFO)
+            log.setLevel(logging.INFO)
+        log.addHandler(_sh)
 
         if args.pname != 'import':
             self.importFunc = None
@@ -142,84 +148,71 @@ class MigrationBase(object):
 
     def __NOT_YET__(self):
         caller = inspect.stack()[1]
-        self.log.warning("-- %s:%s:%s not implemented! --"
+        log.warning("-- %s:%s:%s not implemented! --"
                          % (inspect.getmodule(caller[0]).__name__, self.__class__.__name__, caller[3]))
         # raise NotImplementedError
         return
 
     def prevalidate(self):
         self.__NOT_YET__()
-        logging.warning("-- To be overriden!")
+        log.warning("-- To be overriden!")
         return
 
     def wipe(self):
         self.__NOT_YET__()
-        logging.warning("-- To be overriden!")
+        log.warning("-- To be overriden!")
         return
 
     def doImport(self):
         self.__NOT_YET__()
-        self.log.warning("-- To be overriden!")
+        log.warning("-- To be overriden!")
         return
 
     def reportProgress(self, progress):
         # callback to self.progress if register at creation
         progress = progress.rstrip("\n\r\t ").lstrip("\n\r")
-        self.log.debug(progress)
+        log.debug(progress)
         if self.progress:
             self.progress(progress + "\n")
 
     def postvalidate(self):
         self.__NOT_YET__()
-        self.log.warning("-- To be overriden!")
+        log.warning("-- To be overriden!")
         return
 
     def startZenoss(self):
         # now bring back zenoss processes AFTER the new zope image is committed
         self.reportProgress('Restarting zenoss services...')
         _cmd = '%s/imp4util.py --log-level=%s start_all_svcs' % (self.binpath, self.args.log_level)
-        self.log.debug('-> %s' % _cmd)
+        log.debug('-> %s' % _cmd)
         self.exec_cmd(_cmd)
         return
 
     '''
     Utility methods
     '''
-    # execute a command and pocesses the stdout/stderr
+    # execute a command and pocesses its stdout/stderr
+    # all output of subcommand execution are piped to subprocess stderr.
     def exec_cmd(self, cmd):
-        # prep for the error log file for the restoration command
-        _errfile = tempfile.NamedTemporaryFile(
-            mode='w+b', dir=self.tempDir, prefix='_zen', delete=False)
+        log.debug('Executing %s ...' % cmd)
 
-        self.log.debug('Executing %s ...' % cmd)
+        proc = subprocess.Popen(cmd, shell=True, stderr=subprocess.STDOUT)
 
-        proc = subprocess.Popen(cmd, shell=True,
-                                stdout=subprocess.PIPE, stderr=_errfile)
-        # report the execution status
         while True:
             _line = proc.stdout.readline()
             if _line:
-                _line.strip()
-                self.reportProgress(_line)
+                sys.stderr.write(">%s\n" % _line.rstrip())
             else:
                 break
         proc.wait()
 
         if proc.returncode != 0:
-            # report the stderr of the subprocess
-            # only if the return code is not success
-            _errfile.seek(0)
-            while True:
-                raw_line = _errfile.readline().rstrip()
-                if raw_line != '':
-                    self.reportProgress("[STDERR]" + raw_line)
-                else:
-                    break
-            _errfile.close()
-            self.reportProgress(codeString[Results.CMD_ERROR])
-            raise ImportError(Results.CMD_ERROR)
+            # report the error of the subprocess
+            err_msg = '[%s]:%s(%d)' % (codeString[ExitCode.CMD_ERROR], cmd, proc.returncode)
+            log.error(err_msg)
+            self.reportProgress(err_msg)
+            raise ImportError(ExitCode.CMD_ERROR)
 
-        _errfile.close()
         return
 
     # socket must be supplied because
@@ -241,7 +234,7 @@ class MigrationBase(object):
         cmd = 'echo "create database if not exists %s" | %s' % (db, mysql_cmd)
         _rc = os.system(cmd)
         if _rc:
-            raise ImportError(Results.FAILURE, _rc)
+            raise ImportError(ExitCode.FAILURE)
 
         if sql_path.endswith('.gz'):
             cmd_fmt = "gzip -dc {sql_path}"

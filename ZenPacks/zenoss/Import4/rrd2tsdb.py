@@ -21,7 +21,7 @@ import sys
 import traceback
 import string
 
-log = logging.getLogger(__name__)
+log = logging.getLogger("Imp4")
 script_path = os.path.dirname(os.path.realpath(__file__))
 
 _ES = OrderedDict(
