@@ -10,26 +10,12 @@
 import os
 import subprocess
 
-from ZenPacks.zenoss.Import4.migration import MigrationBase, ImportError, Config
+from ZenPacks.zenoss.Import4.migration import MigrationBase, ImportError, Config, ExitCode, codeString
 
 # some common tags
 _check_tag = '[Check] '
 _stderr_tag = '[STDERR] '
 _import_prefix = 'Event: '
-
-
-class Results(object):
-    COMMAND_ERROR = 'EVENTMIGRATION_COMMAND_ERROR'
-    UNTAR_FAIL = 'EVENTMIGRATION_UNTAR_FAILED'
-    INVALID = 'EVENTMIGRATION_INVALID'
-    WARNING = 'EVENTMIGRATION_WARNING'
-    FAILURE = 'EVENTMIGRATION_FAILURE'
-    SUCCESS = 'EVENTMIGRATION_SUCCESS'
-
-
-class EventImportError(ImportError):
-    def __init__(self, error_string, return_code):
-        super(EventImportError, self).__init__(error_string, return_code)
 
 
 class Migration(MigrationBase):
@@ -54,7 +40,7 @@ class Migration(MigrationBase):
 
     def prevalidate(self):
         self._check_files()
-        self.reportProgress(Results.SUCCESS)
+        self.reportProgress(codeString[ExitCode.SUCCESS])
         return
 
     def _check_files(self):
@@ -65,7 +51,7 @@ class Migration(MigrationBase):
         if not os.path.isdir(self.zenbackup_dir):
             self.reportProgress(
                 _stderr_tag + 'Backup directory does not exist. Run `events check` command to extract the backup file.')
-            raise EventImportError(Results.INVALID, -1)
+            raise ImportError(ExitCode.INVALID)
         self.reportProgress(_check_tag + 'zenbackup directory exists')
 
         # attempt to find the compressed zep.sql file
@@ -77,13 +63,13 @@ class Migration(MigrationBase):
             self.exec_cmd('gunzip %s' % _gzfile)
 
         if not os.path.isfile(self.zep_sql):
-            raise EventImportError(Results.INVALID, -1)
+            raise ImportError(ExitCode.INVALID)
 
         # obtain the number of insert counts
         self.insert_count = int(subprocess.check_output(
             'egrep "^INSERT INTO" %s|wc -l' % self.zep_sql, shell=True))
         if self.insert_count <= 0:
-            raise EventImportError(Results.INVALID, -1)
+            raise ImportError(ExitCode.INVALID)
 
         self.reportProgress(_check_tag + '%s file is OK' % self.zep_sql)
         self.reportProgress(_check_tag +
@@ -112,7 +98,7 @@ class Migration(MigrationBase):
         with open(self.event_migrated, 'a'):
             pass
 
-        self.reportProgress(Results.SUCCESS)
+        self.reportProgress(codeString[ExitCode.SUCCESS])
         return
 
     def reportProgress(self, raw_line):
@@ -122,7 +108,7 @@ class Migration(MigrationBase):
                 raw_line.find(_stderr_tag) == 0 or \
                 raw_line.find('LOCK TABLES') == 0 or \
                 raw_line.find('DROP TABLE') == 0 or \
-                raw_line.find(Results.SUCCESS) == 0:
+                raw_line.find(codeString[ExitCode.SUCCESS]) == 0:
             _msg = raw_line
         elif raw_line.find('CREATE TABLE') == 0:
             _msg = raw_line.split('(', 1)[0]
@@ -143,11 +129,11 @@ class Migration(MigrationBase):
         if os.path.isfile(self.event_migrated):
             self.reportProgress(
                 _check_tag + 'Previous "event import" is successful, No post validation needed.')
-            self.reportProgress(Results.SUCCESS)
+            self.reportProgress(codeString[ExitCode.SUCCESS])
         else:
             self.reportProgress(
                 _check_tag + 'Previous "event import" is not successful or not imported yet.')
-            self.reportProgress(Results.FAILURE)
+            self.reportProgress(codeString[ExitCode.FAILURE])
         return
 
     def _migrateSchema(self):
@@ -160,5 +146,5 @@ class Migration(MigrationBase):
         _cmdstr = subprocess.list2cmdline(_cmd)
         _rc = subprocess.call(_cmdstr, shell=True)
         if _rc > 0:
-            raise EventImportError(Results.COMMAND_ERROR, _rc)
+            raise ImportError(ExitCode.COMMAND_ERROR, _rc)
         return

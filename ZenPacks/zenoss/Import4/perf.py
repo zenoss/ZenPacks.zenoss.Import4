@@ -13,7 +13,7 @@ import subprocess
 import re
 import time
 
-from ZenPacks.zenoss.Import4.migration import MigrationBase, ImportError, Config
+from ZenPacks.zenoss.Import4.migration import MigrationBase, ImportError, Config, ExitCode, codeString
 
 # some common constants shared among the py and bash scripts
 _check_tag = '[Check] '
@@ -30,21 +30,6 @@ _tsdb_Q = '%s/Q.tsdb' % _import4_vol
 
 _jobs_done = '%s/.done' % _jobs_Q
 _tsdb_done = '%s/.done' % _tsdb_Q
-
-
-class Results(object):
-    RUNTIME_ERROR = 'PERF_MIGRATION_RUNTIME_ERROR'
-    COMMAND_ERROR = 'PERF_MIGRATION_COMMAND_ERROR'
-    UNTAR_FAIL = 'PERF_MIGRATION_UNTAR_FAILED'
-    INVALID = 'PERF_MIGRATION_INVALID'
-    WARNING = 'PERF_MIGRATION_WARNING'
-    FAILURE = 'PERF_MIGRATION_FAILURE'
-    SUCCESS = 'PERF_MIGRATION_SUCCESS'
-
-
-class PerfDataImportError(ImportError):
-    def __init__(self, error_string, return_code):
-        super(PerfDataImportError, self).__init__(error_string, return_code)
 
 
 class Migration(MigrationBase):
@@ -71,25 +56,14 @@ class Migration(MigrationBase):
         self.data_checked = '%s/PERF_CHECKED' % self.tempDir
         self.data_migrated = '%s/PERF_MIGRATED' % self.tempDir
 
+        # check runtime environment
         if not os.path.exists(_import4_vol):
             self.reportProgress("%s does not exist." % _import4_vol)
-            raise PerfDataImportError(Results.RUNTIME_ERROR, -1)
-
-        # always copy the small pkg for the imp4mariadb and imp4opentsdb services
-        # this call should not execute under '/import4/pkg'
-        # instead, via <zenpack_path>/bin/import4
-        '''
-        # this is already done before the service starts
-        _rc = subprocess.call(["%s/install_pkg.sh" % self.binpath,
-                              shell=True, stderr=subprocess.STDOUT)
-        if _rc > 0:
-            raise PerfDataImportError(Results.RUNTIME_ERROR, _rc)
-        '''
-
+            raise ImportError(ExitCode.RUNTIME_ERROR)
         if not os.path.exists('%s/imp4mariadb.sh' % _import4_pkg_bin):
-            raise PerfDataImportError(Results.RUNTIME_ERROR, -1)
+            raise ImportError(ExitCode.RUNTIME_ERROR)
         if not os.path.exists('%s/imp4opentsdb.sh' % _import4_pkg_bin):
-            raise PerfDataImportError(Results.RUNTIME_ERROR, -1)
+            raise ImportError(ExitCode.RUNTIME_ERROR)
 
     @staticmethod
     def init_command_parser(m_parser):
@@ -116,7 +90,7 @@ class Migration(MigrationBase):
         # check if the rrd_dir is valid
         if not os.path.exists(self.rrd_dir):
             self.reportProgress("%s does not exist. Need to extract the backup file first." % self.rrd_dir)
-            raise PerfDataImportError(Results.INVALID, -1)
+            raise ImportError(ExitCode.INVALID)
 
     def _get_rrd_list(self):
         try:
@@ -130,7 +104,7 @@ class Migration(MigrationBase):
             self.files_no = int(subprocess.check_output('cat %s | wc -l' % _rrd_list, shell=True))
         except Exception as e:
             print e
-            raise PerfDataImportError(Results.INVALID, -1)
+            raise ImportError(ExitCode.INVALID)
         self.reportProgress("rrd files to work on:%s" % self.files_no)
         return _rrd_list
 
@@ -176,7 +150,7 @@ class Migration(MigrationBase):
                             self.reportProgress("Warn: no datapoint found, all NaN?")
         except Exception as e:
             print e
-            raise PerfDataImportError(Results.INVALID, -1)
+            raise ImportError(ExitCode.INVALID)
 
         self.reportProgress("DS#: %d" % _total_ds)
         self.reportProgress("DR#: %d" % _total_dr)
@@ -191,12 +165,12 @@ class Migration(MigrationBase):
         self._setup_rrd_dir()
         if not os.path.isfile(self.data_migrated):
             self.reportProgress("Error: Performance data not imported yet")
-            raise PerfDataImportError(Results.INVALID, -1)
+            raise ImportError(ExitCode.INVALID)
 
         # self.password is either '' or something
         if not self.user:
             self.reportProgress("Error: username not provided")
-            raise PerfDataImportError(Results.COMMAND_ERROR, -1)
+            raise ImportError(ExitCode.CMD_ERROR)
 
         _rrd_list = self._get_rrd_list()
         try:
@@ -225,7 +199,7 @@ class Migration(MigrationBase):
                         self.reportProgress("%s:. [%d/%d] Error..." % (_one_rrd, _eno, self.files_no))
         except Exception as e:
             print e
-            raise PerfDataImportError(Results.INVALID, -1)
+            raise ImportError(ExitCode.INVALID)
 
         return
 
@@ -240,7 +214,7 @@ class Migration(MigrationBase):
 
         if not os.path.exists(self.data_checked):
             self.reportProgress("rrdfiles not validated yet. Run `perf check` command first.")
-            raise PerfDataImportError(Results.INVALID, -1)
+            raise ImportError(ExitCode.INVALID)
 
         if os.path.isfile(self.data_migrated):
             os.remove(self.data_migrated)
@@ -250,7 +224,7 @@ class Migration(MigrationBase):
         _rc = subprocess.call(
             _args, shell=False, stderr=subprocess.STDOUT)
         if _rc != 0:
-            raise PerfDataImportError(Results.COMMAND_ERROR, _rc)
+            raise ImportError(ExitCode.CMD_ERROR)
 
         # setup the fixed PERFTOP file for the parallel services
         text_file = open("/import4/Q.tasks/PERFTOP", "w")
@@ -262,7 +236,7 @@ class Migration(MigrationBase):
         _rc = subprocess.call(
             _args, shell=False, stderr=subprocess.STDOUT)
         if _rc != 0:
-            raise PerfDataImportError(Results.COMMAND_ERROR, _rc)
+            raise ImportError(ExitCode.CMD_ERROR)
 
         self.reportProgress("rrd files dispatched to tasks")
 
@@ -290,10 +264,10 @@ class Migration(MigrationBase):
                         break
                 else:
                     # cannot recognize the progress output string
-                    raise PerfDataImportError(Results.COMMAND_ERROR, -1)
+                    raise ImportError(ExitCode.CMD_ERROR)
         except:
             print sys.exc_info()[0]
-            raise PerfDataImportError(Results.FAILURE, -1)
+            raise ImportError(ExitCode.FAILURE)
 
         with open(self.data_migrated, 'a'):
             pass
