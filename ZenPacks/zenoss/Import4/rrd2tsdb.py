@@ -21,7 +21,9 @@ import sys
 import traceback
 import string
 
-log = logging.getLogger(__name__)
+import ZenPacks.zenoss.Import4
+
+log = logging.getLogger('rrd2tsdb')
 script_path = os.path.dirname(os.path.realpath(__file__))
 
 _ES = OrderedDict(

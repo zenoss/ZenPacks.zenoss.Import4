@@ -10,7 +10,7 @@
 import os
 import subprocess
 
-from ZenPacks.zenoss.Import4.migration import MigrationBase, ImportError, Config, ExitCode, codeString
+from ZenPacks.zenoss.Import4.migration import MigrationBase, ImportError, Config, ExitCode, codeString, log
 
 # some common tags
 _check_tag = '[Check] '

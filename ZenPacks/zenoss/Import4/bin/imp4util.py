@@ -19,7 +19,7 @@ import time
 
 
 conf_file = os.path.join(os.environ['ZENHOME'], 'etc', 'zope.conf')
-log = logging.getLogger("Imp4Util")
+log = logging.getLogger(__name__)
 
 
 def _svc_cmd():
@@ -139,7 +139,7 @@ def _stop_svc(id):
 def _start_svc(svc_name):
     log.info('Staring %s ...' % svc_name)
     subprocess.call(_svc_cmd() + " start %s" % svc_name, shell=True)
-  
+
 
 # stop all services except the root service, Imp4Mariadb, and mariadb*
 def stop_services(args):

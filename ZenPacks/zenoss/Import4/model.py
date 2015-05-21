@@ -18,6 +18,8 @@ from distutils.dir_util import copy_tree
 
 from ZenPacks.zenoss.Import4.migration import MigrationBase, ImportError, Config, ExitCode, codeString
 
+import logging
+log = logging.getLogger(__name__)
 
 class Migration(MigrationBase):
 
@@ -66,7 +68,7 @@ class Migration(MigrationBase):
 
     def reportProgress(self, raw_line):
         # process output lines if it contains certain pattern
-        self.log.debug(raw_line)
+        log.debug(raw_line)
         _msg =  raw_line
         if (_msg.find('STDERR') == 0 or
             _msg.find('LOCK TABLES') == 0 or
@@ -162,7 +164,7 @@ class Migration(MigrationBase):
         self.reportProgress('checking directories ...')
 
         if not os.path.isdir(self.zenbackup_dir):
-            self.log.error('Backup directory does not exist. Must be extracted first.')
+            log.error('Backup directory does not exist. Must be extracted first.')
             raise ImportError(ExitCode.INVALID)
 
         self.zodb_sql = '%s/%s' % (self.zenbackup_dir, Config.zodbSQL)
@@ -171,17 +173,17 @@ class Migration(MigrationBase):
         if os.path.isfile(_gzfile):
             _rc = os.system('gunzip %s' % _gzfile)
             if _rc > 0:
-                self.log.error('Failed to unzip %s' % _gzfile)
+                log.error('Failed to unzip %s' % _gzfile)
                 raise ImportError(ExitCode.INVALID)
 
         if not os.path.isfile(self.zodb_sql):
-                self.log.error('Failed to find %s' % self.zodb_sql)
+                log.error('Failed to find %s' % self.zodb_sql)
                 raise ImportError(ExitCode.INVALID)
 
         self.insert_count = int(subprocess.check_output(
             'egrep "^INSERT INTO" %s | wc -l' % self.zodb_sql, shell=True))
         if self.insert_count <= 0:
-            self.log.error("Cannot find any INSERT statement in %s" % self.zodb_sql)
+            log.error("Cannot find any INSERT statement in %s" % self.zodb_sql)
             raise ImportError(ExitCode.INVALID)
 
         self.reportProgress('%s file is OK' % self.zodb_sql)
@@ -192,15 +194,15 @@ class Migration(MigrationBase):
         catalogDir = os.path.join(self.zenbackup_dir, Config.catalogSvcDir)
         if os.path.isdir(catalogDir):
             self.catalog_dir = catalogDir
-            self.log.info("Found catalog dir %s", self.catalog_dir)
+            log.info("Found catalog dir %s", self.catalog_dir)
         else:
-            self.log.info("No external catalog backup found")
+            log.info("No external catalog backup found")
 
         # check egg directories
         self.zenpack_count = int(subprocess.check_output(
             'find %s/ZenPacks -type d -name "*.egg" | wc -l' % self.zenbackup_dir, shell=True))
         if self.zenpack_count <= 0:
-            self.log.error("No zenpack found in %s/ZenPacks!" % self.zenbackup_dir)
+            log.error("No zenpack found in %s/ZenPacks!" % self.zenbackup_dir)
             raise ImportError(ExitCode.INVALID)
         self.reportProgress('%d zenpack directories in "%s/ZenPacks"' % (self.zenpack_count, self.zenbackup_dir))
 

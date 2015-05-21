@@ -13,7 +13,7 @@ import subprocess
 import re
 import time
 
-from ZenPacks.zenoss.Import4.migration import MigrationBase, ImportError, Config, ExitCode, codeString
+from ZenPacks.zenoss.Import4.migration import MigrationBase, ImportError, Config, ExitCode, codeString, log
 
 # some common constants shared among the py and bash scripts
 _check_tag = '[Check] '
@@ -87,6 +87,7 @@ class Migration(MigrationBase):
             # else, rrd_dir is the one derived from provided rrd_dir_arg
             self.reportProgress("Use %s provided ..." % self.rrd_dir)
 
+        log.info("RRDTree:%s..." % self.rrd_dir)
         # check if the rrd_dir is valid
         if not os.path.exists(self.rrd_dir):
             self.reportProgress("%s does not exist. Need to extract the backup file first." % self.rrd_dir)
