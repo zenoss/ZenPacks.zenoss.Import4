@@ -19,7 +19,7 @@ import time
 
 
 conf_file = os.path.join(os.environ['ZENHOME'], 'etc', 'zope.conf')
-log = logging.getLogger("Imp4")
+log = logging.getLogger(__name__)
 
 
 def _svc_cmd():

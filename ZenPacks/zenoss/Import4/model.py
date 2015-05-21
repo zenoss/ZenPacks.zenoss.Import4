@@ -16,8 +16,10 @@ import subprocess
 import shutil
 from distutils.dir_util import copy_tree
 
-from ZenPacks.zenoss.Import4.migration import MigrationBase, ImportError, Config, ExitCode, codeString, log
+from ZenPacks.zenoss.Import4.migration import MigrationBase, ImportError, Config, ExitCode, codeString
 
+import logging
+log = logging.getLogger(__name__)
 
 class Migration(MigrationBase):
 

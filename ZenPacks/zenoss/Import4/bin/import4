@@ -15,7 +15,7 @@ import logging
 
 from ZenPacks.zenoss.Import4 import migration, model, events, perf
 
-log = logging.getLogger("Imp4")
+log = logging.getLogger('import4')
 
 def run_migration(migration_class, args):
     # The main control running a migration process
@@ -23,7 +23,7 @@ def run_migration(migration_class, args):
 
     # Run pname functions
     try:
-        log.info('Executing %s' % args.pname)
+        log.info('Executing %s', args.pname)
         {
             'check': _migration.prevalidate,
             'verify': _migration.postvalidate,
@@ -37,12 +37,12 @@ def run_migration(migration_class, args):
 
     except Exception as e:
         # unrecognized exception
-        log.error("Unknown exception during import --- ")
+        log.error("Unknown exception --- ")
         log.exception(e)
         exit(migration.ExitCode.UNKNOWN)
 
     # all finished successfully
-    log.info('%s done! ' % args.pname)
+    log.info('%s done!', args.pname)
     exit(migration.ExitCode.SUCCESS)
 
 

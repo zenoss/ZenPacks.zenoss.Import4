@@ -9,9 +9,17 @@
 
 import os
 import Globals
+import sys
 
 from Products.ZenModel.ZenPack import ZenPack as ZenPackBase
 from Products.ZenUtils.Utils import unused, zenPath
+
+import logging
+logging.basicConfig(
+    stream=sys.stderr,
+    level=logging.INFO,
+    format='%(asctime)s %(levelname)s %(name)s:%(lineno)s: %(message)s'
+)
 
 unused(Globals)
 

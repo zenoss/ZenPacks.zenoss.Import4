@@ -13,7 +13,7 @@ import logging
 import subprocess
 import sys
 
-log = logging.getLogger("Imp4")
+log = logging.getLogger(__name__)
 
 
 class ExitCode(object):
@@ -101,18 +101,9 @@ class MigrationBase(object):
         else:
             self.password = ''
 
-        # setup the log output to stderr for migration
-        _sh = logging.StreamHandler(stream=sys.stderr)
-        _fm = logging.Formatter(fmt='%(asctime)s [%(name)s]%(filename)s:%(lineno)s [%(levelname)s] %(message)s',
-                                datefmt='%m/%d/%Y %H:%M:%S')
-        _sh.setFormatter(_fm)
+        # setup the log level on the root logger
         if args.log_level:
-            _sh.setLevel(getattr(logging, args.log_level.upper()))
-            log.setLevel(getattr(logging, args.log_level.upper()))
-        else:
-            _sh.setLevel(logging.INFO)
-            log.setLevel(logging.INFO)
-        log.addHandler(_sh)
+            logging.getLogger().setLevel(getattr(logging, args.log_level.upper()))
 
         if args.pname != 'import':
             self.importFunc = None
