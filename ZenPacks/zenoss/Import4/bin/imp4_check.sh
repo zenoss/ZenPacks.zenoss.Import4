@@ -71,6 +71,8 @@ echo -e "\nExtracting zep.tar..."
 tar -vxf zep.tar 2>/dev/null | awk "$awk_cmd"
 [[ ${PIPESTATUS[0]} -ne 0 ]] && echo "Zeneventserver indexes not found, skipping"
 
+# make sure dmd_uuid.txt is there!
+[[ -f "dmd_uuid.txt" ]] || echo "dmd_uuid.txt is missing from backup, cannot continue" && exit 2
 
 # extract the perf into the shared staging volume
 ! mkdir -p "$staging_dir"   && echo "Cannot create staging directory in the containter!" && exit 2
