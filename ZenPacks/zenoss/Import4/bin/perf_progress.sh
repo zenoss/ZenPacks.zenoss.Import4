@@ -14,10 +14,12 @@
 export tasks_Q=/import4/Q.tasks         # initial all task lists
 
 export jobs_Q=/import4/Q.jobs           # being processed + completed
-export jdone_Q=/import4/Q.jobs/.done    # completed
+export converted_Q=/import4/Q.jobs/.done    # completed
 
 export task_Q=/import4/Q.tsdb           # to be imported
-export tdone_Q=/import4/Q.tsdb/.done    # completed
+export imported_Q=/import4/Q.tsdb/.done    # completed
+
+export rrd_list=/import4/staging/zenbackup/perf/rrd.list
 
 # common block
 progdir=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
@@ -26,20 +28,19 @@ source "$progdir/utils.sh"
 
 # check all the target directories
 [[ -d $tasks_Q ]] || err_exit "$tasks_Q does not exist"
-[[ -d $jdone_Q ]] || mkdir -p "$jdone_Q"
-[[ -d $tdone_Q ]] || mkdir -p "$tdone_Q"
+[[ -d $converted_Q ]] || mkdir -p "$converted_Q"
+[[ -d $imported_Q ]] || mkdir -p "$imported_Q"
 
 # the current conversion status
-wait_no=$(find $tasks_Q -type f -name "task.*" | wc -l)
-started_no=$(find $jobs_Q -type f -name "task.*" | wc -l)
-jdone_no=$(find $jdone_Q -type f -name "task.*" | wc -l)
-tsum=$((wait_no+started_no))
+wait_no=$(find $tasks_Q -type f -name "task.*" -exec cat {} \; | wc -l)
+started_no=$(find $jobs_Q -type f -name "task.*" -exec cat {} \; | wc -l)
+converted_no=$(find $converted_Q -type f -name "task.*" -exec cat {} \; | wc -l)
+tsum=$(cat "$rrd_list" | wc -l)
 [[ $tsum -ne 0 ]] || err_exit "No task"
 
 # the current imported number
-imported_no=$(find $tdone_Q -type f -name "task.*.tsdb" | wc -l)
-cent=$(((imported_no*100)/tsum))
+imported_no=$(find $imported_Q -type f -name "task.*.tsdb" -exec cat {} \; | wc -l)
 
 # the exact output format is important
-echo "T:$tsum S:$started_no C:$jdone_no D:$imported_no P:$cent"
+echo "T:$tsum S:$started_no C:$converted_no D:$imported_no"
 exit 0

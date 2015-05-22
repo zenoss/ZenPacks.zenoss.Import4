@@ -62,7 +62,7 @@ class Migration(MigrationBase):
         # mark the checked file
         with open(self.model_checked, 'a'):
             pass
-        self.reportProgress('...Success...')
+        log.info('Model files checked.')
 
         return
 
@@ -81,14 +81,13 @@ class Migration(MigrationBase):
         super(Migration, self).reportProgress(_msg)
 
     def wipe(self):
-        self.reportProgress('Wipe is done while importing zodb')
+        log.info('Wipe is done while importing zodb')
 
     # TOTO: Make this a decorator
     def _ready_to_import(self):
         if not os.path.exists(self.model_checked):
-            self.reportProgress("Model backup file not validated yet. Run `model check` command first.")
+            log.Error("Model backup file not validated yet. Run `check` command first.")
             raise ImportError(ExitCode.INVALID)
-
         self._check_files()
 
     #==========================================================================
@@ -98,10 +97,10 @@ class Migration(MigrationBase):
     def database(self):
         self._ready_to_import()
         # restore zodb
-        self.reportProgress('Restoring zodb ...')
+        log.info('Restoring zodb ...')
         self.restoreMySqlDb(self.zodb_sql, 'zodb', Config.zodbSocket)
 
-        self.reportProgress(codeString[ExitCode.SUCCESS])
+        log.info(codeString[ExitCode.SUCCESS])
         return
 
     def catalog(self):
@@ -109,17 +108,17 @@ class Migration(MigrationBase):
         if self.catalog_dir:
             zcs_index = "/opt/zenoss/var/zencatalogservice/global_catalog/index"
             shutil.rmtree(zcs_index, ignore_errors=True)
-            self.reportProgress("Successfully removed existing global catalog index")
+            log.info("Successfully removed existing global catalog index")
 
             copy_tree(
                     self.catalog_dir,
                     zcs_index
             )
-            self.reportProgress("Successfully copied catalog from backup to {}".format(zcs_index))
+            log.info("Successfully copied catalog from backup to {}".format(zcs_index))
         else:
-            self.reportProgress("Skipping external catalog restore")
+            log.info("Skipping external catalog restore")
 
-        self.reportProgress(codeString[ExitCode.SUCCESS])
+        log.info("copying catalog dir:%s", codeString[ExitCode.SUCCESS])
         return
 
     def zenmigrate(self):
@@ -130,26 +129,27 @@ class Migration(MigrationBase):
         self.exec_cmd(_cmd)
 
         # zenmigrate
-        self.reportProgress('Running zenmigrate')
+        log.info('Running zenmigrate')
         _cmd = "zenmigrate"
         self.exec_cmd(_cmd)
 
-        self.reportProgress(codeString[ExitCode.SUCCESS])
+        log.info("zenmigrate:%s", codeString[ExitCode.SUCCESS])
         return
 
     def zenpack(self):
         self._ready_to_import()
         # zip up the zenpacks in the backup ZenPack dir
         # copy it to /opt/zenoss/.ZenPack
-        self.reportProgress('Create and copying the 4.x zenpacks eggs ...')
+        log.info('Create and copying the 4.x zenpacks eggs ...')
         _cmd = '%s/get_eggs.sh "%s/ZenPacks"' % (self.binpath, self.zenbackup_dir)
         self.exec_cmd(_cmd)
+
         # zenpack --restore AND --ignore-services and --keep-pack
-        self.reportProgress('Fixing zenpack in zodb and files on the image ...')
+        log.info('Fixing zenpack in zodb and files on the image ...')
         _cmd = "zenpack --restore --keep-pack=ZenPacks.zenoss.Import4"
         self.exec_cmd(_cmd)
 
-        self.reportProgress(codeString[ExitCode.SUCCESS])
+        log.info("zenpack restore:%s", codeString[ExitCode.SUCCESS])
         return
 
     #==========================================================================
@@ -158,7 +158,7 @@ class Migration(MigrationBase):
         self.__NOT_YET__()
 
     def _check_files(self):
-        self.reportProgress('checking directories ...')
+        log.info('checking directories ...')
 
         if not os.path.isdir(self.zenbackup_dir):
             log.error('Backup directory does not exist. Must be extracted first.')
@@ -183,8 +183,8 @@ class Migration(MigrationBase):
             log.error("Cannot find any INSERT statement in %s" % self.zodb_sql)
             raise ImportError(ExitCode.INVALID)
 
-        self.reportProgress('%s file is OK' % self.zodb_sql)
-        self.reportProgress('A rough scan shows [%d] INSERT statements'
+        log.info('%s file is OK' % self.zodb_sql)
+        log.info('A rough scan shows [%d] INSERT statements'
                             % self.insert_count)
 
         # check catalog
@@ -201,7 +201,7 @@ class Migration(MigrationBase):
         if self.zenpack_count <= 0:
             log.error("No zenpack found in %s/ZenPacks!" % self.zenbackup_dir)
             raise ImportError(ExitCode.INVALID)
-        self.reportProgress('%d zenpack directories in "%s/ZenPacks"' % (self.zenpack_count, self.zenbackup_dir))
+        log.info('%d zenpack directories in "%s/ZenPacks"' % (self.zenpack_count, self.zenbackup_dir))
 
-        self.reportProgress('directory "%s" for models looks OK' % self.zenbackup_dir)
+        log.info('directory "%s" for models looks OK' % self.zenbackup_dir)
         return

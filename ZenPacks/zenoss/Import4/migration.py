@@ -15,6 +15,13 @@ import sys
 
 log = logging.getLogger(__name__)
 
+#
+# json output format
+#
+# scale meta:
+# { "scale_name" : { "min" : int, "max" : int} }
+# scale status:
+# { "scale_name" : { "cur" : int } }
 
 class ExitCode(object):
     # exit code used by the migration operations
@@ -39,6 +46,16 @@ codeString = {
     ExitCode.UNTAR_ERROR: 'Untar error',
     ExitCode.RUNTIME_ERROR: 'Runtime error'
 }
+
+
+class Imp4Meta(object):
+    json_tag =      "imp4_metadata"
+    num_perfrrd =   "RRDSourcesConversion"
+    num_perftsdb =  "TSDBSourcesImport"
+    num_event =     "numEventInserts"
+    num_zenpacks =  "numZenPacks"
+    name_zenpacks = "zenpackNames"
+    num_zodb =      "numZodbInserts"
 
 
 class Config(object):
@@ -190,10 +207,11 @@ class MigrationBase(object):
 
         proc = subprocess.Popen(cmd, shell=True, stderr=subprocess.STDOUT)
 
+        # log every output
         while True:
             _line = proc.stdout.readline()
             if _line:
-                sys.stderr.write(">%s\n" % _line.rstrip())
+                log.info('%s>>%s' % cmd, _line.rstring())
             else:
                 break
         proc.wait()
@@ -206,6 +224,15 @@ class MigrationBase(object):
             raise ImportError(ExitCode.CMD_ERROR)
 
         return
+
+    def reportMetaData(self, keyname, key_min, key_max):
+        self.reportProgress('{"imp4_meta" : { "%s" : { "min":%d, "max":%d }}}' % (keyname, key_min, key_max))
+
+    def reportStatus(self, keyname, key_value):
+        self.reportProgress('{"imp4_status" : { "%s" : %d }}' % (keyname, key_value))
+
+    def reportHeartbeat(self):
+        self.reportProgress('{"imp4_status" : {}}')
 
     # socket must be supplied because
     # we use two different sockets for zep and zodb

@@ -8,7 +8,10 @@
 #
 ##############################################################################
 
-UUID_CACHE="/mnt/pwd/dmd_uuid.txt"
+UUID_CACHE="/import4/dmd_uuid.txt"
+UUID_SRC="/mnt/pwd/dmd_uuid.txt"
+
+[ -f "$UUID_SRC" ] && cp "$UUID_SRC" "$UUID_CACHE"
 
 if [ ! -f "$UUID_CACHE" ]
 then
