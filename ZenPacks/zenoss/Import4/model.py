@@ -106,10 +106,6 @@ class Migration(MigrationBase):
         _cmd = "zendmd --script=%s/del_dmdobjs.dmd --commit" % self.binpath
         self.exec_cmd(_cmd)
 
-        self.reportProgress('Obtain and Cache dmd uuid...')
-        _cmd = "%s/set_dmduuid.sh" % self.binpath
-        self.exec_cmd(_cmd)
-
         self.reportProgress(codeString[ExitCode.SUCCESS])
         return
 
