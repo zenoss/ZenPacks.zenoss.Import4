@@ -101,11 +101,6 @@ class Migration(MigrationBase):
         self.reportProgress('Restoring zodb ...')
         self.restoreMySqlDb(self.zodb_sql, 'zodb', Config.zodbSocket)
 
-        # dmd del black list zenpacks (commit)
-        self.reportProgress('Removing the non 5.x compatible zenpacks from zodb ...')
-        _cmd = "zendmd --script=%s/del_dmdobjs.dmd --commit" % self.binpath
-        self.exec_cmd(_cmd)
-
         self.reportProgress(codeString[ExitCode.SUCCESS])
         return
 
@@ -129,6 +124,12 @@ class Migration(MigrationBase):
 
     def zenmigrate(self):
         self._ready_to_import()
+        # dmd del black list zenpacks (commit)
+        self.reportProgress('Removing the non 5.x compatible zenpacks from zodb ...')
+        _cmd = "zendmd --script=%s/del_dmdobjs.dmd --commit" % self.binpath
+        self.exec_cmd(_cmd)
+
+        # zenmigrate
         self.reportProgress('Running zenmigrate')
         _cmd = "zenmigrate"
         self.exec_cmd(_cmd)
