@@ -205,7 +205,7 @@ class MigrationBase(object):
     '''
     # execute a command and pocesses its stdout/stderr
     # all output of subcommand execution are piped to subprocess stderr.
-    def exec_cmd(self, cmd, status_key=None, status_max=0, status_re=None):
+    def exec_cmd(self, cmd, status_key=None, status_max=0, status_re=None, to_log=True):
         log.debug('Executing %s ...' % cmd)
 
         proc = subprocess.Popen(cmd, shell=True, stderr=subprocess.STDOUT)
@@ -215,7 +215,8 @@ class MigrationBase(object):
         while True:
             _line = proc.stdout.readline()
             if _line:
-                log.info('%s>>%s' % cmd, _line.rstring())
+                if to_log:
+                    log.info('%s>>%s' % cmd, _line.rstring())
 
                 # process the status if requested
                 if status_key and status_re:
@@ -285,5 +286,5 @@ class MigrationBase(object):
         cmd = cmd_fmt.format(**locals())
 
         # using 'INSERT INTO' as progress indicator
-        self.exec_cmd(cmd, status_key=status_key, status_max=status_max, status_re='^INSERT INTO ')
+        self.exec_cmd(cmd, status_key=status_key, status_max=status_max, status_re='^INSERT INTO ', to_log=False)
         return

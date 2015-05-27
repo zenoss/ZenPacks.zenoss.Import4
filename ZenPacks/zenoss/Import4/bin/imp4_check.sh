@@ -73,14 +73,13 @@ info_out "Extracting zencatalogservice.tar"
 tar -vxf zencatalogservice.tar | awk "$awk_cmd" >&2
 [[ ${PIPESTATUS[0]} -ne 0 ]] && err_exit "Extracting zencatalogservice.tar failed!"
 
-echo -e "\nExtracting zep.tar..."
-tar -vxf zep.tar 2>/dev/null | awk "$awk_cmd"
-[[ ${PIPESTATUS[0]} -ne 0 ]] && echo "Zeneventserver indexes not found, skipping"
+info_out "Extracting zep.tar..."
+tar -vxf zep.tar 2>/dev/null | awk "$awk_cmd" >&2
+[[ ${PIPESTATUS[0]} -ne 0 ]] && info_out "Zeneventserver indexes not found, skipping"
 
 # make sure dmd_uuid.txt is there!
 if [[ ! -f ../dmd_uuid.txt ]]; then
-    echo "dmd_uuid.txt is missing from backup, cannot continue"
-    exit 2
+    err_exit "dmd_uuid.txt is missing from backup, cannot continue"
 fi
 
 # extract the perf into the shared staging volume
