@@ -16,10 +16,11 @@ import subprocess
 import shutil
 from distutils.dir_util import copy_tree
 
-from ZenPacks.zenoss.Import4.migration import MigrationBase, ImportError, Config, ExitCode, codeString
+from ZenPacks.zenoss.Import4.migration import MigrationBase, ImportError, Config, ExitCode, codeString, Imp4Meta
 
 import logging
 log = logging.getLogger(__name__)
+
 
 class Migration(MigrationBase):
 
@@ -59,26 +60,15 @@ class Migration(MigrationBase):
     def prevalidate(self):
         self._check_files()
 
+        self.reportMetaData(Imp4Meta.num_models, 0, self.insert_count)
+        self.reportMetaData(Imp4Meta.num_zenpacks, 0, self.zenpack_count)
+
         # mark the checked file
         with open(self.model_checked, 'a'):
             pass
         log.info('Model files checked.')
 
         return
-
-    def reportProgress(self, raw_line):
-        # process output lines if it contains certain pattern
-        log.debug(raw_line)
-        _msg =  raw_line
-        if (_msg.find('STDERR') == 0 or
-            _msg.find('LOCK TABLES') == 0 or
-            _msg.find('DROP TABLE') == 0 or
-            _msg.find('INSERT INTO ') == 0 or
-            _msg.find('CREATE TABLE') == 0):
-            _msg = _msg.split('(', 1)[0]
-        if len(_msg) > 255:
-            _msg = _msg[:255]
-        super(Migration, self).reportProgress(_msg)
 
     def wipe(self):
         log.info('Wipe is done while importing zodb')
@@ -98,7 +88,9 @@ class Migration(MigrationBase):
         self._ready_to_import()
         # restore zodb
         log.info('Restoring zodb ...')
-        self.restoreMySqlDb(self.zodb_sql, 'zodb', Config.zodbSocket)
+
+        # reportStatus is called by restoreMySqlDB -> exec_cmd
+        self.restoreMySqlDb(self.zodb_sql, 'zodb', Config.zodbSocket, status_key=Imp4Meta.num_models)
 
         log.info(codeString[ExitCode.SUCCESS])
         return
@@ -149,7 +141,7 @@ class Migration(MigrationBase):
         _cmd = "zenpack --restore --keep-pack=ZenPacks.zenoss.Import4"
         self.exec_cmd(_cmd)
 
-        log.info("zenpack restore:%s", codeString[ExitCode.SUCCESS])
+        log.info("zenpacks restored:%s", codeString[ExitCode.SUCCESS])
         return
 
     #==========================================================================
@@ -170,22 +162,21 @@ class Migration(MigrationBase):
         if os.path.isfile(_gzfile):
             _rc = os.system('gunzip %s' % _gzfile)
             if _rc > 0:
-                log.error('Failed to unzip %s' % _gzfile)
+                log.error('Failed to unzip %s', _gzfile)
                 raise ImportError(ExitCode.INVALID)
 
         if not os.path.isfile(self.zodb_sql):
-                log.error('Failed to find %s' % self.zodb_sql)
+                log.error('Failed to find %s', self.zodb_sql)
                 raise ImportError(ExitCode.INVALID)
 
         self.insert_count = int(subprocess.check_output(
             'egrep "^INSERT INTO" %s | wc -l' % self.zodb_sql, shell=True))
         if self.insert_count <= 0:
-            log.error("Cannot find any INSERT statement in %s" % self.zodb_sql)
+            log.error("Cannot find any INSERT statement in %s", self.zodb_sql)
             raise ImportError(ExitCode.INVALID)
 
-        log.info('%s file is OK' % self.zodb_sql)
-        log.info('A rough scan shows [%d] INSERT statements'
-                            % self.insert_count)
+        log.info('%s file is OK', self.zodb_sql)
+        log.info('A rough scan shows [%d] INSERT statements', self.insert_count)
 
         # check catalog
         catalogDir = os.path.join(self.zenbackup_dir, Config.catalogSvcDir)
@@ -199,9 +190,9 @@ class Migration(MigrationBase):
         self.zenpack_count = int(subprocess.check_output(
             'find %s/ZenPacks -type d -name "*.egg" | wc -l' % self.zenbackup_dir, shell=True))
         if self.zenpack_count <= 0:
-            log.error("No zenpack found in %s/ZenPacks!" % self.zenbackup_dir)
+            log.error("No zenpack found in %s/ZenPacks!", self.zenbackup_dir)
             raise ImportError(ExitCode.INVALID)
-        log.info('%d zenpack directories in "%s/ZenPacks"' % (self.zenpack_count, self.zenbackup_dir))
+        log.info('%d zenpack directories in "%s/ZenPacks"', (self.zenpack_count, self.zenbackup_dir))
 
-        log.info('directory "%s" for models looks OK' % self.zenbackup_dir)
+        log.info('directory "%s" for models looks OK', self.zenbackup_dir)
         return

@@ -165,6 +165,9 @@ class Migration(MigrationBase):
             log.error("Performance data not imported yet")
             raise ImportError(ExitCode.INVALID)
 
+        # output the dimension for the post validation
+        self.reportMetaData(Imp4Meta.num_perf, 0, self.files_no)
+
         # self.password is either '' or something
         if not self.user:
             log.error("username not provided")

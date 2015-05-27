@@ -11,7 +11,7 @@ import os
 import inspect
 import logging
 import subprocess
-import sys
+import re
 
 log = logging.getLogger(__name__)
 
@@ -22,6 +22,7 @@ log = logging.getLogger(__name__)
 # { "scale_name" : { "min" : int, "max" : int} }
 # scale status:
 # { "scale_name" : { "cur" : int } }
+
 
 class ExitCode(object):
     # exit code used by the migration operations
@@ -50,9 +51,11 @@ codeString = {
 
 class Imp4Meta(object):
     json_tag =      "imp4_metadata"
+    num_perf =      "numPerfChecked"
     num_perfrrd =   "RRDSourcesConversion"
     num_perftsdb =  "TSDBSourcesImport"
-    num_event =     "numEventInserts"
+    num_models =    "numModelInserts"
+    num_events =    "numEventInserts"
     num_zenpacks =  "numZenPacks"
     name_zenpacks = "zenpackNames"
     num_zodb =      "numZodbInserts"
@@ -158,7 +161,7 @@ class MigrationBase(object):
     def __NOT_YET__(self):
         caller = inspect.stack()[1]
         log.warning("-- %s:%s:%s not implemented! --"
-                         % (inspect.getmodule(caller[0]).__name__, self.__class__.__name__, caller[3]))
+                    % (inspect.getmodule(caller[0]).__name__, self.__class__.__name__, caller[3]))
         # raise NotImplementedError
         return
 
@@ -202,16 +205,28 @@ class MigrationBase(object):
     '''
     # execute a command and pocesses its stdout/stderr
     # all output of subcommand execution are piped to subprocess stderr.
-    def exec_cmd(self, cmd):
+    def exec_cmd(self, cmd, status_key=None, status_max=0, status_re=None):
         log.debug('Executing %s ...' % cmd)
 
         proc = subprocess.Popen(cmd, shell=True, stderr=subprocess.STDOUT)
 
         # log every output
+        _status_cnt = 0
         while True:
             _line = proc.stdout.readline()
             if _line:
                 log.info('%s>>%s' % cmd, _line.rstring())
+
+                # process the status if requested
+                if status_key and status_re:
+                    match = re.search(re, _line)
+                    if match:
+                        _status_cnt += 1
+                        # ignore extraneous status lines after status_max
+                        if _status_cnt < status_max:
+                            self.reportStatus(status_key, _status_cnt)
+                    else:
+                        pass
             else:
                 break
         proc.wait()
@@ -223,6 +238,8 @@ class MigrationBase(object):
             self.reportProgress(err_msg)
             raise ImportError(ExitCode.CMD_ERROR)
 
+        # output status_max indicating completion successfully
+        self.reportStatus(status_key, status_max)
         return
 
     def reportMetaData(self, keyname, key_min, key_max):
@@ -236,10 +253,17 @@ class MigrationBase(object):
 
     # socket must be supplied because
     # we use two different sockets for zep and zodb
-    def restoreMySqlDb(self, sql_path, db, socket):
+    def restoreMySqlDb(self, sql_path, db, socket, status_key='sql'):
         """
         Create MySQL database if it doesn't exist.
         """
+
+        # obtain the number of insert statements again
+        status_max = int(subprocess.check_output(
+            'egrep "^INSERT INTO" %s | wc -l' % sql_path, shell=True))
+        if status_max <= 0:
+            log.error("Cannot find any INSERT statement in %s" % sql_path)
+
         mysql_cmd = ['mysql', '--socket=%s' % socket, '-u%s' % self.user]
         mysql_cmd.extend(['--verbose'])
         if self.password:
@@ -255,12 +279,11 @@ class MigrationBase(object):
         if _rc:
             raise ImportError(ExitCode.FAILURE)
 
-        if sql_path.endswith('.gz'):
-            cmd_fmt = "gzip -dc {sql_path}"
-        else:
-            cmd_fmt = "cat {sql_path}"
+        # sql_path is already gunzipped by the check run command
+        cmd_fmt = "cat {sql_path}"
         cmd_fmt += " | {mysql_cmd} {db}"
         cmd = cmd_fmt.format(**locals())
 
-        self.exec_cmd(cmd)
+        # using 'INSERT INTO' as progress indicator
+        self.exec_cmd(cmd, status_key=status_key, status_max=status_max, status_re='^INSERT INTO ')
         return
