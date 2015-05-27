@@ -72,10 +72,13 @@ tar -vxf zep.tar 2>/dev/null | awk "$awk_cmd"
 [[ ${PIPESTATUS[0]} -ne 0 ]] && echo "Zeneventserver indexes not found, skipping"
 
 # make sure dmd_uuid.txt is there!
-[[ -f "dmd_uuid.txt" ]] || echo "dmd_uuid.txt is missing from backup, cannot continue" && exit 2
+if [[ ! -f ../dmd_uuid.txt ]]; then
+    echo "dmd_uuid.txt is missing from backup, cannot continue"
+    exit 2
+fi
 
 # extract the perf into the shared staging volume
-! mkdir -p "$staging_dir"   && echo "Cannot create staging directory in the containter!" && exit 2
+! mkdir -p "$staging_dir" && echo "Cannot create staging directory in the containter!" && exit 2
 
 echo -e "\nExtracting performance data tends to take a long time..."
 tar -C "$staging_dir" -vxf perf.tar | awk "$awk_cmd"
@@ -93,4 +96,4 @@ cmd="cd /mnt/pwd; /opt/zenoss/bin/python /import4/pkg/bin/import4 "
 
 echo "Migration files checked OK..."
 echo "No need to commit image for this operation..."
-exit 1
+exit 42

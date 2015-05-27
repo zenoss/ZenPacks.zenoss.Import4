@@ -39,4 +39,4 @@ if [[ "$options" == *" import "* && "$options" == *"model "* && "$options" == *"
 fi
 
 echo "No need to commit image for this operation..."
-exit 1
+exit 42
