@@ -259,7 +259,7 @@ class Migration(MigrationBase):
                     continue
                 _num = _repattern.search(_progress)
                 if _num:
-                    log.info(_progress)
+                    log.info(_progress.strip())
                     _tno = int(_num.group(1))
                     _cno = int(_num.group(3))
                     _dno = int(_num.group(4))
