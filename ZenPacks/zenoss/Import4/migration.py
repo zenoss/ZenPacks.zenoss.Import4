@@ -194,7 +194,7 @@ class MigrationBase(object):
 
     def startZenoss(self):
         # now bring back zenoss processes AFTER the new zope image is committed
-        self.reportProgress('Restarting zenoss services...')
+        log.info('Restarting zenoss services...')
         _cmd = '%s/imp4util.py --log-level=%s start_all_svcs' % (self.binpath, self.args.log_level)
         log.debug('-> %s' % _cmd)
         self.exec_cmd(_cmd)
@@ -208,7 +208,10 @@ class MigrationBase(object):
     def exec_cmd(self, cmd, status_key=None, status_max=0, status_re=None, to_log=True):
         log.debug('Executing %s ...' % cmd)
 
-        proc = subprocess.Popen(cmd, shell=True, stderr=subprocess.STDOUT)
+        proc = subprocess.Popen(cmd, shell=True,
+                                stdout=subprocess.PIPE,
+                                stderr=subprocess.STDOUT,
+                                bufsize=0)
 
         # log every output
         _status_cnt = 0
@@ -236,7 +239,6 @@ class MigrationBase(object):
             # report the error of the subprocess
             err_msg = '[%s]:%s(%d)' % (codeString[ExitCode.CMD_ERROR], cmd, proc.returncode)
             log.error(err_msg)
-            self.reportProgress(err_msg)
             raise ImportError(ExitCode.CMD_ERROR)
 
         # output status_max indicating completion successfully

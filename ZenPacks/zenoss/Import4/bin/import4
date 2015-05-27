@@ -48,6 +48,7 @@ def run_migration(migration_class, args):
 
 def progress_report_callback(msg):
     sys.stdout.write(msg)
+    sys.stderr.flush()
 
 
 def parse_args():

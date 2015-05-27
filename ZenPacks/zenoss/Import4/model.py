@@ -192,7 +192,7 @@ class Migration(MigrationBase):
         if self.zenpack_count <= 0:
             log.error("No zenpack found in %s/ZenPacks!", self.zenbackup_dir)
             raise ImportError(ExitCode.INVALID)
-        log.info('%d zenpack directories in "%s/ZenPacks"', (self.zenpack_count, self.zenbackup_dir))
+        log.info('%d zenpack directories in "%s/ZenPacks"', self.zenpack_count, self.zenbackup_dir)
 
         log.info('directory "%s" for models looks OK', self.zenbackup_dir)
         return

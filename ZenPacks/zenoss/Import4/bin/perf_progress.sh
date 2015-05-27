@@ -14,7 +14,7 @@
 export tasks_Q=/import4/Q.tasks         # initial all task lists
 
 export jobs_Q=/import4/Q.jobs           # being processed + completed
-export converted_Q=/import4/Q.jobs/.done    # completed
+export converted_Q=/import4/Q.jobs/.done   # completed
 
 export task_Q=/import4/Q.tsdb           # to be imported
 export imported_Q=/import4/Q.tsdb/.done    # completed
@@ -39,8 +39,8 @@ tsum=$(cat "$rrd_list" | wc -l)
 [[ $tsum -ne 0 ]] || err_exit "No task"
 
 # the current imported number
-imported_no=$(find $imported_Q -type f -name "task.*.tsdb" -exec cat {} \; | wc -l)
+imported_no=$(find $imported_Q -type f -name "task.*.tsdb" -print | wc -l)
 
-# the exact output format is important
-echo "T:$tsum S:$started_no C:$converted_no D:$imported_no"
+# the exact output format is important. Each task file contains 5 rrd
+echo "T:$tsum S:$started_no C:$converted_no D:$(($imported_no*5))"
 exit 0

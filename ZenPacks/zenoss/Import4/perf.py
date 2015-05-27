@@ -268,7 +268,7 @@ class Migration(MigrationBase):
                     self.reportStatus(Imp4Meta.num_perfrrd, _cno)
                     self.reportStatus(Imp4Meta.num_perftsdb, _dno)
 
-                    if (_dno == _tno) and (_cno == _tno):
+                    if (_dno == _tno) and (_cno >= _tno):
                         break
                 else:
                     # cannot recognize the progress output string
