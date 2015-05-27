@@ -223,7 +223,7 @@ class MigrationBase(object):
 
                 # process the status if requested
                 if status_key and status_re:
-                    match = re.search(re, _line)
+                    match = re.search(status_re, _line)
                     if match:
                         _status_cnt += 1
                         # ignore extraneous status lines after status_max
