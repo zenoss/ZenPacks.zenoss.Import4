@@ -8,6 +8,9 @@
 #
 ##############################################################################
 
+# common block
+progdir=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
+source "$progdir/utils.sh"
 
 # this is supposed to be executed as a root
 tmpdir="/import4/tmp/rrdtool"
@@ -16,14 +19,13 @@ mkdir -p "$tmpdir"
 cd "$tmpdir"
 
 Prereq="libdbi ruby xorg-x11-fonts-Type1 gettext libpng12 perl-Time-HiRes"
-echo Installing $Prereq
+info_out "Installing $Prereq"
 /usr/bin/yum install $Prereq -y > "$tmpdir/yum.log" 2>&1
 
 let rc=$?
 if [ 0 -ne $rc ]
 then
-    echo ERROR:Prereq yum installation failed: $rc
-    exit 1
+    err_exit "ERROR:Prereq yum installation failed: $rc"
 fi
 
 processor=$(uname -p)
@@ -40,15 +42,14 @@ packages="${packages} ${base_name}-devel-${version}.${processor}.rpm"
 
 for pkg in ${packages}
 do
-    echo Getting $pkg
+    info_out "Getting $pkg"
     /usr/bin/wget --quiet $url/$pkg
     let rc=$?
     if [ 0 -ne $rc ]
     then
-        echo "ERROR: wget error:$rc"
-        exit 1
+        err_exit "ERROR: wget error:$rc"
     fi
-    echo -e "\t[OK]"
+    info_out "[OK]"
 done
 
 /usr/bin/yum erase rrdtool -y   >> "$tmpdir/yum.log" 2>&1
@@ -57,9 +58,8 @@ done
 let rc=$?
 if [ 0 -ne $rc ]
 then
-    echo "ERROR: Installation error:$rc"
-    exit 1
+    err_exit "ERROR: Installation error:$rc"
 fi
-echo -e "\t[OK]"
+info_out "[OK]"
 
 # rm -rf /tmp/rrdtool
