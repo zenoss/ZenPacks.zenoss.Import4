@@ -134,7 +134,7 @@ class Migration(MigrationBase):
         # copy it to /opt/zenoss/.ZenPack
         log.info('Create and copying the 4.x zenpacks eggs ...')
         _cmd = '%s/get_eggs.sh "%s/ZenPacks"' % (self.binpath, self.zenbackup_dir)
-        self.exec_cmd(_cmd)
+        self.exec_cmd(_cmd, to_log=False)
 
         # zenpack --restore AND --ignore-services and --keep-pack
         log.info('Fixing zenpack in zodb and files on the image ...')

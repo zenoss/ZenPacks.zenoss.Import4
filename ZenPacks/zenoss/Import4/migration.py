@@ -242,7 +242,8 @@ class MigrationBase(object):
             raise ImportError(ExitCode.CMD_ERROR)
 
         # output status_max indicating completion successfully
-        self.reportStatus(status_key, status_max)
+        if status_key:
+            self.reportStatus(status_key, status_max)
         return
 
     def reportMetaData(self, keyname, key_min, key_max):
