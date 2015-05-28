@@ -219,7 +219,7 @@ class MigrationBase(object):
             _line = proc.stdout.readline()
             if _line:
                 if to_log:
-                    log.info('%s>>%s', cmd, _line.rstrip())
+                    log.info('%s:\n> %s', cmd, _line.rstrip())
 
                 # process the status if requested
                 if status_key and status_re:
