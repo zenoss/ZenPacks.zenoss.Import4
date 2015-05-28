@@ -13,13 +13,9 @@ import subprocess
 import re
 import time
 
-from ZenPacks.zenoss.Import4.migration import MigrationBase, ImportError, Config, ExitCode, codeString, log
+from ZenPacks.zenoss.Import4.migration import MigrationBase, ImportError, Config, ExitCode, log, Imp4Meta
 
 # some common constants shared among the py and bash scripts
-_check_tag = '[Check] '
-_stderr_tag = '[STDERR] '
-_import_prefix = 'Perf: '
-
 _import4_vol = Config.volume
 _import4_pkg = Config.pkgPath
 _import4_pkg_bin = Config.pkgBinPath
@@ -58,11 +54,13 @@ class Migration(MigrationBase):
 
         # check runtime environment
         if not os.path.exists(_import4_vol):
-            self.reportProgress("%s does not exist." % _import4_vol)
+            log.error("%s does not exist.", _import4_vol)
             raise ImportError(ExitCode.RUNTIME_ERROR)
         if not os.path.exists('%s/imp4mariadb.sh' % _import4_pkg_bin):
+            log.error("%s/imp4mariadb.sh does not exist.", _import4_pkg_bin)
             raise ImportError(ExitCode.RUNTIME_ERROR)
         if not os.path.exists('%s/imp4opentsdb.sh' % _import4_pkg_bin):
+            log.error("%s/imp4opentsdb.sh does not exist.", _import4_pkg_bin)
             raise ImportError(ExitCode.RUNTIME_ERROR)
 
     @staticmethod
@@ -85,12 +83,12 @@ class Migration(MigrationBase):
             self.perf_top = self.rrd_dir
         else:
             # else, rrd_dir is the one derived from provided rrd_dir_arg
-            self.reportProgress("Use %s provided ..." % self.rrd_dir)
+            log.info("Use %s provided ..." % self.rrd_dir)
 
         log.info("RRDTree:%s..." % self.rrd_dir)
         # check if the rrd_dir is valid
         if not os.path.exists(self.rrd_dir):
-            self.reportProgress("%s does not exist. Need to extract the backup file first." % self.rrd_dir)
+            log.error("%s does not exist. Need to extract the backup file first." % self.rrd_dir)
             raise ImportError(ExitCode.INVALID)
 
     def _get_rrd_list(self):
@@ -106,17 +104,20 @@ class Migration(MigrationBase):
         except Exception as e:
             print e
             raise ImportError(ExitCode.INVALID)
-        self.reportProgress("rrd files to work on:%s" % self.files_no)
+        log.info("rrd files to work on:%s" % self.files_no)
         return _rrd_list
 
     def prevalidate(self):
         self._setup_rrd_dir()
         _rrd_list = self._get_rrd_list()
 
+        self.reportMetaData(Imp4Meta.num_perfrrd, 0, self.files_no)
+        self.reportMetaData(Imp4Meta.num_perftsdb, 0, self.files_no)
+
         # this allows an user to skip the lengthy validation
         # that was validated offline before
         if self.skip_scan:
-            self.reportProgress("rrd scanning skip option specified - skipped")
+            log.info("rrd scanning skip option specified - skipped")
             # mark the checked file
             with open(self.data_checked, 'a'):
                 pass
@@ -124,7 +125,7 @@ class Migration(MigrationBase):
 
         # here we do a single-process check of the rrdfiles
         # we go thru each rrdfile and do a dryrun
-        self.reportProgress("Scanning rrdfiles ...")
+        log.info("Scanning rrdfiles ...")
         _total_dr = 0
         _total_dp = 0
         _total_ds = 0
@@ -134,10 +135,10 @@ class Migration(MigrationBase):
                 for _aline in f:
                     _one_rrd = _aline.strip()
                     _i = _i+1
-                    self.reportProgress("%s ...[%d/%d]" % (_one_rrd, _i, self.files_no))
+                    log.info("%s ...[%d/%d]" % (_one_rrd, _i, self.files_no))
                     _cmd = '%s/rrd2tsdb.py -t -p "%s" "%s"' % (Config.pkgPath, self.perf_top, _one_rrd)
                     _result = subprocess.check_output(_cmd, shell=True, stderr=None).strip()
-                    self.reportProgress("%s datapoints..." % _result)
+                    log.info("%s datapoints..." % _result)
                     _total_dp += int(_result)
                     if int(_result):
                         _total_ds += 1
@@ -145,17 +146,13 @@ class Migration(MigrationBase):
                         # check if the 0 results from a dup derived in rrd file
                         # remove .rrd
                         if os.path.isfile("%s_GAUGE.rrd" % _one_rrd[:-4]):
-                            self.reportProgress("Info: DERIVE type dup'ed into GAUGE")
+                            log.info("DERIVE type dup'ed into GAUGE")
                             _total_dr += 1
                         else:
-                            self.reportProgress("Warn: no datapoint found, all NaN?")
+                            log.warning("no datapoint found, all NaN?")
         except Exception as e:
             print e
             raise ImportError(ExitCode.INVALID)
-
-        self.reportProgress("DS#: %d" % _total_ds)
-        self.reportProgress("DR#: %d" % _total_dr)
-        self.reportProgress("DP#: %d" % _total_dp)
 
         # mark the checked file
         with open(self.data_checked, 'a'):
@@ -165,12 +162,15 @@ class Migration(MigrationBase):
     def postvalidate(self):
         self._setup_rrd_dir()
         if not os.path.isfile(self.data_migrated):
-            self.reportProgress("Error: Performance data not imported yet")
+            log.error("Performance data not imported yet")
             raise ImportError(ExitCode.INVALID)
+
+        # output the dimension for the post validation
+        self.reportMetaData(Imp4Meta.num_perf, 0, self.files_no)
 
         # self.password is either '' or something
         if not self.user:
-            self.reportProgress("Error: username not provided")
+            log.error("username not provided")
             raise ImportError(ExitCode.CMD_ERROR)
 
         _rrd_list = self._get_rrd_list()
@@ -180,7 +180,7 @@ class Migration(MigrationBase):
             with open(_rrd_list, "r") as f:
                 for _aline in f:
                     _one_rrd = _aline.strip()
-                    self.reportProgress("%s ..." % _one_rrd)
+                    log.info("%s ..." % _one_rrd)
 
                     if self.user and (self.password != ""):
                         _cre = "-v %s:%s" % (self.user, self.password)
@@ -194,12 +194,14 @@ class Migration(MigrationBase):
                     _result = subprocess.call(_cmd, shell=True, stdout=None, stderr=None)
                     if _result == 0:
                         _no += 1
-                        self.reportProgress("%s:. [%d/%d] verified" % (_one_rrd, _no, self.files_no))
+                        log.info("%s:. [%d/%d] verified..." % (_one_rrd, _no, self.files_no))
                     else:
                         _eno += 1
-                        self.reportProgress("%s:. [%d/%d] Error..." % (_one_rrd, _eno, self.files_no))
+                        log.warning("%s:. [%d/%d] Error detected..." % (_one_rrd, _eno, self.files_no))
+                    self.reportStatus(Imp4Meta.num_perf, _no+_eno)
+
         except Exception as e:
-            print e
+            log.exceptioni(e)
             raise ImportError(ExitCode.INVALID)
 
         return
@@ -214,7 +216,7 @@ class Migration(MigrationBase):
         self._setup_rrd_dir()
 
         if not os.path.exists(self.data_checked):
-            self.reportProgress("rrdfiles not validated yet. Run `perf check` command first.")
+            log.error("rrdfiles not validated yet. Run `perf check` command first.")
             raise ImportError(ExitCode.INVALID)
 
         if os.path.isfile(self.data_migrated):
@@ -239,33 +241,40 @@ class Migration(MigrationBase):
         if _rc != 0:
             raise ImportError(ExitCode.CMD_ERROR)
 
-        self.reportProgress("rrd files dispatched to tasks")
+        log.info("rrd files dispatched to tasks")
 
         # polling the task files and job/.done to report progress
         # the output pattern is hardcoded in the perf_progress.sh
-        _repattern = re.compile('T:(\d+) S:(\d+) C:(\d+) D:(\d+) P:(\d+)')
+        _repattern = re.compile('T:(\d+) S:(\d+) C:(\d+) D:(\d+)')
 
         # run until _done == _tasks
         try:
             # wait 10 seconds before each check
+            _old_progress = None
             while True:
-                # self.reportProgress(".")
                 time.sleep(10)
                 _progress = subprocess.check_output(["%s/perf_progress.sh" % self.binpath])
+                if _progress == _old_progress:
+                    self.reportHeartbeat()
+                    continue
                 _num = _repattern.search(_progress)
                 if _num:
-                    self.reportProgress(_progress)
+                    log.info(_progress.strip())
                     _tno = int(_num.group(1))
                     _cno = int(_num.group(3))
                     _dno = int(_num.group(4))
-                    _cents = int(_num.group(5))
-                    self.reportProgress("[%s/%s] %s%%" %
-                                        (_dno, _tno, _cents))
-                    if (_dno == _tno) and (_cno == _tno):
+                    # _cents = int(_num.group(5))
+                    # output status in json
+                    self.reportStatus(Imp4Meta.num_perfrrd, _cno)
+                    self.reportStatus(Imp4Meta.num_perftsdb, _dno)
+
+                    if (_dno == _tno) and (_cno >= _tno):
                         break
                 else:
                     # cannot recognize the progress output string
+                    log.error("perf_progress.sh error:%s", _progress)
                     raise ImportError(ExitCode.CMD_ERROR)
+                _old_progress = _progress
         except:
             print sys.exc_info()[0]
             raise ImportError(ExitCode.FAILURE)
@@ -273,12 +282,5 @@ class Migration(MigrationBase):
         with open(self.data_migrated, 'a'):
             pass
 
-        self.reportProgress("Performance data import complete!")
-        return
-
-    def reportProgress(self, raw_line):
-        _msg = raw_line
-        if _msg:
-            _msg = _import_prefix + '%s\n' % _msg.strip()
-            super(Migration, self).reportProgress(_msg)
+        log.info("Performance data import complete!")
         return

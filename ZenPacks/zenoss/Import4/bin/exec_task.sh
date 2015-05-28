@@ -77,7 +77,8 @@ done < "$job"
 # if successful
 # we need to do a sort and uniq to resolve out-of-order and dup rrd data
 # this is only needed when placed in the same import file
-sort "$tsdb_raw" | awk '!x[$1 $2]++' > "$tsdb_ok"
+# this also filter out empty lines
+sort "$tsdb_raw" | awk '(NF>0) && (!x[$1 $2]++)' > "$tsdb_ok"
 
 # make the finalized tsdb import file visible
 ln "$tsdb_ok" "$tsdb_file"

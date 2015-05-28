@@ -85,7 +85,7 @@
        "Actions": null,
        "HealthChecks": {
          "Script_OK": {
-           "Script": "[ 1 -eq $(pgrep -fla '/bin/bash /import4/pkg/bin/imp4opentsdb.sh' | wc -l) ]",
+           "Script": "[ 1 -le $(pgrep -fla '/bin/bash /import4/pkg/bin/imp4opentsdb.sh' | wc -l) ]",
            "Interval": 15,
            "Timeout": 0
          }

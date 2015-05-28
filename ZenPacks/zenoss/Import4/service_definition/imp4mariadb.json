@@ -4,7 +4,7 @@
         "Name": "Imp4MariaDB",
         "Description": "Mariadb environment and RRD converter worker for import4",
         "Launch": "manual",
-        "Command": "bash -c \"which rrdtool && [ -f /import4/pkg/bin/imp4mariadb.sh ] && /import4/pkg/bin/imp4mariadb.sh\"",
+        "Command": "bash -c \"while ! ( which rrdtool && [ -f /import4/pkg/bin/imp4mariadb.sh ] ); do sleep 10; done; /import4/pkg/bin/imp4mariadb.sh\"",
         "ImageID": "",
         "Tags": [
             "daemon"
@@ -217,7 +217,7 @@
        "Actions": null,
        "HealthChecks": {
          "running": {
-           "Script": "[ 1 -eq $(pgrep -fla '/bin/bash /import4/pkg/bin/imp4mariadb.sh' | wc -l) ]",
+           "Script": "[ 1 -le $(pgrep -fla '/bin/bash /import4/pkg/bin/imp4mariadb.sh' | wc -l) ]",
            "Interval": 5.0
          },
          "dmd_ready": {

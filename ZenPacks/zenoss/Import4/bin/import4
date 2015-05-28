@@ -31,7 +31,7 @@ def run_migration(migration_class, args):
         }[args.pname]()
 
     except migration.ImportError as err:
-        log.error('[EXCEPTION]: %s' % err.error_string)
+        log.error(err.error_string)
         log.exception(err)
         exit(err.return_code)
 
@@ -48,6 +48,7 @@ def run_migration(migration_class, args):
 
 def progress_report_callback(msg):
     sys.stdout.write(msg)
+    sys.stdout.flush()
 
 
 def parse_args():

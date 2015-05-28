@@ -11,9 +11,17 @@ import os
 import inspect
 import logging
 import subprocess
-import sys
+import re
 
 log = logging.getLogger(__name__)
+
+#
+# json output format
+#
+# scale meta:
+# { "scale_name" : { "min" : int, "max" : int} }
+# scale status:
+# { "scale_name" : { "cur" : int } }
 
 
 class ExitCode(object):
@@ -39,6 +47,18 @@ codeString = {
     ExitCode.UNTAR_ERROR: 'Untar error',
     ExitCode.RUNTIME_ERROR: 'Runtime error'
 }
+
+
+class Imp4Meta(object):
+    json_tag =      "imp4_metadata"
+    num_perf =      "numPerfChecked"
+    num_perfrrd =   "RRDSourcesConversion"
+    num_perftsdb =  "TSDBSourcesImport"
+    num_models =    "numModelInserts"
+    num_events =    "numEventInserts"
+    num_zenpacks =  "numZenPacks"
+    name_zenpacks = "zenpackNames"
+    num_zodb =      "numZodbInserts"
 
 
 class Config(object):
@@ -141,7 +161,7 @@ class MigrationBase(object):
     def __NOT_YET__(self):
         caller = inspect.stack()[1]
         log.warning("-- %s:%s:%s not implemented! --"
-                         % (inspect.getmodule(caller[0]).__name__, self.__class__.__name__, caller[3]))
+                    % (inspect.getmodule(caller[0]).__name__, self.__class__.__name__, caller[3]))
         # raise NotImplementedError
         return
 
@@ -174,7 +194,7 @@ class MigrationBase(object):
 
     def startZenoss(self):
         # now bring back zenoss processes AFTER the new zope image is committed
-        self.reportProgress('Restarting zenoss services...')
+        log.info('Restarting zenoss services...')
         _cmd = '%s/imp4util.py --log-level=%s start_all_svcs' % (self.binpath, self.args.log_level)
         log.debug('-> %s' % _cmd)
         self.exec_cmd(_cmd)
@@ -185,15 +205,32 @@ class MigrationBase(object):
     '''
     # execute a command and pocesses its stdout/stderr
     # all output of subcommand execution are piped to subprocess stderr.
-    def exec_cmd(self, cmd):
+    def exec_cmd(self, cmd, status_key=None, status_max=0, status_re=None, to_log=True):
         log.debug('Executing %s ...' % cmd)
 
-        proc = subprocess.Popen(cmd, shell=True, stderr=subprocess.STDOUT)
+        proc = subprocess.Popen(cmd, shell=True,
+                                stdout=subprocess.PIPE,
+                                stderr=subprocess.STDOUT,
+                                bufsize=0)
 
+        # log every output
+        _status_cnt = 0
         while True:
             _line = proc.stdout.readline()
             if _line:
-                sys.stderr.write(">%s\n" % _line.rstrip())
+                if to_log:
+                    log.info('%s:\n> %s', cmd, _line.rstrip())
+
+                # process the status if requested
+                if status_key and status_re:
+                    match = re.search(status_re, _line)
+                    if match:
+                        _status_cnt += 1
+                        # ignore extraneous status lines after status_max
+                        if _status_cnt < status_max:
+                            self.reportStatus(status_key, _status_cnt)
+                    else:
+                        pass
             else:
                 break
         proc.wait()
@@ -202,17 +239,35 @@ class MigrationBase(object):
             # report the error of the subprocess
             err_msg = '[%s]:%s(%d)' % (codeString[ExitCode.CMD_ERROR], cmd, proc.returncode)
             log.error(err_msg)
-            self.reportProgress(err_msg)
             raise ImportError(ExitCode.CMD_ERROR)
 
+        # output status_max indicating completion successfully
+        if status_key:
+            self.reportStatus(status_key, status_max)
         return
+
+    def reportMetaData(self, keyname, key_min, key_max):
+        self.reportProgress('{"imp4_meta" : { "%s" : { "min":%d, "max":%d }}}' % (keyname, key_min, key_max))
+
+    def reportStatus(self, keyname, key_value):
+        self.reportProgress('{"imp4_status" : { "%s" : %d }}' % (keyname, key_value))
+
+    def reportHeartbeat(self):
+        self.reportProgress('{"imp4_status" : {}}')
 
     # socket must be supplied because
     # we use two different sockets for zep and zodb
-    def restoreMySqlDb(self, sql_path, db, socket):
+    def restoreMySqlDb(self, sql_path, db, socket, status_key='sql'):
         """
         Create MySQL database if it doesn't exist.
         """
+
+        # obtain the number of insert statements again
+        status_max = int(subprocess.check_output(
+            'egrep "^INSERT INTO" %s | wc -l' % sql_path, shell=True))
+        if status_max <= 0:
+            log.error("Cannot find any INSERT statement in %s" % sql_path)
+
         mysql_cmd = ['mysql', '--socket=%s' % socket, '-u%s' % self.user]
         mysql_cmd.extend(['--verbose'])
         if self.password:
@@ -228,12 +283,11 @@ class MigrationBase(object):
         if _rc:
             raise ImportError(ExitCode.FAILURE)
 
-        if sql_path.endswith('.gz'):
-            cmd_fmt = "gzip -dc {sql_path}"
-        else:
-            cmd_fmt = "cat {sql_path}"
+        # sql_path is already gunzipped by the check run command
+        cmd_fmt = "cat {sql_path}"
         cmd_fmt += " | {mysql_cmd} {db}"
         cmd = cmd_fmt.format(**locals())
 
-        self.exec_cmd(cmd)
+        # using 'INSERT INTO' as progress indicator
+        self.exec_cmd(cmd, status_key=status_key, status_max=status_max, status_re='^INSERT INTO ', to_log=False)
         return

@@ -12,20 +12,26 @@
 #
 err_out ()
 {
-  echo "$1" " ..." >&2
+  echo -e "[ERROR] $1" " !!" >&2
 }
 export -f err_out
 
 err_exit()
 {
   err_out "$1"
-  exit 1
+  exit 2
 }
 export -f err_exit
 
+info_out ()
+{
+  echo -e "[INFO] $1" " ..." >&2
+}
+export -f info_out
+
 ok_exit()
 {
-  err_out "$1"
+  info_out "$1"
   exit 0
 }
 export -f ok_exit

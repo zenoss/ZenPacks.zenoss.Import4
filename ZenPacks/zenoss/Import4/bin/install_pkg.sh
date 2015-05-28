@@ -21,7 +21,7 @@ export BIN_D="$VOL_D/pkg/bin"
 progdir=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 source "$progdir/utils.sh"
 
-echo "Installing import4 worker scripts from $progdir ..."
+info_out "Installing import4 worker scripts from $progdir ..."
 
 [[ -d "$VOL_D" ]]     || err_exit "The environment does not have the shared volume: $VOL_D" 
 mkdir -p "$BIN_D"     || err_exit "Cannot create the pkg directories"
@@ -46,5 +46,5 @@ do
     rm -rf "/import4/$i"
 done
 
-echo "Installed!"
+info_out "Installed!"
 exit 0
