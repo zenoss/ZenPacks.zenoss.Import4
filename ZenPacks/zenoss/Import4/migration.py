@@ -229,6 +229,9 @@ class MigrationBase(object):
                         # ignore extraneous status lines after status_max
                         if _status_cnt < status_max:
                             self.reportStatus(status_key, _status_cnt)
+                        elif status_max > 0:
+                            # a heart beat for progress
+                            self.reportStatus(status_key, status_max-1)
                     else:
                         pass
             else:
