@@ -205,7 +205,7 @@ class MigrationBase(object):
     '''
     # execute a command and pocesses its stdout/stderr
     # all output of subcommand execution are piped to subprocess stderr.
-    def exec_cmd(self, cmd, status_key=None, status_max=0, status_re=None, to_log=True):
+    def exec_cmd(self, cmd, status_key=None, status_max=0, status_re=None, to_log_re='.', to_log=True):
         log.debug('Executing %s ...' % cmd)
 
         proc = subprocess.Popen(cmd, shell=True,
@@ -218,7 +218,7 @@ class MigrationBase(object):
         while True:
             _line = proc.stdout.readline()
             if _line:
-                if to_log:
+                if to_log and re.search(to_log_re, _line):
                     log.info('%s:\n> %s', cmd, _line.rstrip())
 
                 # process the status if requested
