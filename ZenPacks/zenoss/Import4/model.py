@@ -143,12 +143,20 @@ class Migration(MigrationBase):
                       to_log_re='looking|loading|Previous')
 
         log.info("zenpacks restored:%s", codeString[ExitCode.SUCCESS])
+
+        # do a quick post validation
+        self.postvalidate()
         return
 
     #==========================================================================
 
     def postvalidate(self):
-        self.__NOT_YET__()
+        log.info("validating the zenpacks and devices")
+        _cmd = "zendmd --script=%s/check_model.dmd" % self.binpath
+        self.exec_cmd(_cmd)
+
+        log.info("Model restored OK")
+        return
 
     def _check_files(self):
         log.info('checking directories ...')
