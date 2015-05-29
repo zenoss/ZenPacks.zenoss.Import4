@@ -190,7 +190,7 @@ class Migration(MigrationBase):
         # check egg directories
         self.zenpack_count = int(subprocess.check_output(
             'find %s/ZenPacks -maxdepth 1 -type d -name "*.egg" | \
-             sed "s@\([^/]*/\)*\(.*\)-[0-9].*@\2@" | \
+             sed "s@\\([^/]*/\\)*\\(.*\\)-[0-9].*@\\2@" | \
              sort | \
              tee "%s/zenpack.list" | \
              wc -l' % (self.zenbackup_dir, Config.stageDir),
