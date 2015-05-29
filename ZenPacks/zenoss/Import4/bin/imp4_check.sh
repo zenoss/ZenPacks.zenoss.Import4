@@ -90,10 +90,11 @@ tar -C "$staging_dir" -vxf perf.tar | awk "$awk_cmd" >&2
 [[ ${PIPESTATUS[0]} -ne 0 ]] && err_exit "Extracting performance data from perf.tar failed!"
 
 info_out "Setup proper access right"
-find . -type d -exec chmod a+rwx {} \; >&2
-find . -type f -exec chmod a+rw {} \; >&2
-find "$staging_dir" -type d -exec chmod a+rwx {} \; >&2
-find "$staging_dir" -type f -exec chmod a+rw {} \; >&2
+(find . -type d -exec chmod a+rwx {} \; >&2) &
+(find . -type f -exec chmod a+rw {} \; >&2) &
+(find "$staging_dir" -type d -exec chmod a+rwx {} \; >&2) &
+(find "$staging_dir" -type f -exec chmod a+rw {} \; >&2) &
+wait
 
 # use the mounted directory as the current directory
 # no redirect of stdout where meta data is reported
