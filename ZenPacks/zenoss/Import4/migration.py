@@ -50,7 +50,8 @@ codeString = {
 
 
 class Imp4Meta(object):
-    json_tag =      "imp4_metadata"
+    imp4_meta =     "imp4_meta"
+    imp4_status =   "imp4_status"
     num_perf =      "numPerfChecked"
     num_perfrrd =   "RRDSourcesConversion"
     num_perftsdb =  "TSDBSourcesImport"

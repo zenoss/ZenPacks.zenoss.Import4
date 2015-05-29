@@ -27,7 +27,8 @@ if [[ $(find /mnt/pwd -maxdepth 0 -perm -777 | wc -l) != 1 ]]; then
 fi
 
 export imp4dir="/import4"
-export staging_dir="$imp4dir/staging/zenbackup"
+export staging_dir="$imp4dir/staging"
+export staging_zenbackup_dir="$staging_dir/zenbackup"
 export zbk="zenbackup"
 export awk_cmd='{ if (NR%10 == 0) printf "."} END {printf "\n"}'
 
@@ -83,10 +84,10 @@ if [[ ! -f ../dmd_uuid.txt ]]; then
 fi
 
 # extract the perf into the shared staging volume
-! mkdir -p "$staging_dir" && err_exit "Cannot create staging directory in the containter!"
+! mkdir -p "$staging_zenbackup_dir" && err_exit "Cannot create staging directory in the containter!"
 
 info_out "Extracting performance data tends to take a long time"
-tar -C "$staging_dir" -vxf perf.tar | awk "$awk_cmd" >&2
+tar -C "$staging_zenbackup_dir" -vxf perf.tar | awk "$awk_cmd" >&2
 [[ ${PIPESTATUS[0]} -ne 0 ]] && err_exit "Extracting performance data from perf.tar failed!"
 
 info_out "Setup proper access right"
