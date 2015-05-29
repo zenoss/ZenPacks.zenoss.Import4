@@ -24,7 +24,11 @@ if z_error_cnt:
 
 # check components
 d_error_cnt = 0
-dlist = [ '/'.join(d.getPrimaryPath()) for d in dmd.Devices.getSubDevices() ]
+clist = []
+for d in dmd.Devices.getSubDevices():
+    clist.extend(d.getMonitoredComponents())
+
+dlist = [ '/'.join(c.getPrimaryPath()) for c in clist]
 with open('/mnt/pwd/componentList.txt', 'r') as f:
     while True:
         d = f.readline().strip()
