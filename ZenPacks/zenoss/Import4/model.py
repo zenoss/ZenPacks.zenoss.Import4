@@ -144,8 +144,6 @@ class Migration(MigrationBase):
 
         log.info("zenpacks restored:%s", codeString[ExitCode.SUCCESS])
 
-        # do a quick post validation
-        self.postvalidate()
         return
 
     #==========================================================================
