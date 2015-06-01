@@ -50,7 +50,8 @@ codeString = {
 
 
 class Imp4Meta(object):
-    json_tag =      "imp4_metadata"
+    imp4_meta =     "imp4_meta"
+    imp4_status =   "imp4_status"
     num_perf =      "numPerfChecked"
     num_perfrrd =   "RRDSourcesConversion"
     num_perftsdb =  "TSDBSourcesImport"
@@ -205,7 +206,7 @@ class MigrationBase(object):
     '''
     # execute a command and pocesses its stdout/stderr
     # all output of subcommand execution are piped to subprocess stderr.
-    def exec_cmd(self, cmd, status_key=None, status_max=0, status_re=None, to_log=True):
+    def exec_cmd(self, cmd, status_key=None, status_max=0, status_re=None, to_log_re='.', to_log=True):
         log.debug('Executing %s ...' % cmd)
 
         proc = subprocess.Popen(cmd, shell=True,
@@ -218,7 +219,7 @@ class MigrationBase(object):
         while True:
             _line = proc.stdout.readline()
             if _line:
-                if to_log:
+                if to_log and re.search(to_log_re, _line):
                     log.info('%s:\n> %s', cmd, _line.rstrip())
 
                 # process the status if requested
@@ -229,6 +230,9 @@ class MigrationBase(object):
                         # ignore extraneous status lines after status_max
                         if _status_cnt < status_max:
                             self.reportStatus(status_key, _status_cnt)
+                        elif status_max > 0:
+                            # a heart beat for progress
+                            self.reportStatus(status_key, status_max-1)
                     else:
                         pass
             else:

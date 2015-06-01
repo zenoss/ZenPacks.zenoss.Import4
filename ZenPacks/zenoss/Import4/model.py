@@ -139,15 +139,22 @@ class Migration(MigrationBase):
         # zenpack --restore AND --ignore-services and --keep-pack
         log.info('Fixing zenpack in zodb and files on the image ...')
         _cmd = "zenpack --restore --keep-pack=ZenPacks.zenoss.Import4"
-        self.exec_cmd(_cmd)
+        self.exec_cmd(_cmd, status_key='numZenPacks', status_re='looking for', status_max=self.zenpack_count,
+                      to_log_re='looking|loading|Previous')
 
         log.info("zenpacks restored:%s", codeString[ExitCode.SUCCESS])
+
         return
 
     #==========================================================================
 
     def postvalidate(self):
-        self.__NOT_YET__()
+        log.info("validating the zenpacks and devices")
+        _cmd = "zendmd --script=%s/check_model.dmd" % self.binpath
+        self.exec_cmd(_cmd)
+
+        log.info("Model restored OK")
+        return
 
     def _check_files(self):
         log.info('checking directories ...')
@@ -188,7 +195,12 @@ class Migration(MigrationBase):
 
         # check egg directories
         self.zenpack_count = int(subprocess.check_output(
-            'find %s/ZenPacks -type d -name "*.egg" | wc -l' % self.zenbackup_dir, shell=True))
+            'find %s/ZenPacks -maxdepth 1 -type d -name "*.egg" | \
+             sed "s@\\([^/]*/\\)*\\(.*\\)-[0-9].*@\\2@" | \
+             sort | \
+             tee "%s/zenpack.list" | \
+             wc -l' % (self.zenbackup_dir, Config.stageDir),
+            shell=True))
         if self.zenpack_count <= 0:
             log.error("No zenpack found in %s/ZenPacks!", self.zenbackup_dir)
             raise ImportError(ExitCode.INVALID)

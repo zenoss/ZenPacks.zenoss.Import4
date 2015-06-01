@@ -1,0 +1,47 @@
+##############################################################################
+#
+# Copyright (C) Zenoss, Inc. 2014-2015, all rights reserved.
+#
+# This content is made available according to terms specified in
+# License.zenoss under the directory where your Zenoss product is installed.
+#
+##############################################################################
+
+# check Zenpacks
+zlist = [ i.id for i in dmd.ZenPackManager.packs() ]
+z_error_cnt = 0
+with open('/import4/staging/zenpacks.list', 'r') as f:
+    while True:
+        z = f.readline().strip()
+        if not z:
+            break
+        if not z in zlist:
+            sys.stderr.write("[ERROR] Cannot find %s\n" % z)
+            z_error_cnt += 1
+
+if z_error_cnt:
+    sys.stderr.write("[ERROR] %d Zenpacks not imported\n" % z_error_cnt)
+
+# check components
+d_error_cnt = 0
+clist = []
+for d in dmd.Devices.getSubDevices():
+    clist.extend(d.getMonitoredComponents())
+
+dlist = [ '/'.join(c.getPrimaryPath()) for c in clist]
+with open('/mnt/pwd/componentList.txt', 'r') as f:
+    while True:
+        d = f.readline().strip()
+        if not d:
+            break
+        if d[0] == '#':
+            continue
+        if not d in dlist:
+            sys.stderr.write("[ERROR] Cannot find %s\n" % d)
+            d_error_cnt += 1
+
+if d_error_cnt:
+    sys.stderr.write("[ERROR] %d devices not imported\n" % d_error_cnt)
+    
+if d_error_cnt > 0 or z_error_cnt > 0:
+    sys.exit(1)

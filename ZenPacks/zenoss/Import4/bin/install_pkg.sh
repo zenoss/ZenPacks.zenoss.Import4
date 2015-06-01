@@ -46,5 +46,5 @@ do
     rm -rf "/import4/$i"
 done
 
-info_out "Installed!"
+info_out "Import4 scripts Installed!"
 exit 0
