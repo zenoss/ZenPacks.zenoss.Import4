@@ -59,7 +59,6 @@ class Imp4Meta(object):
     num_events =    "numEventInserts"
     num_zenpacks =  "numZenPacks"
     name_zenpacks = "zenpackNames"
-    num_zodb =      "numZodbInserts"
 
 
 class Config(object):
