@@ -112,10 +112,12 @@ else
     info_out "No catalogservice archive, continue"
 fi
 
+# prep the staging area
+! mkdir -p "$staging_zenbackup_dir" && err_exit "Cannot create staging directory in the containter!"
+
 if [ -f perf.tar ]
 then
     # extract the perf into the shared staging volume
-    ! mkdir -p "$staging_zenbackup_dir" && err_exit "Cannot create staging directory in the containter!"
     status_out "Extracting perf.tar"
     info_out "This operation tends to take a long time ..."
     tar -C "$staging_zenbackup_dir" -vxf perf.tar | awk "$awk_cmd" >&2
