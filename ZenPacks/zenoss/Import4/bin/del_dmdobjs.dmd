@@ -1,8 +1,9 @@
-for zp in ['AutoTune', 'WebScale', 'ZenHoltWinters', 'DeviceSearch']:
-    zp_name = 'ZenPacks.zenoss.' + zp
-    if zp_name in dmd.ZenPackManager.packs._objects:
-        print "deleting " + zp_name
-        del dmd.ZenPackManager.packs._objects[zp_name]
-    else:
-        print zp_name + " is not in zodb..."
+with open('/import4/pkg/bin/zenpack_skipped.list') as f:
+    for zp in f:
+        zp_name = zp.strip()
+        if zp_name in dmd.ZenPackManager.packs._objects:
+            print "deleting " + zp_name
+            del dmd.ZenPackManager.packs._objects[zp_name]
+        else:
+            print zp_name + " is not in zodb..."
 commit()
