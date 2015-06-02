@@ -89,17 +89,18 @@ if [ -f zep.sql.gz ]
 then 
     status_out "Unzipping zep.sql.gz"
     ! gunzip -vf "zep.sql.gz" >&2 && err_exit "Invalid zep.sql.gz! abort"
-else
-    info_out "No Zeneventserver indexes, continue"
-fi
+    ((zep_ok=1))
 
-if [ -f zep.tar ]
-then
-    status_out "Extracting zep.tar"
-    tar -vxf zep.tar 2>/dev/null | awk "$awk_cmd" >&2
-    [[ ${PIPESTATUS[0]} -ne 0 ]] && err_exit "Extracting Zeneventserver indexes failed! abort"
+    if [ -f zep.tar ]
+    then
+        status_out "Extracting zep.tar"
+        tar -vxf zep.tar 2>/dev/null | awk "$awk_cmd" >&2
+        [[ ${PIPESTATUS[0]} -ne 0 ]] && err_exit "Extracting Zeneventserver indexes failed! abort"
+    else
+        info_out "No Zeneventserver indexes archive, continue"
+    fi
 else
-    info_out "No Zeneventserver indexes archive, continue"
+    info_out "No events archive, continue"
 fi
 
 # catalogservice file is optional
@@ -122,6 +123,7 @@ then
     info_out "This operation tends to take a long time ..."
     tar -C "$staging_zenbackup_dir" -vxf perf.tar | awk "$awk_cmd" >&2
     [[ ${PIPESTATUS[0]} -ne 0 ]] && err_exit "Extracting performance data from perf.tar failed!"
+    ((perf_ok=1))
 else
     info_out "No performance data archive, continue"
 fi
@@ -140,8 +142,8 @@ status_out "Finding import meta data"
 ! su - zenoss -c "$cmd model check"            && err_exit "Model files not valid!"
 
 # optional prevalidation
-[ -f zep.sql ]  && ! su - zenoss -c "$cmd events check"           && err_exit "Events files not valid!"
-[ -f perf.tar ] && ! su - zenoss -c "$cmd perf --skip-scan check" && err_exit "Performance data files not valid!"
+[ $zep_ok -eq 1 ]  && ! su - zenoss -c "$cmd events check"           && err_exit "Events files not valid!"
+[ $perf_ok -eq 1 ] && ! su - zenoss -c "$cmd perf --skip-scan check" && err_exit "Performance data files not valid!"
 
 info_out "Migration files checked OK..."
 info_out "No need to commit image for this operation..."
