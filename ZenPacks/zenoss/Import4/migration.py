@@ -59,7 +59,6 @@ class Imp4Meta(object):
     num_events =    "numEventInserts"
     num_zenpacks =  "numZenPacks"
     name_zenpacks = "zenpackNames"
-    num_zodb =      "numZodbInserts"
 
 
 class Config(object):
@@ -207,6 +206,14 @@ class MigrationBase(object):
     # execute a command and pocesses its stdout/stderr
     # all output of subcommand execution are piped to subprocess stderr.
     def exec_cmd(self, cmd, status_key=None, status_max=0, status_re=None, to_log_re='.', to_log=True):
+        '''
+        Using Shell to execute the provided shell command.
+        Both stdout and stderr of the execution are piped to stdout.
+        Each output line is matched by two regex pattern status_re and to_log_re:
+            if a line matches status_re, exec_cmd calls reportStatus to output the status
+            if matching to_log_re, the line is sent the current logger at info level
+            if to_log_re is '.', then all output lines are logged.
+        '''
         log.debug('Executing %s ...' % cmd)
 
         proc = subprocess.Popen(cmd, shell=True,

@@ -9,12 +9,18 @@
 
 # check Zenpacks
 zlist = [ i.id for i in dmd.ZenPackManager.packs() ]
+blist = [ b.strip() for b in open('/import4/pkg/bin/zenpack_skipped.list') ]
 z_error_cnt = 0
 with open('/import4/staging/zenpacks.list', 'r') as f:
     while True:
         z = f.readline().strip()
         if not z:
             break
+
+        # ignore the skipped zenpacks
+        if z in blist:
+            continue
+
         if not z in zlist:
             sys.stderr.write("[ERROR] Cannot find %s\n" % z)
             z_error_cnt += 1

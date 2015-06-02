@@ -209,9 +209,11 @@
            "model-catalog": "/import4/pkg/bin/imp4_run.sh model import --catalog",
            "model-zenmigrate": "/import4/pkg/bin/imp4_run.sh model import --zenmigrate",
            "model-zenpack": "/import4/pkg/bin/imp4_run.sh model import --zenpack",
+           "model-verify": "/import4/pkg/bin/imp4_run.sh model verify",
            "events-database": "/import4/pkg/bin/imp4_run.sh events import --database",
            "events-index": "/import4/pkg/bin/imp4_run.sh events import --index",
            "perf-import": "/import4/pkg/bin/imp4_run.sh perf import",
+           "perf-verify": "/import4/pkg/bin/imp4_run.sh perf verify",
            "import4": "/import4/pkg/bin/imp4_run.sh"
        },
        "Actions": null,

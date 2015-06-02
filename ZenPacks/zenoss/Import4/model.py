@@ -139,8 +139,7 @@ class Migration(MigrationBase):
         # zenpack --restore AND --ignore-services and --keep-pack
         log.info('Fixing zenpack in zodb and files on the image ...')
         _cmd = "zenpack --restore --keep-pack=ZenPacks.zenoss.Import4"
-        self.exec_cmd(_cmd, status_key='numZenPacks', status_re='looking for', status_max=self.zenpack_count,
-                      to_log_re='looking|loading|Previous')
+        self.exec_cmd(_cmd, status_key='numZenPacks', status_re='looking for', status_max=self.zenpack_count)
 
         log.info("zenpacks restored:%s", codeString[ExitCode.SUCCESS])
 
