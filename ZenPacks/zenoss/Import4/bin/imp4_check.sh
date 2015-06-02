@@ -85,6 +85,7 @@ tar -vxf ZenPacks.tar | awk "$awk_cmd" >&2
 [[ ${PIPESTATUS[0]} -ne 0 ]] && err_exit "Extracting ZenPack.tar failed!"
 
 # events file is optional
+((zep_ok=0))
 if [ -f zep.sql.gz ] 
 then 
     status_out "Unzipping zep.sql.gz"
@@ -116,6 +117,7 @@ fi
 # prep the staging area
 ! mkdir -p "$staging_zenbackup_dir" && err_exit "Cannot create staging directory in the containter!"
 
+((perf_ok=0))
 if [ -f perf.tar ]
 then
     # extract the perf into the shared staging volume

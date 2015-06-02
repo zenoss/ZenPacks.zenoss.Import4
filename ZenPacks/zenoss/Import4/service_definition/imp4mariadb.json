@@ -143,6 +143,12 @@
          {
            "Owner": "zenoss:zenoss",
            "Permission": "0775",
+           "ResourcePath": "zenoss-var-flexera",
+           "ContainerPath": "/opt/zenoss/var/flexera"
+         },
+         {
+           "Owner": "zenoss:zenoss",
+           "Permission": "0775",
            "ResourcePath": "zenoss-export",
            "ContainerPath": "/opt/zenoss/export",
            "Type": ""
