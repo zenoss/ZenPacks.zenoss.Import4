@@ -94,9 +94,9 @@ class Migration(MigrationBase):
         log.info('Zodb restored ...')
 
         # copy the license files for ucspm if exist
-        if os.path.isdir("%s/flexera" % self.zenbackup_dir):
+        if os.path.isdir("%s/flexera" % Config.mntPwdDir):
             log.info('License directory found, copying license files ...')
-            _cmd = "%/cp_license.sh" % self.binpath
+            _cmd = "%s/cp_license.sh" % self.binpath
             self.exec_cmd(_cmd)
             log.info('License files copied ...')
 
