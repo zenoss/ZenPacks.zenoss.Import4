@@ -143,6 +143,12 @@ class Migration(MigrationBase):
 
         log.info("zenpacks restored:%s", codeString[ExitCode.SUCCESS])
 
+        # copy the license files for ucspm if exist
+        log.info('Copying license files if exists ...')
+        if os.path.isdir("%s/flexera" % self.zenbackup_dir):
+            _cmd = "%/cp_license.sh" % self.binpath
+            self.exec_cmd(_cmd)
+
         return
 
     #==========================================================================

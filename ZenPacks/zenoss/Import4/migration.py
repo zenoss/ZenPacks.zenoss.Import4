@@ -258,10 +258,10 @@ class MigrationBase(object):
         return
 
     def reportMetaData(self, keyname, key_min, key_max):
-        self.reportProgress('{"imp4_meta" : { "%s" : { "min":%d, "max":%d }}}' % (keyname, key_min, key_max))
+        self.reportProgress('{"imp4_meta": {"%s": {"min": %d, "max": %d}}}' % (keyname, key_min, key_max))
 
     def reportStatus(self, keyname, key_value):
-        self.reportProgress('{"imp4_status" : { "%s" : %d }}' % (keyname, key_value))
+        self.reportProgress('{"imp4_status": {"%s": %d}}' % (keyname, key_value))
 
     def reportHeartbeat(self):
         self.reportProgress('{"imp4_status" : {}}')
