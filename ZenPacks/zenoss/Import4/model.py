@@ -91,6 +91,14 @@ class Migration(MigrationBase):
 
         # reportStatus is called by restoreMySqlDB -> exec_cmd
         self.restoreMySqlDb(self.zodb_sql, 'zodb', Config.zodbSocket, status_key=Imp4Meta.num_models)
+        log.info('Zodb restored ...')
+
+        # copy the license files for ucspm if exist
+        if os.path.isdir("%s/flexera" % self.zenbackup_dir):
+            log.info('License directory found, copying license files ...')
+            _cmd = "%/cp_license.sh" % self.binpath
+            self.exec_cmd(_cmd)
+            log.info('License files copied ...')
 
         log.info(codeString[ExitCode.SUCCESS])
         return
@@ -142,13 +150,6 @@ class Migration(MigrationBase):
         self.exec_cmd(_cmd, status_key='numZenPacks', status_re='looking for', status_max=self.zenpack_count)
 
         log.info("zenpacks restored:%s", codeString[ExitCode.SUCCESS])
-
-        # copy the license files for ucspm if exist
-        log.info('Copying license files if exists ...')
-        if os.path.isdir("%s/flexera" % self.zenbackup_dir):
-            _cmd = "%/cp_license.sh" % self.binpath
-            self.exec_cmd(_cmd)
-
         return
 
     #==========================================================================
