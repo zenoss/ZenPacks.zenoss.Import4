@@ -97,7 +97,7 @@
          },
          {
            "Name": "OpenTSDB up",
-           "Script": "/opt/opentsdb/build/tsdb uid --config=/opt/zenoss/etc/opentsdb/opentsdb.conf grep metrics jvm.uptime"
+           "Script": "timeout 5 /opt/opentsdb/build/tsdb uid --config=/opt/zenoss/etc/opentsdb/opentsdb.conf grep metrics jvm.uptime"
          },
          {
            "Name": "DMD UUID obtained",
