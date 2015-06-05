@@ -40,7 +40,9 @@ tsum=$(cat "$rrd_list" | wc -l)
 
 # the current imported number
 imported_no=$(find $imported_Q -type f -name "task.*.tsdb" -print | wc -l)
+((imported_no=imported_no*5))
+[ $imported_no -gt $tsum ] && ((imported_no=tsum))
 
 # the exact output format is important. Each task file contains 5 rrd
-echo "T:$tsum S:$started_no C:$converted_no D:$(($imported_no*5))"
+echo "T:$tsum S:$started_no C:$converted_no D:$imported_no"
 exit 0
