@@ -258,6 +258,13 @@ class MigrationBase(object):
         return
 
     def reportMetaData(self, keyname, key_min, key_max):
+        """
+        This method reports metadata to the caller.  External integrations
+        rely on this json format not changing, all the way down to having
+        just one keyname.  For example, if you want to report about 2 different
+        metadatas, make 2 separate calls to this function - do not try and
+        construct a keyname with multiple keys in it.
+        """
         self.reportProgress('{"imp4_meta": {"%s": {"min": %d, "max": %d}}}' % (keyname, key_min, key_max))
 
     def reportStatus(self, keyname, key_value):
