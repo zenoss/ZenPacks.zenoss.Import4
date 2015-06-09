@@ -62,4 +62,7 @@ then
 fi
 info_out "[OK]"
 
+# drop a dotfile so that we can tell that initialization happened
+touch /var/import4/.initialized
+
 # rm -rf /tmp/rrdtool
