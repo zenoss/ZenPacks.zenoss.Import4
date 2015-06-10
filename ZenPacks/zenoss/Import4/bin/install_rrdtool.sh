@@ -20,7 +20,7 @@ cd "$tmpdir"
 
 Prereq="libdbi ruby xorg-x11-fonts-Type1 gettext libpng12 perl-Time-HiRes"
 info_out "Installing $Prereq"
-status_out "initialize" "Installing prereq packages"
+status_out "initialize" "Installing prereq packages ..."
 /usr/bin/yum install $Prereq -y > "$tmpdir/yum.log" 2>&1
 
 let rc=$?
