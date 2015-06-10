@@ -214,7 +214,7 @@ class MigrationBase(object):
             if matching to_log_re, the line is sent the current logger at info level
             if to_log_re is '.', then all output lines are logged.
         '''
-        log.debug('Executing %s ...' % cmd)
+        log.info('>>> %s enter ...', cmd)
 
         proc = subprocess.Popen(cmd, shell=True,
                                 stdout=subprocess.PIPE,
@@ -227,7 +227,7 @@ class MigrationBase(object):
             _line = proc.stdout.readline()
             if _line:
                 if to_log and re.search(to_log_re, _line):
-                    log.info('%s:\n> %s', cmd, _line.rstrip())
+                    log.info('> %s', _line.rstrip())
 
                 # process the status if requested
                 if status_key and status_re:
@@ -245,6 +245,7 @@ class MigrationBase(object):
             else:
                 break
         proc.wait()
+        log.info('>>> %s exit .', cmd)
 
         if proc.returncode != 0:
             # report the error of the subprocess
