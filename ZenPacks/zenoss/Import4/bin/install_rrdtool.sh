@@ -20,6 +20,7 @@ cd "$tmpdir"
 
 Prereq="libdbi ruby xorg-x11-fonts-Type1 gettext libpng12 perl-Time-HiRes"
 info_out "Installing $Prereq"
+status_out "initialize" "Installing prereq packages ..."
 /usr/bin/yum install $Prereq -y > "$tmpdir/yum.log" 2>&1
 
 let rc=$?
@@ -43,6 +44,7 @@ packages="${packages} ${base_name}-devel-${version}.${processor}.rpm"
 for pkg in ${packages}
 do
     info_out "Getting $pkg"
+    status_out "initialize" "downloading $pkg ..."
     /usr/bin/wget --quiet $url/$pkg
     let rc=$?
     if [ 0 -ne $rc ]
@@ -50,10 +52,12 @@ do
         err_exit "ERROR: wget error:$rc"
     fi
     info_out "[OK]"
+    status_out "initialize" "$pkg downloaded."
 done
 
 /usr/bin/yum erase rrdtool -y   >> "$tmpdir/yum.log" 2>&1
 
+status_out "initialize" "installing $packages ..."
 /usr/bin/rpm -Uvh $packages     >> "$tmpdir/yum.log" 2>&1
 let rc=$?
 if [ 0 -ne $rc ]
@@ -61,6 +65,7 @@ then
     err_exit "ERROR: Installation error:$rc"
 fi
 info_out "[OK]"
+status_out "initialize" "$packages installed."
 
 # drop a dotfile so that we can tell that initialization happened
 mkdir -p /var/import4 && touch /var/import4/.initialized

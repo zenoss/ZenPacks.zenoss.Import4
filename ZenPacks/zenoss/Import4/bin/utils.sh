@@ -23,6 +23,12 @@ err_exit()
 }
 export -f err_exit
 
+status_out ()
+{
+  echo -e "{\"imp4_status\": {\"$1\": \"$2\"}}"
+}
+export -f status_out
+
 info_out ()
 {
   echo -e "[INFO] $1" " ..." >&2
