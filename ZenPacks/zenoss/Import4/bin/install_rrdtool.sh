@@ -63,6 +63,7 @@ fi
 info_out "[OK]"
 
 # drop a dotfile so that we can tell that initialization happened
-touch /var/import4/.initialized
+mkdir -p /var/import4 && touch /var/import4/.initialized
+[[ $? = 0 ]] || err_exit "ERROR: creating initialization marker failed"
 
 # rm -rf /tmp/rrdtool
