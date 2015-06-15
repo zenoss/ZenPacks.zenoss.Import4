@@ -35,7 +35,7 @@ progdir=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 source "$progdir/utils.sh"
 
 # check parameters and environment
-[[ -f "$task_dir/PERFTOP" ]] || err_exit "file:$task/PERFTOP not exist"
+[[ -f "$task_dir/PERFTOP" ]] || err_exit "file:$task_dir/PERFTOP not created yet..."
 read PERFTOP < "$task_dir/PERFTOP"
 [[ -d "$PERFTOP" ]]     || err_exit "$PERFTOP location in \"$task_dir/PERFTOP\" is not correct"
 
