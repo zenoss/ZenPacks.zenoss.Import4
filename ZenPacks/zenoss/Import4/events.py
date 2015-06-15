@@ -53,6 +53,7 @@ class Migration(MigrationBase):
 
         if not os.path.isdir(self.zenbackup_dir):
             log.error('Backup directory does not exist. Run `check` command to extract the backup file.')
+            self.reportError('events_import', 'Events database error, please check log')
             raise ImportError(ExitCode.INVALID)
 
         log.info('zenbackup directory exists')
@@ -67,6 +68,8 @@ class Migration(MigrationBase):
 
         if not os.path.isfile(self.zep_sql):
             log.error('Cannot fine input zep db file:%s', self.zep_sql)
+            self.reportError('events_import', 'Events database error, please check log')
+            raise ImportError(ExitCode.INVALID)
             raise ImportError(ExitCode.INVALID)
 
         # obtain the number of insert counts
@@ -125,13 +128,7 @@ class Migration(MigrationBase):
 
     def postvalidate(self):
         # we assume the db operations are all correct if no error returned
-        if os.path.isfile(self.event_migrated):
-            log.info('Previous "event import" is successful, No post validation needed.')
-            log.info(codeString[ExitCode.SUCCESS])
-        else:
-            log.error('Previous "event import" is not successful or not imported yet.')
-            log.error(codeString[ExitCode.FAILURE])
-        return
+        log.info('If a previous "event import" is successful, No post validation needed.')
 
     def _migrateSchema(self):
         _cmd = ['/opt/zenoss/bin/zeneventserver-create-db',

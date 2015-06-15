@@ -271,6 +271,12 @@ class MigrationBase(object):
     def reportStatus(self, keyname, key_value):
         self.reportProgress('{"imp4_status": {"%s": %d}}' % (keyname, key_value))
 
+    def reportWarning(self, keyname, key_string):
+        self.reportProgress('{"imp4_warning": {"%s": "%s"}}' % (keyname, key_string))
+
+    def reportError(self, keyname, key_string):
+        self.reportProgress('{"imp4_error": {"%s": "%s"}}' % (keyname, key_string))
+
     def reportHeartbeat(self):
         self.reportProgress('{"imp4_status" : {}}')
 

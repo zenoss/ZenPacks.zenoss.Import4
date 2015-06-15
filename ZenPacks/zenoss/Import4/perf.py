@@ -55,12 +55,15 @@ class Migration(MigrationBase):
         # check runtime environment
         if not os.path.exists(_import4_vol):
             log.error("%s does not exist.", _import4_vol)
+            self.reportError('perf_import', 'Runtime error! plase check log')
             raise ImportError(ExitCode.RUNTIME_ERROR)
         if not os.path.exists('%s/imp4mariadb.sh' % _import4_pkg_bin):
             log.error("%s/imp4mariadb.sh does not exist.", _import4_pkg_bin)
+            self.reportError('perf_import', 'Runtime error! plase check log')
             raise ImportError(ExitCode.RUNTIME_ERROR)
         if not os.path.exists('%s/imp4opentsdb.sh' % _import4_pkg_bin):
             log.error("%s/imp4opentsdb.sh does not exist.", _import4_pkg_bin)
+            self.reportError('perf_import', 'Runtime error! plase check log')
             raise ImportError(ExitCode.RUNTIME_ERROR)
 
     @staticmethod
@@ -89,6 +92,7 @@ class Migration(MigrationBase):
         # check if the rrd_dir is valid
         if not os.path.exists(self.rrd_dir):
             log.error("%s does not exist. Need to extract the backup file first." % self.rrd_dir)
+            self.reportError('perf_import', 'Perf database error! plase check log')
             raise ImportError(ExitCode.INVALID)
 
     def _get_rrd_list(self):
@@ -164,6 +168,7 @@ class Migration(MigrationBase):
         self._setup_rrd_dir()
         if not os.path.isfile(self.data_migrated):
             log.error("Performance data not imported yet")
+            self.reportError('perf_import', 'Perf database not imported yet! plase check log')
             raise ImportError(ExitCode.INVALID)
 
         # output the dimension for the post validation
@@ -172,6 +177,8 @@ class Migration(MigrationBase):
         # self.password is either '' or something
         if not self.user:
             log.error("username not provided")
+            self.reportError('perf_import', 'Postvalidation setup error! plase check log')
+            raise ImportError(ExitCode.INVALID)
             raise ImportError(ExitCode.CMD_ERROR)
 
         _rrd_list = self._get_rrd_list()
@@ -218,6 +225,7 @@ class Migration(MigrationBase):
 
         if not os.path.exists(self.data_checked):
             log.error("rrdfiles not validated yet. Run `perf check` command first.")
+            self.reportError('perf_import', 'Perf database error! plase check log')
             raise ImportError(ExitCode.INVALID)
 
         if os.path.isfile(self.data_migrated):
@@ -274,6 +282,7 @@ class Migration(MigrationBase):
                 else:
                     # cannot recognize the progress output string
                     log.error("perf_progress.sh error:%s", _progress)
+                    self.reportError('perf_import', 'Runtime error! plase check log')
                     raise ImportError(ExitCode.CMD_ERROR)
                 _old_progress = _progress
         except:

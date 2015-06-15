@@ -77,6 +77,7 @@ class Migration(MigrationBase):
     def _ready_to_import(self):
         if not os.path.exists(self.model_checked):
             log.error("Model backup file not validated yet. Run `check` command first.")
+            self.reportError('model_import', 'Model database not correct')
             raise ImportError(ExitCode.INVALID)
         self._check_files()
 
@@ -167,6 +168,7 @@ class Migration(MigrationBase):
 
         if not os.path.isdir(self.zenbackup_dir):
             log.error('Backup directory does not exist. Must be extracted first.')
+            self.reportError('model_import', 'Model database error, please check log')
             raise ImportError(ExitCode.INVALID)
 
         self.zodb_sql = '%s/%s' % (self.zenbackup_dir, Config.zodbSQL)
@@ -176,6 +178,7 @@ class Migration(MigrationBase):
             _rc = os.system('gunzip %s' % _gzfile)
             if _rc > 0:
                 log.error('Failed to unzip %s', _gzfile)
+                self.reportError('model_import', 'Model database error, please check log')
                 raise ImportError(ExitCode.INVALID)
 
         if not os.path.isfile(self.zodb_sql):
@@ -186,6 +189,7 @@ class Migration(MigrationBase):
             'egrep "^INSERT INTO" %s | wc -l' % self.zodb_sql, shell=True))
         if self.insert_count <= 0:
             log.error("Cannot find any INSERT statement in %s", self.zodb_sql)
+            self.reportError('model_import', 'Model database error, please check log')
             raise ImportError(ExitCode.INVALID)
 
         log.info('%s file is OK', self.zodb_sql)
@@ -209,6 +213,7 @@ class Migration(MigrationBase):
             shell=True))
         if self.zenpack_count <= 0:
             log.error("No zenpack found in %s/ZenPacks!", self.zenbackup_dir)
+            self.reportError('model_import', 'No zenpack found! please check log')
             raise ImportError(ExitCode.INVALID)
         log.info('%d zenpack directories in "%s/ZenPacks"', self.zenpack_count, self.zenbackup_dir)
 
