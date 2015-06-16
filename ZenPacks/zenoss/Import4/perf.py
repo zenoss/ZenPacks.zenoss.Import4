@@ -89,6 +89,7 @@ class Migration(MigrationBase):
         # check if the rrd_dir is valid
         if not os.path.exists(self.rrd_dir):
             log.error("%s does not exist. Need to extract the backup file first." % self.rrd_dir)
+            self.reportError('perf_import', 'Performance data not extracted')
             raise ImportError(ExitCode.INVALID)
 
     def _get_rrd_list(self):
@@ -151,8 +152,10 @@ class Migration(MigrationBase):
                             _total_dr += 1
                         else:
                             log.warning("no datapoint found, all NaN?")
+                            self.reportWarning('perf_import', 'No datapoint value found')
         except Exception as e:
             print e
+            self.reportError('perf_import', 'Performance data validation failed')
             raise ImportError(ExitCode.INVALID)
 
         # mark the checked file
@@ -164,6 +167,7 @@ class Migration(MigrationBase):
         self._setup_rrd_dir()
         if not os.path.isfile(self.data_migrated):
             log.error("Performance data not imported yet")
+            self.reportError('perf_import', 'Performance data not imported yet')
             raise ImportError(ExitCode.INVALID)
 
         # output the dimension for the post validation
@@ -172,6 +176,7 @@ class Migration(MigrationBase):
         # self.password is either '' or something
         if not self.user:
             log.error("username not provided")
+            self.reportError('perf_import', 'Username and password required for performance postvalidation')
             raise ImportError(ExitCode.CMD_ERROR)
 
         _rrd_list = self._get_rrd_list()
@@ -199,6 +204,7 @@ class Migration(MigrationBase):
                     else:
                         _eno += 1
                         log.warning("%s:. [%d/%d] Error detected..." % (_one_rrd, _eno, self.files_no))
+                        self.reportWarning('perf_import', 'Error detected in performance data')
                     self.reportStatus(Imp4Meta.num_perf, _no+_eno)
 
         except Exception as e:
@@ -218,6 +224,7 @@ class Migration(MigrationBase):
 
         if not os.path.exists(self.data_checked):
             log.error("rrdfiles not validated yet. Run `perf check` command first.")
+            self.reportError('perf_import', 'Perfmance RRD files not validated')
             raise ImportError(ExitCode.INVALID)
 
         if os.path.isfile(self.data_migrated):
@@ -274,6 +281,7 @@ class Migration(MigrationBase):
                 else:
                     # cannot recognize the progress output string
                     log.error("perf_progress.sh error:%s", _progress)
+                    self.reportError('perf_import', 'No performance progress reported')
                     raise ImportError(ExitCode.CMD_ERROR)
                 _old_progress = _progress
         except:
