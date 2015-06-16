@@ -53,7 +53,7 @@ class Migration(MigrationBase):
 
         if not os.path.isdir(self.zenbackup_dir):
             log.error('Backup directory does not exist. Run `check` command to extract the backup file.')
-            self.reportError('events_import', 'Events database error, please check log')
+            self.reportError('events_import', 'Events database error')
             raise ImportError(ExitCode.INVALID)
 
         log.info('zenbackup directory exists')
@@ -68,8 +68,7 @@ class Migration(MigrationBase):
 
         if not os.path.isfile(self.zep_sql):
             log.error('Cannot fine input zep db file:%s', self.zep_sql)
-            self.reportError('events_import', 'Events database error, please check log')
-            raise ImportError(ExitCode.INVALID)
+            self.reportError('events_import', 'Events database error')
             raise ImportError(ExitCode.INVALID)
 
         # obtain the number of insert counts
