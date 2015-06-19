@@ -52,7 +52,7 @@ for i in \
         zodb.sql* \
         ZenPacks* \
         zencatalogservice* \
-        perf.tar \
+        perf.tar* \
         dmd_uuid.txt \
         "$staging_dir"
 do
@@ -118,13 +118,22 @@ fi
 ! mkdir -p "$staging_zenbackup_dir" && err_exit "Cannot create staging directory in the containter!"
 
 ((perf_ok=0))
-if [ -f perf.tar ]
+perf_tarball=""
+[[ -f perf.tar && -f perf.tar.gz ]] && err_exit "Multiple perf data tarballs found!"
+if [[ -f perf.tar ]]; then
+    perf_tarball="perf.tar"
+    tar_flags="-vxf"
+elif [[ -f perf.tar.gz ]]; then
+    perf_tarball="perf.tar.gz"
+    tar_flags="-vxzf"
+fi
+if [[ -n $perf_tarball ]]
 then
     # extract the perf into the shared staging volume
-    status_out "Extracting perf.tar"
+    status_out "Extracting $perf_tarball"
     info_out "This operation tends to take a long time ..."
-    tar -C "$staging_zenbackup_dir" -vxf perf.tar | awk "$awk_cmd" >&2
-    [[ ${PIPESTATUS[0]} -ne 0 ]] && err_exit "Extracting performance data from perf.tar failed!"
+    tar -C "$staging_zenbackup_dir" "$tar_flags" "$perf_tarball" | awk "$awk_cmd" >&2
+    [[ ${PIPESTATUS[0]} -ne 0 ]] && err_exit "Extracting performance data from $perf_tarball failed!"
     ((perf_ok=1))
 else
     info_out "No performance data archive, continue"
