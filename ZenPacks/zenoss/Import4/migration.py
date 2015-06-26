@@ -84,6 +84,8 @@ class Config(object):
     rrdTop =        '/import4/staging/zenbackup/perf/Devices'
     zepSocket =     '/var/lib/mysql/mysql.sock'
     zodbSocket =    '/var/lib/mysql.model/mysql.sock'
+    perf_poll =     10
+    perf_timeout =  60
 
 
 class ImportError(Exception):

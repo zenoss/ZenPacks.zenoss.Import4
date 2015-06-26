@@ -253,26 +253,40 @@ class Migration(MigrationBase):
 
         # polling the task files and job/.done to report progress
         # the output pattern is hardcoded in the perf_progress.sh
-        _repattern = re.compile('T:(\d+) S:(\d+) C:(\d+) D:(\d+)')
+        _repattern = re.compile('T:(\d+) F:(\d+) C:(\d+) D:(\d+)')
 
         # run until _done == _tasks
         try:
-            # wait 10 seconds before each check
+            # wait Config.perf_poll seconds before each check
+            _no_progress_count = 0
             _old_progress = None
             while True:
-                time.sleep(10)
+                time.sleep(Config.perf_poll)
                 _progress = subprocess.check_output(["%s/perf_progress.sh" % self.binpath])
                 if _progress == _old_progress:
+                    _no_progress_count += 1
+                    log.warning('No progress for %d seconds', (_no_progress_count*Config.perf_poll))
                     self.reportHeartbeat()
+                    # if the progress stuck and timeout, we abort the perf import
+                    if _no_progress_count > Config.perf_timeout:
+                        log.error('Performance data import stalling over %d seconds, import operation aborted', (Config.perf_poll*Config.perf_timeout))
+                        self.reportError('perf_import', 'Performance data import stalling, import operation aborted')
+                        self.exec_cmd("%s/abort_jobs.sh" % self.binpath)
+                        raise ImportError(ExitCode.FAILURE)
                     continue
+                _no_progress_count = 0
                 _num = _repattern.search(_progress)
                 if _num:
                     log.info(_progress.strip())
                     _tno = int(_num.group(1))
+                    _fno = int(_num.group(2))
                     _cno = int(_num.group(3))
                     _dno = int(_num.group(4))
                     # _cents = int(_num.group(5))
                     # output status in json
+                    if _fno > 0:
+                        self.reportWarning('perf_import', '%d performance data errors reported' % _fno)
+
                     self.reportStatus(Imp4Meta.num_perfrrd, _cno)
                     self.reportStatus(Imp4Meta.num_perftsdb, _dno)
 
@@ -281,7 +295,7 @@ class Migration(MigrationBase):
                 else:
                     # cannot recognize the progress output string
                     log.error("perf_progress.sh error:%s", _progress)
-                    self.reportError('perf_import', 'No performance progress reported')
+                    self.reportError('perf_import', 'Incorrect performance progress report')
                     raise ImportError(ExitCode.CMD_ERROR)
                 _old_progress = _progress
         except:
