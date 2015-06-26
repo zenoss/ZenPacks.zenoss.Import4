@@ -8,6 +8,8 @@
 #
 ##############################################################################
 
+export fail_records="/import4/perf.fail.records" # keep the failed status for top level UI
+
 # forcefully cleanup all the ongoing tasks/jobs
 
 targets="
@@ -19,6 +21,7 @@ tsdb
 # remove the save_dir if exist
 save_dir="/import4/Q.save"
 rm -rf "$save_dir"
+rm -f "$fail_records"
 
 for dname in $targets
 do

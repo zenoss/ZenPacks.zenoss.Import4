@@ -68,7 +68,7 @@ do
     let rc=$?
     if [[ $rc -ne 0 ]] 
     then
-        echo "[ERROR] in converting $one_rrd in $job" >> "$fail_records"
+        echo "in converting $one_rrd in $job" >> "$fail_records"
 
         # failed, send the partial result to the part pool for debug
         [ -f "tsdb_raw" ] && mv "$tsdb_raw" "$job_part_dir"
