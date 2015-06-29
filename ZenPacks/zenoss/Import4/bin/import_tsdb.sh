@@ -49,7 +49,7 @@ sync
 let rc=$?
 if [[ $rc -ne 0 ]] 
 then
-    echo "[ERROR] in importing $tsdb_imp_file" >> "$fail_records"
+    echo "[ERROR] $tsdb_imp_file" >> "$fail_records"
 
     # if failed, move the tsdb file to the failed dir 
     mv -f "$tsdb_imp_file" "$tsdb_fail_dir"

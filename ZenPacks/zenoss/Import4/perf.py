@@ -260,6 +260,7 @@ class Migration(MigrationBase):
             # wait Config.perf_poll seconds before each check
             _no_progress_count = 0
             _old_progress = None
+            _last_fail_line = 0
             while True:
                 time.sleep(Config.perf_poll)
                 _progress = subprocess.check_output(["%s/perf_progress.sh" % self.binpath])
@@ -285,7 +286,15 @@ class Migration(MigrationBase):
                     # _cents = int(_num.group(5))
                     # output status in json
                     if _fno > 0:
-                        self.reportWarning('perf_import', '%d performance data errors reported' % _fno)
+                        _now_fail_line = sum(1 for line in open(Config.perf_fail_records))
+                        if _now_fail_line > _last_fail_line:
+                            self.reportWarning('perf_import', 'performance data errors reported:')
+                            _fail_lines = subprocess.check_output("/usr/bin/sed -n '%d,$p' %s" % (_last_fail_line+1, Config.perf_fail_records),
+                                                                  shell=True)
+                            for _fail_line in _fail_lines.split('\n'):
+                                if _fail_line.strip():
+                                    self.reportWarning('perf_import', _fail_line)
+                            _last_fail_line = _now_fail_line
 
                     self.reportStatus(Imp4Meta.num_perfrrd, _cno)
                     self.reportStatus(Imp4Meta.num_perftsdb, _dno)
