@@ -48,8 +48,8 @@ imported_no=$(find $imported_Q -type f -name "task.*.tsdb" -print | wc -l)
 [ $imported_no -gt $tsum ] && ((imported_no=tsum))
 
 # the total failure counts, not rrd count
-fail_c_no=$(find $converted_Q_fail -type f -name "task.*" -print | wc -l)
-fail_i_no=$(find $imported_Q_fail  -type f -name "task.*" -print | wc -l)
+[ -d "$converted_Q_fail" ] && ((fail_c_no=$(find $converted_Q_fail -type f -name "task.*" -print | wc -l))) || ((fail_c_no=0))
+[ -d "$imported_Q_fail" ]  && ((fail_i_no=$(find $imported_Q_fail  -type f -name "task.*" -print | wc -l))) || ((fail_i_no=0))
 ((fsum=fail_c_no+fail_i_no))
 
 # the exact output format is important. 

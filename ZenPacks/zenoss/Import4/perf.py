@@ -152,7 +152,7 @@ class Migration(MigrationBase):
                             _total_dr += 1
                         else:
                             log.warning("no datapoint found, all NaN?")
-                            self.reportWarning('perf_import', 'No datapoint value found')
+                            self.reportWarning('perf_import', 'No datapoint value found in %s' % _one_rrd)
         except Exception as e:
             print e
             self.reportError('perf_import', 'Performance data validation failed')
@@ -204,7 +204,7 @@ class Migration(MigrationBase):
                     else:
                         _eno += 1
                         log.warning("%s:. [%d/%d] Error detected..." % (_one_rrd, _eno, self.files_no))
-                        self.reportWarning('perf_import', 'Error detected in performance data')
+                        self.reportWarning('perf_import', 'Error detected in performance data in %s' % _one_rrd)
                     self.reportStatus(Imp4Meta.num_perf, _no+_eno)
 
         except Exception as e:
