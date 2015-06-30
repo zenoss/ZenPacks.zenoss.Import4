@@ -114,7 +114,7 @@ class Migration(MigrationBase):
 
         self.reportMetaData(Imp4Meta.num_perfrrd, 0, self.files_no)
         self.reportMetaData(Imp4Meta.num_perftsdb, 0, self.files_no)
-        self.reportMetaData(Imp4Meta.num_perf, 0, self.files_no)
+        # self.reportMetaData(Imp4Meta.num_perf, 0, self.files_no)
 
         # this allows an user to skip the lengthy validation
         # that was validated offline before
