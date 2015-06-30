@@ -12,9 +12,15 @@
 cp  -p /opt/zenoss/etc/zodb_db_main.conf /tmp/zodb_db_main.conf.sav
 cp  -p /opt/zenoss/etc/zodb_db_imp4.conf /opt/zenoss/etc/zodb_db_main.conf
 
+# if it is a perf import operation, 
+# we also try to clean up worker job queue if operation aborted
+export perf_rex='[[:blank:]]*perf([[:blank:]]+.*[[:blank:]]|[[:blank:]]+)import($|[[:blank:]].*)'
+trap "[[ $* =~ $perf_rex ]] && /import4/pkg/bin/abort_jobs.sh" SIGTERM SIGINT
+
 # use the mounted directory as the current directory
 cmd="cd /mnt/pwd; /opt/zenoss/bin/python /import4/pkg/bin/import4 $*"
-su - zenoss -c "$cmd"
+su - zenoss -c "$cmd" &
+wait "$!"
 let rc=$?
 
 # restore the config file

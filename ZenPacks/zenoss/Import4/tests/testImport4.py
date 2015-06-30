@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 ##############################################################################
 #
 # Copyright (C) Zenoss, Inc. 2014-2015, all rights reserved.
@@ -8,87 +7,67 @@
 #
 ##############################################################################
 
-import argparse
-import sys
-import traceback
-import logging
+# BaseTestCase is a subclass of ZopeTestCase which is ultimately a subclass of
+# Python's standard unittest.TestCase. Because of this the following
+# documentation on unit testing in Zope and Python are both applicable here.
+#
+# Python Unit testing framework
+# http://docs.python.org/library/unittest.html
+#
+# Zope Unit Testing
+# http://wiki.zope.org/zope2/Testing
 
-from ZenPacks.zenoss.Import4 import migration, model, events, perf
-
-log = logging.getLogger('import4')
-
-def run_migration(migration_class, args):
-    # The main control running a migration process
-    _migration = migration_class(args, progress_report_callback)
-
-    # Run pname functions
-    try:
-        log.info('Executing %s', args.pname)
-        {
-            'check': _migration.prevalidate,
-            'verify': _migration.postvalidate,
-            'import': _migration.importFunc
-        }[args.pname]()
-
-    except migration.ImportError as err:
-        log.error(err.error_string)
-        log.exception(err)
-        exit(err.return_code)
-
-    except Exception as e:
-        # unrecognized exception
-        log.error("Unknown exception --- ")
-        log.exception(e)
-        exit(migration.ExitCode.UNKNOWN)
-
-    # all finished successfully
-    log.info('%s done!', args.pname)
-    exit(migration.ExitCode.SUCCESS)
+from Products.ZenTestCase.BaseTestCase import BaseTestCase
 
 
-def progress_report_callback(msg):
-    sys.stdout.write(msg)
-    sys.stdout.flush()
+class TestImport4(BaseTestCase):
+    def afterSetUp(self):
+        # You can use the afterSetUp method to create a proper environment for
+        # your tests to execute in, or to run common code between the tests.
+
+        # Always call the base class's afterSetUp method first, so things like self.dmd will be available.
+        super(TestImport4, self).afterSetUp()
+
+        self.device = self.dmd.Devices.createInstance('testDevice')
+
+    def testExampleOne(self):
+        self.assertEqual("One", "One")
+        self.assertTrue(True)
+
+    def testExampleTwo(self):
+        self.assertEqual(self.device.id, "testDevice")
+        self.assertFalse(False)
+
+    def beforeTearDown(self):
+        # You can use the beforeTearDown method to un-do anything from the afterSetUp method
+        # that needs to be restored to its original state. The ZODB transaction for the test
+        # case will be rolled back, so this method is not be necessary in most cases.
+
+        self.device = None
+
+        # Always call the base class's beforeTearDown method last, so any changes are rolled back
+        # correctly.
+        super(TestImport4, self).beforeTearDown()
 
 
-def parse_args():
-    parser = argparse.ArgumentParser(
-        description=(
-            "Import data from a 4.x Zenoss instance. These imports are destructive - "
-            "the relevant datastores on this instance will be destroyed, and the 4.x "
-            "data imported in its place.\n\n"
-        )
-    )
-    # add the global options
-    migration.MigrationBase.init_command_parser(parser)
-
-    subparsers = parser.add_subparsers(help='Group of migration functions')
-    for module in (model, events, perf):
-        m_name = module.__name__.split(".")[-1]
-        m_parser = subparsers.add_parser(m_name, description='Tool to migrate %s data' % m_name)
-        m_subparser = m_parser.add_subparsers()
-        # Add action-specific parsers
-        check_parser = m_subparser.add_parser('check', description='Run pre-validation on 4x backup artifact prior to import')
-        check_parser.set_defaults(pname='check')
-        import_parser = m_subparser.add_parser('import', description='Perform an import')
-        import_parser.set_defaults(pname='import')
-        verify_parser = m_subparser.add_parser('verify', description='Run post-validation on new system')
-        verify_parser.set_defaults(pname='verify')
-        module.Migration.init_command_parser(m_parser)
-        module.Migration.init_command_parsers(check_parser, verify_parser, import_parser)
-        m_parser.set_defaults(functor=lambda args, mclass=module.Migration: run_migration(mclass, args))
-
-    args = parser.parse_args()
-
-    return args
+class TestImport4Event(BaseTestCase):
+    pass
 
 
-def main():
-    args = parse_args()
-    args.functor(args)
+class TestImport4Perf(BaseTestCase):
+    pass
 
-if __name__ == "__main__":
-	args = parse_args()
-	_migrate = model.Migration(args, progress_report_callback)
-	_migrate.reportError('Test', 'This')
-	_migrate.reportWarning('Test', 'That')
+
+class TestImport4Model(BaseTestCase):
+    pass
+
+
+def test_suite():
+    from unittest import TestSuite, makeSuite
+    suite = TestSuite()
+
+    # Add your BaseTestCase subclasses here to have them executed.
+    suite.addTest(makeSuite(TestImport4))
+
+    return suite
+
