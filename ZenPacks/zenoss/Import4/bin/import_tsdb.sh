@@ -12,6 +12,7 @@
 # try to lock/grab the given file
 #   returns non-zero if not successful
 
+export fail_records="/import4/perf.fail.records" # keep the failed status for top level UI
 export tsdb_file="$1"                   # the absolute path to a tsdb import file 
 export tsdb_dir="/import4/Q.tsdb"   # the path to keep the final tsdb import files
 
@@ -21,6 +22,7 @@ export tsdb_base=$(basename "$tsdb_file")
 export tsdb_tmp_dir="$tsdb_dir/.tmp"
 export tsdb_imp_file="$tsdb_tmp_dir/$tsdb_base"  # place where we kept the importing file
 export tsdb_done_dir="$tsdb_dir/.done"
+export tsdb_fail_dir="$tsdb_dir/.fail"
 
 # common block
 progdir=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
@@ -28,6 +30,8 @@ source "$progdir/utils.sh"
 
 # check parameters and environment
 mkdir -p "$tsdb_tmp_dir" 
+mkdir -p "$tsdb_done_dir"
+mkdir -p "$tsdb_fail_dir" 
 
 [[ -f "$tsdb_file" ]]    || err_exit "import file:$tsdb_file not available anymore"
 [[ -d "$tsdb_tmp_dir" ]] || err_exit "Working directory $tsdb_tmp_dir not available"
@@ -45,15 +49,16 @@ sync
 let rc=$?
 if [[ $rc -ne 0 ]] 
 then
-    # if failed, return the tsdb file back 
-    mv "$tsdb_imp_file" "$tsdb_file"
+    echo "[ERROR] $tsdb_imp_file" >> "$fail_records"
+
+    # if failed, move the tsdb file to the failed dir 
+    mv -f "$tsdb_imp_file" "$tsdb_fail_dir"
     sync
 
     exit 1
 fi
 
 # mark the process complete
-mkdir -p "$tsdb_done_dir"
 mv "$tsdb_imp_file" "$tsdb_done_dir/$tsdb_base"
 sync
 

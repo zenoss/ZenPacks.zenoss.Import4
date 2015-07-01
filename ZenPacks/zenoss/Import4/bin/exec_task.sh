@@ -17,12 +17,15 @@ export task="$1"                    # the absolute path to a task file containin
 export task_dir="/import4/Q.tasks"  # the path keeping the unclaimed tasks
 export job_dir="/import4/Q.jobs"    # the path keeping the tasks being processed
 export tsdb_dir="/import4/Q.tsdb"   # the path to keep the final tsdb import files
+export fail_records="/import4/perf.fail.records" # keep the failed status for top level UI
 
 # derived
 export taskname=$(basename "$task")
 
 export job="$job_dir/$taskname"
 export job_done_dir="$job_dir/.done"
+export job_fail_dir="$job_dir/.fail"
+export job_part_dir="$job_dir/.part"
 export job_done="$job_done_dir/$taskname"
 
 export tsdb_tmp_dir="$tsdb_dir/.tmp"
@@ -54,6 +57,8 @@ sync
 
 # now this process does own the $job
 mkdir -p "$tsdb_tmp_dir" 
+mkdir -p "$job_fail_dir"
+mkdir -p "$job_part_dir"
 rm -f "$tsdb_raw"   # cleanup first
 sync
 
@@ -63,11 +68,13 @@ do
     let rc=$?
     if [[ $rc -ne 0 ]] 
     then
-        # failed, give up all the previous result
-        rm -f "$tsdb_raw"
+        echo "[ERROR] $one_rrd in $job" >> "$fail_records"
 
-        # return the job to the task pool
-        mv "$job" "$task"
+        # failed, send the partial result to the part pool for debug
+        [ -f "tsdb_raw" ] && mv "$tsdb_raw" "$job_part_dir"
+
+        # put the faled job in the fail pool
+        mv "$job" "$job_fail_dir"
         sync
 
         exit 1

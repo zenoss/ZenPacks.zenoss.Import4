@@ -19,6 +19,7 @@ echo "$0 Running ..."
 export VOL_D='/import4'
 export PYTHONPATH=$PYTHONPATH:$VOL_D/pkg
 export PATH=$PATH:$VOL_D/pkg/bin
+export ptag='/import4/staging/polling'
 
 # common block
 progdir=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
@@ -48,6 +49,24 @@ runuser -l zenoss -c /import4/pkg/bin/get_dmduuid.sh
 while true
 do
     echo 'Rescan tasks...'
+
+    # check if the monitor is alive
+    if [[ ! -f "$ptag" ]] 
+    then
+        echo 'Performance data import process not started yet...'
+        sleep 5
+        continue
+    fi
+
+    # if monitor is dead (300 seconds), abort all operation
+    if (( ($(date +"%s")-$(stat --printf="%Y" "$ptag")) > 300 )) 
+    then
+        echo 'Performance data import process stopped, cleaning up... '
+        rm -f "$ptag"
+        /import4/pkg/bin/abort_jobs.sh
+        echo 'Task queues removed...'
+        continue
+    fi
 
     (( fno = 0 ))
     find /import4/Q.tasks -maxdepth 1 -type f -name "task*" -print | while read task
