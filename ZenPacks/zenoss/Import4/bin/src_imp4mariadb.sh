@@ -53,6 +53,7 @@ do
     # check if the monitor is alive
     if [[ ! -f "$ptag" ]] 
     then
+        echo 'Performance data import process not started yet...'
         sleep 5
         continue
     fi
@@ -60,8 +61,10 @@ do
     # if monitor is dead (300 seconds), abort all operation
     if (( ($(date +"%s")-$(stat --printf="%Y" "$ptag")) > 300 )) 
     then
+        echo 'Performance data import process stopped, cleaning up... '
         rm -f "$ptag"
         /import4/pkg/bin/abort_jobs.sh
+        echo 'Task queues removed...'
         continue
     fi
 
