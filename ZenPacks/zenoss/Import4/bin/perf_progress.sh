@@ -54,4 +54,7 @@ imported_no=$(find $imported_Q -type f -name "task.*.tsdb" -print | wc -l)
 
 # the exact output format is important. 
 echo "T:$tsum F:$fsum C:$converted_no D:$imported_no"
+
+# time stamping polling moment
+date +"%s" > /import4/staging/polling
 exit 0

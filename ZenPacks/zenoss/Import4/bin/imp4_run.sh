@@ -12,25 +12,9 @@
 cp  -p /opt/zenoss/etc/zodb_db_main.conf /tmp/zodb_db_main.conf.sav
 cp  -p /opt/zenoss/etc/zodb_db_imp4.conf /opt/zenoss/etc/zodb_db_main.conf
 
-# if it is a perf import operation, 
-# we also try to clean up worker job queue if operation aborted
-export options="__OPTIONS__: $*"
-export perf_rex='[[:blank:]]*perf([[:blank:]]+.*[[:blank:]]|[[:blank:]]+)import($|[[:blank:]].*)'
-
-do_trap()
-{
-    echo "imp4_run.sh trapped with $1 running"
-    pkill -u zenoss
-    [[ "$options" =~ $perf_rex ]] && /import4/pkg/bin/abort_jobs.sh
-}
-export -f do_trap
-
 # use the mounted directory as the current directory
 cmd="cd /mnt/pwd; /opt/zenoss/bin/python /import4/pkg/bin/import4 $*"
-su - zenoss -c "$cmd" &
-export running_pid="$!"
-trap "do_trap $running_pid" SIGTERM SIGINT
-wait "$!"
+su - zenoss -c "$cmd"
 let rc=$?
 
 # restore the config file
@@ -39,6 +23,7 @@ cp  -p /tmp/zodb_db_main.conf.sav /opt/zenoss/etc/zodb_db_main.conf
 # check to see if we need to commit the image
 [[ $rc != 0 ]] && exit $rc
 
+options="__OPTIONS__: $*"
 for op in ' -h ' ' --help' 
 do
     if [[ "$options" == *"$op"* ]]
