@@ -147,8 +147,9 @@ class Migration(MigrationBase):
 
         # zenpack --restore AND --ignore-services and --keep-pack
         log.info('Fixing zenpack in zodb and files on the image ...')
-        _cmd = "zenpack --restore --keep-pack=ZenPacks.zenoss.Import4"
-        self.exec_cmd(_cmd, status_key='numZenPacks', status_re='looking for', status_max=self.zenpack_count)
+        #_cmd = "zenpack --restore --keep-pack=ZenPacks.zenoss.Import4"
+        _cmd = "%s/zenpack_restore.sh" % self.binpath
+        self.exec_cmd(_cmd, status_key='numZenPacks', status_re='Successfully Installed ZenPack', status_max=self.zenpack_count)
 
         log.info("zenpacks restored:%s", codeString[ExitCode.SUCCESS])
         return
@@ -203,19 +204,15 @@ class Migration(MigrationBase):
         else:
             log.info("No external catalog backup found")
 
-        # check egg directories
+        # check eggs in zenpack_actions.txt_original
         self.zenpack_count = int(subprocess.check_output(
-            'find %s/ZenPacks -maxdepth 1 -type d -name "*.egg" | \
-             sed "s@\\([^/]*/\\)*\\(.*\\)-[0-9].*@\\2@" | \
-             sort | \
-             tee "%s/zenpack.list" | \
-             wc -l' % (self.zenbackup_dir, Config.stageDir),
+            "wc -l /opt/zenoss/var/zenpack_actions.txt_original | awk '{print $1;}'",
             shell=True))
         if self.zenpack_count <= 0:
-            log.error("No zenpack found in %s/ZenPacks!", self.zenbackup_dir)
-            self.reportError('model_import', 'No zenpack found in the backup file')
+            log.error("No zenpacks found in zenpack_actions.txt_original")
+            self.reportError('model_import', 'No zenpacks found to install')
             raise ImportError(ExitCode.INVALID)
-        log.info('%d zenpack directories in "%s/ZenPacks"', self.zenpack_count, self.zenbackup_dir)
+        log.info('%d zenpacks in "/opt/zenoss/var/zenpack_actions.txt_original"', self.zenpack_count)
 
         log.info('directory "%s" for models looks OK', self.zenbackup_dir)
         return
