@@ -17,6 +17,7 @@
 # Zope Unit Testing
 # http://wiki.zope.org/zope2/Testing
 
+import os
 import argparse
 import sys
 from StringIO import StringIO
@@ -73,6 +74,7 @@ def parse_args(args=None):
 class TestImport4(BaseTestCase):
     def afterSetUp(self):
         super(TestImport4, self).afterSetUp()
+        self.dname, self.fname = os.path.split(os.path.abspath(__file__))
         self.args = parse_args(['perf', 'check'])
         self.imp4 = None
 
@@ -114,6 +116,7 @@ class TestImport4Migrate(TestImport4):
         _cmd_str = 'echo "%s"' % _test_str
         self._exec_cmd(_cmd_str, status_key='TestStatus', status_max=3, status_re=_test_re, to_log=True)
         self.assertTrue('{"imp4_status": {"%s": %d}}' % ('TestStatus', 1) in self.out.getvalue())
+        self.assertTrue('{"imp4_status": {"%s": %d}}' % ('TestStatus', 3) in self.out.getvalue())
 
 
 class TestImport4Event(TestImport4):
