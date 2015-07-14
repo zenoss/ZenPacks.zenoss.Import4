@@ -67,7 +67,7 @@ status_out "Extracting $1"
 
 if [[ -f backup.md5 ]]; then
    status_out "Check md5sum against backup.md5"
-   cmp -s -n 32 backup.md5 <(md5sum -b zenbackup_*.tgz) && info_out "md5sum OK" || err_out "md5sum failed: zenbackup_*.tgz"
+   cmp -s -n 32 backup.md5 <(md5sum -b zenbackup_*.tgz) && info_out "md5sum OK" || err_exit "md5sum failed: zenbackup_*.tgz"
 else
     info_out "No md5 checksum, continue"
 fi
