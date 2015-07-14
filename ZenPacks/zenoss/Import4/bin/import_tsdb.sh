@@ -44,10 +44,17 @@ rm "$tsdb_file"             >/dev/null 2>&1 || err_exit "someone else got $tsdb_
 sync
 
 # now this process owns the $tsdb file
-/opt/opentsdb/build/tsdb import --config=/opt/zenoss/etc/opentsdb/opentsdb.conf "$tsdb_imp_file"
+timeout 120 /opt/opentsdb/build/tsdb import --config=/opt/zenoss/etc/opentsdb/opentsdb.conf "$tsdb_imp_file"
 
 let rc=$?
-if [[ $rc -ne 0 ]] 
+if [[ $rc -eq 124 ]]
+then
+    echo "[Warning - timeout] $tsdb_imp_file" >> "$fail_records"
+    # if time-out, move the tsdb file back
+    mv -f "$tsdb_imp_file" "$tsdb_dir"
+
+    exit 1
+elif [[ $rc -ne 0 ]] 
 then
     echo "[ERROR] $tsdb_imp_file" >> "$fail_records"
 
