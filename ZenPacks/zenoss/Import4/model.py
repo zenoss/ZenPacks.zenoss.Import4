@@ -125,9 +125,20 @@ class Migration(MigrationBase):
     def zenmigrate(self):
         self._ready_to_import()
         # dmd del black list zenpacks (commit)
-        self.reportProgress('Removing the non 5.x compatible zenpacks from zodb ...')
-        _cmd = "zendmd --script=%s/del_dmdobjs.dmd --commit" % self.binpath
-        self.exec_cmd(_cmd)
+        dmdObjsRetries = 0
+        dmdObjsException = None
+        while dmdObjsRetries < 3: # ZEN-18740
+            try:
+                self.reportProgress('Removing the non 5.x compatible zenpacks from zodb ...')
+                _cmd = "zendmd --script=%s/del_dmdobjs.dmd" % self.binpath
+                self.exec_cmd(_cmd)
+                break
+            except ImportError as e:
+                log.warning('Failed to run dmd script to remove dmd objects, will retry up to 2 times')
+                dmdObjsException = e
+                dmdObjsRetries += 1
+        if dmdObjsRetries == 3:
+            raise dmdObjsException
 
         # zenmigrate
         log.info('Running zenmigrate')
