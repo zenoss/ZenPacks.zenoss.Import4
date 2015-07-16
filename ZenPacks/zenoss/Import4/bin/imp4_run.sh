@@ -28,7 +28,7 @@ prep_mysqld()
 
     # wait until the daemon is running or timeout
     ((i=0))
-    while ! /usr/bin/mysqladmin --socket="$1"/mysql.sock status
+    while ! /usr/bin/mysqladmin --socket="$1"/mysql.sock status > /dev/null 2>&1
     do
         echo -n '.'
         sleep 5
@@ -42,7 +42,7 @@ prep_mysqld()
 if [[ "$options" == *" import "* && "$options" == *"model "* && "$options" == *" --database"* ]]
 then
     prep_mysqld /var/lib/mysql.model 3307
-else if [[ "$options" == *" import "* && "$options" == *"events "* && "$options" == *" --database"* ]]
+elif [[ "$options" == *" import "* && "$options" == *"events "* && "$options" == *" --database"* ]]
 then
     prep_mysqld /var/lib/mysql.events 3306
 fi

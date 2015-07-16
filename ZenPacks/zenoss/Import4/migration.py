@@ -83,9 +83,9 @@ class Config(object):
     # other locations
     rrdTop =        '/import4/staging/zenbackup/perf/Devices'
     zepSocket =     '/var/lib/mysql.events/mysql.sock'
-    zepPort =       3306
+    zepPort =       '3306'
     zodbSocket =    '/var/lib/mysql.model/mysql.sock'
-    zodbPort =      3307
+    zodbPort =      '3307'
     perf_poll =     10
     perf_timeout =  60
     perf_fail_records = '/import4/perf.fail.records'
