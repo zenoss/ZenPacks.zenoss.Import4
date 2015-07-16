@@ -34,22 +34,19 @@ source "$progdir/utils.sh"
 [[ -d $imported_Q ]] || mkdir -p "$imported_Q"
 
 # the current conversion status
-wait_no=$(find $tasks_Q -type f -name "task.*" -exec cat {} \; | wc -l)
-converted_no=$(find $converted_Q -type f -name "task.*" -exec cat {} \; | wc -l)
+converted_no=$(find $converted_Q -type f -exec cat {} \; | wc -l)
 tsum=$(cat "$rrd_list" | wc -l)
 [[ $tsum -ne 0 ]] || err_exit "No task"
 
-# started_no=$(find $jobs_Q -type f -name "task.*" -exec cat {} \; | wc -l)
-
 # the current imported number
-imported_no=$(find $imported_Q -type f -name "task.*.tsdb" -print | wc -l)
+imported_no=$(find $imported_Q -type f -print | wc -l)
 # Each tsdb file contains 5 rrd, but not exceeding the tsum
 ((imported_no=imported_no*5))
 [ $imported_no -gt $tsum ] && ((imported_no=tsum))
 
 # the total failure counts, not rrd count
-[ -d "$converted_Q_fail" ] && ((fail_c_no=$(find $converted_Q_fail -type f -name "task.*" -print | wc -l))) || ((fail_c_no=0))
-[ -d "$imported_Q_fail" ]  && ((fail_i_no=$(find $imported_Q_fail  -type f -name "task.*" -print | wc -l))) || ((fail_i_no=0))
+[ -d "$converted_Q_fail" ] && ((fail_c_no=$(find $converted_Q_fail -type f -print | wc -l))) || ((fail_c_no=0))
+[ -d "$imported_Q_fail" ]  && ((fail_i_no=$(find $imported_Q_fail  -type f -print | wc -l))) || ((fail_i_no=0))
 ((fsum=fail_c_no+fail_i_no))
 
 # the exact output format is important. 

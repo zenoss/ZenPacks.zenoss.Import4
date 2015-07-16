@@ -33,18 +33,18 @@ mkdir -p "$tsdb_tmp_dir"
 mkdir -p "$tsdb_done_dir"
 mkdir -p "$tsdb_fail_dir" 
 
-[[ -f "$tsdb_file" ]]    || err_exit "import file:$tsdb_file not available anymore"
+[[ -f "$tsdb_file" ]]    || ok_exit "import file:$tsdb_file not available anymore"
 [[ -d "$tsdb_tmp_dir" ]] || err_exit "Working directory $tsdb_tmp_dir not available"
 
 # double attempts for an atomic ownership
-ln "$tsdb_file" "$tsdb_imp_file"    >/dev/null 2>&1 || err_exit "someone else got $tsdb_file - ln" 
-touch "$tsdb_imp_file"              >/dev/null 2>&1 || err_exit "someone else got $tsdb_file - touch" 
+ln "$tsdb_file" "$tsdb_imp_file"    >/dev/null 2>&1 || ok_exit "someone else got $tsdb_file - ln" 
+touch "$tsdb_imp_file"              >/dev/null 2>&1 || ok_exit "someone else got $tsdb_file - touch" 
 sync
-rm "$tsdb_file"             >/dev/null 2>&1 || err_exit "someone else got $tsdb_file - rm"
+rm "$tsdb_file"             >/dev/null 2>&1 || ok_exit "someone else got $tsdb_file - rm"
 sync
 
 # now this process owns the $tsdb file
-timeout 120 /opt/opentsdb/build/tsdb import --config=/opt/zenoss/etc/opentsdb/opentsdb.conf "$tsdb_imp_file"
+timeout 120 /opt/opentsdb/build/tsdb import --config=/opt/zenoss/etc/opentsdb/opentsdb.conf "$tsdb_imp_file" 2>&1 | grep "TextImporter: Processed"
 
 let rc=$?
 if [[ $rc -eq 124 ]]
@@ -58,8 +58,10 @@ elif [[ $rc -ne 0 ]]
 then
     echo "[ERROR] $tsdb_imp_file" >> "$fail_records"
 
-    # if failed, move the tsdb file to the failed dir 
-    mv -f "$tsdb_imp_file" "$tsdb_fail_dir"
+    # if failed, move the tsdb file back and retry later
+    # if a true error, the perf_progress monitoring will timeout 
+    # then abort at the perf import level
+    mv -f "$tsdb_imp_file" "$tsdb_dir"
     sync
 
     exit 1

@@ -62,6 +62,8 @@ mkdir -p "$job_part_dir"
 rm -f "$tsdb_raw"   # cleanup first
 sync
 
+info_out "Processing $job"
+
 while read one_rrd
 do
     "$progdir"/../rrd2tsdb.py -p "$PERFTOP" "$one_rrd" >> "$tsdb_raw"
