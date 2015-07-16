@@ -116,7 +116,7 @@
            "Owner": "mysql:mysql",
            "Permission": "0755",
            "ResourcePath": "mariadb-events",
-           "ContainerPath": "/var/lib/mysql",
+           "ContainerPath": "/var/lib/mysql.events",
            "Type": ""
          },
          {

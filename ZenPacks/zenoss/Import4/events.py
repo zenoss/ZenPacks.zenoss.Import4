@@ -133,6 +133,8 @@ class Migration(MigrationBase):
     def _migrateSchema(self):
         _cmd = ['/opt/zenoss/bin/zeneventserver-create-db',
                 '--dbtype', 'mysql',
+                '--dbhost', '127.0.0.1',
+                '--dbport', Config.zepPort,
                 '--dbuser', "'%s'" % self.user,
                 '--dbpass', "'%s'" % self.password,
                 '--schemadir', '/opt/zenoss/share/zeneventserver/sql',
@@ -140,5 +142,5 @@ class Migration(MigrationBase):
         _cmdstr = subprocess.list2cmdline(_cmd)
         _rc = subprocess.call(_cmdstr, shell=True)
         if _rc > 0:
-            raise ImportError(ExitCode.COMMAND_ERROR, _rc)
+            raise ImportError(ExitCode.CMD_ERROR, _rc)
         return
