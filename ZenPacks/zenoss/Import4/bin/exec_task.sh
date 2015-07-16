@@ -42,14 +42,14 @@ source "$progdir/utils.sh"
 read PERFTOP < "$task_dir/PERFTOP"
 [[ -d "$PERFTOP" ]]     || err_exit "$PERFTOP location in \"$task_dir/PERFTOP\" is not correct"
 
-[[ -f "$task" ]]        || err_exit "task:$task not available anymore"
+[[ -f "$task" ]]        || ok_exit "task:$task not available anymore"
 [[ -d "$job_dir" ]]     || err_exit "Job directory not available"
 
 # double attempts for an atomic ownership
-ln "$task" "$job" >/dev/null 2>&1  || err_exit "someone else got $task - ln" 
-touch "$job"      >/dev/null 2>&1  || err_exit "someone else got $task - touch" 
+ln "$task" "$job" >/dev/null 2>&1  || ok_exit "someone else got $task - ln" 
+touch "$job"      >/dev/null 2>&1  || ok_exit "someone else got $task - touch" 
 sync
-rm "$task"        >/dev/null 2>&1  || err_exit "someone else got $task - rm"
+rm "$task"        >/dev/null 2>&1  || ok_exit "someone else got $task - rm"
 sync
 
 # Not likely but we can further monitor workers and restart crashed ones
