@@ -30,13 +30,6 @@
         },
         "Context": null,
         "Endpoints": [
-        {
-            "Application": "opentsdb*",
-            "Name": "opentsdb*",
-            "PortNumber": 4242,
-            "Protocol": "tcp",
-            "Purpose": "import"
-        },
          {
            "Name": "zookeeper-client",
            "Application": "zookeeper-client",
@@ -45,8 +38,8 @@
            "Purpose": "import_all"
          },
          {
-           "Name": "hbase-master",
-           "Application": "hbase-master-.*",
+           "Name": "hbase-master-rest",
+           "Application": "hbase-master-rest",
            "Purpose": "import"
          },
          {
@@ -97,13 +90,13 @@
          },
          {
            "Name": "OpenTSDB up",
-           "Script": "timeout 5 /opt/opentsdb/build/tsdb uid --config=/opt/zenoss/etc/opentsdb/opentsdb.conf grep metrics jvm.uptime"
+           "Script": "timeout 5 /opt/opentsdb/build/tsdb mkmetric --config=/opt/zenoss/etc/opentsdb/opentsdb.conf imp4opentsdb-up"
          },
          {
            "Name": "DMD UUID obtained",
            "Script": "[ -f /import4/dmd_uuid.txt ]"
          },
-         { 
+         {
            "Name": "imp4opentsdb script",
            "Script": "[ -f /import4/pkg/bin/imp4opentsdb.sh ]"
          }
