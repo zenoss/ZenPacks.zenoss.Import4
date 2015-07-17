@@ -142,5 +142,5 @@ class Migration(MigrationBase):
         _cmdstr = subprocess.list2cmdline(_cmd)
         _rc = subprocess.call(_cmdstr, shell=True)
         if _rc > 0:
-            raise ImportError(ExitCode.CMD_ERROR, _rc)
+            raise ImportError(ExitCode.CMD_ERROR)
         return
