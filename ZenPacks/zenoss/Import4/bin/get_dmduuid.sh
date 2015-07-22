@@ -15,6 +15,6 @@ then
     cat "$UUID_CACHE"
     exit $?
 else
-    echo 'Cannot get dmd.uuid! Need to service run imp4mariadb check <4x.tar> first.' >&2
+    echo 'dmd.uuid does not exist!' >&2
     exit 1
 fi
