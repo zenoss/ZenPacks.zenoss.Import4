@@ -33,7 +33,7 @@ mkdir -p "$tsdb_tmp_dir"
 mkdir -p "$tsdb_done_dir"
 mkdir -p "$tsdb_fail_dir" 
 
-[[ -f "$tsdb_file" ]]    || ok_exit "import file:$tsdb_file not available anymore"
+[[ -f "$tsdb_file" ]]    || ok_exit "import file:$tsdb_file is being processed"
 [[ -d "$tsdb_tmp_dir" ]] || err_exit "Working directory $tsdb_tmp_dir not available"
 
 # double attempts for an atomic ownership
@@ -44,7 +44,7 @@ rm "$tsdb_file"             >/dev/null 2>&1 || ok_exit "someone else got $tsdb_f
 sync
 
 # now this process owns the $tsdb file
-timeout 120 /opt/opentsdb/build/tsdb import --config=/opt/zenoss/etc/opentsdb/opentsdb.conf "$tsdb_imp_file" 2>&1 | grep "TextImporter: Processed"
+timeout 120 /opt/opentsdb/build/tsdb import --config=/opt/zenoss/etc/opentsdb/opentsdb.conf "$tsdb_imp_file" 2>&1 | egrep "(TextImporter: Processed|ERROR)"
 
 let rc=$?
 if [[ $rc -eq 124 ]]

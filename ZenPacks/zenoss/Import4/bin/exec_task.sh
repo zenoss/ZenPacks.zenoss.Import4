@@ -42,7 +42,7 @@ source "$progdir/utils.sh"
 read PERFTOP < "$task_dir/PERFTOP"
 [[ -d "$PERFTOP" ]]     || err_exit "$PERFTOP location in \"$task_dir/PERFTOP\" is not correct"
 
-[[ -f "$task" ]]        || ok_exit "task:$task not available anymore"
+[[ -f "$task" ]]        || ok_exit "task:$task is being processed"
 [[ -d "$job_dir" ]]     || err_exit "Job directory not available"
 
 # double attempts for an atomic ownership
