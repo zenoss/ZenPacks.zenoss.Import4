@@ -35,6 +35,7 @@ do
     # recreate the struct
     mkdir -p "/import4/Q.$dname/.done"
     chmod -R a+w "/import4/Q.$dname"
+    chown -R zenoss:zenoss "/import4/Q.$dname"
 done
 
 info_out "Performance directories cleaned up"
