@@ -83,6 +83,5 @@ do
     then
 	    # check and revive the stuck tasks
         runuser -l zenoss -c "/import4/pkg/bin/check_task.sh"
-        sleep 5
     fi
 done

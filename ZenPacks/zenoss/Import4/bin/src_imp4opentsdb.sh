@@ -43,6 +43,5 @@ do
     then
 	        # check and revive the stuck tsdb
             /import4/pkg/bin/check_tsdb.sh
-            sleep 5
     fi
 done
