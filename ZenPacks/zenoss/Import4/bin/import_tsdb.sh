@@ -55,12 +55,10 @@ then
     # if a true error, the perf_progress monitoring will timeout 
     # then abort at the perf import level
     mv -f "$tsdb_imp_file" "$tsdb_dir"
-    sync
 
     exit 1
 fi
 
 # mark the process complete
 mv "$tsdb_imp_file" "$tsdb_done_dir/$tsdb_base"
-sync
 
