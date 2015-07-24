@@ -27,6 +27,10 @@ mkdir -p  "$save_dir"
 chmod -R a+w "$save_dir"
 [ -f "$fail_records" ] && mv "$fail_records" "$save_dir"
 
+# the extra one for tsdb
+mkdir -p "/import4/Q.tsdb/.tmp"
+mkdir -p "/import4/Q.tsdb/.fail"
+
 for dname in $targets
 do
     # remove the residue directories

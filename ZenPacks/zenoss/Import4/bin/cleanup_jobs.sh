@@ -23,6 +23,10 @@ save_dir="/import4/Q.save"
 rm -rf "$save_dir"
 rm -f "$fail_records"
 
+# the extra one for tsdb
+mkdir -p "/import4/Q.tsdb/.tmp"
+mkdir -p "/import4/Q.tsdb/.fail"
+
 for dname in $targets
 do
     # remove the residue directories
@@ -33,3 +37,4 @@ do
     chmod -R a+w "/import4/Q.$dname"
     chown -R zenoss:zenoss "/import4/Q.$dname"
 done
+

@@ -28,11 +28,6 @@ export tsdb_fail_dir="$tsdb_dir/.fail"
 progdir=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 source "$progdir/utils.sh"
 
-# check parameters and environment
-mkdir -p "$tsdb_tmp_dir" 
-mkdir -p "$tsdb_done_dir"
-mkdir -p "$tsdb_fail_dir" 
-
 [[ -f "$tsdb_file" ]]    || ok_exit "import file:$tsdb_file is being processed"
 [[ -d "$tsdb_tmp_dir" ]] || err_exit "Working directory $tsdb_tmp_dir not available"
 

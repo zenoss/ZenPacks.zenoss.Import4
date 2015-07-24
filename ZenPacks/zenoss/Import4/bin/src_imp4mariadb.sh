@@ -68,6 +68,8 @@ do
         continue
     fi
 
+    [[ ! -d /import4/Q.tasks ]] && sleep 5 && continue
+
     (( fno = 0 ))
     find /import4/Q.tasks -maxdepth 1 -type f -name "task*" -print | while read task
     do
