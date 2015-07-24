@@ -39,9 +39,7 @@ mkdir -p "$tsdb_fail_dir"
 # double attempts for an atomic ownership
 ln "$tsdb_file" "$tsdb_imp_file"    >/dev/null 2>&1 || ok_exit "someone else got $tsdb_file - ln" 
 touch "$tsdb_imp_file"              >/dev/null 2>&1 || ok_exit "someone else got $tsdb_file - touch" 
-sync
 rm "$tsdb_file"             >/dev/null 2>&1 || ok_exit "someone else got $tsdb_file - rm"
-sync
 
 # now this process owns the $tsdb file
 timeout 120 /opt/opentsdb/build/tsdb import --config=/opt/zenoss/etc/opentsdb/opentsdb.conf "$tsdb_imp_file" 2>&1 | egrep "(TextImporter: Processed|ERROR)"

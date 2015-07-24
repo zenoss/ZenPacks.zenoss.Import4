@@ -49,7 +49,6 @@ read PERFTOP < "$task_dir/PERFTOP"
 ln "$task" "$job" >/dev/null 2>&1  || ok_exit "someone else got $task - ln" 
 touch "$job"      >/dev/null 2>&1  || ok_exit "someone else got $task - touch" 
 rm "$task"        >/dev/null 2>&1  || ok_exit "someone else got $task - rm"
-sync
 
 # Not likely but we can further monitor workers and restart crashed ones
 # <job> no being completed for a while
@@ -59,7 +58,6 @@ mkdir -p "$tsdb_tmp_dir"
 mkdir -p "$job_fail_dir"
 mkdir -p "$job_part_dir"
 rm -f "$tsdb_raw"   # cleanup first
-sync
 
 info_out "Processing $job"
 
