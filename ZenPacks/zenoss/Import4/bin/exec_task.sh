@@ -48,7 +48,6 @@ read PERFTOP < "$task_dir/PERFTOP"
 # double attempts for an atomic ownership
 ln "$task" "$job" >/dev/null 2>&1  || ok_exit "someone else got $task - ln" 
 touch "$job"      >/dev/null 2>&1  || ok_exit "someone else got $task - touch" 
-sync
 rm "$task"        >/dev/null 2>&1  || ok_exit "someone else got $task - rm"
 sync
 
@@ -77,7 +76,6 @@ do
 
         # put the faled job in the fail pool
         mv "$job" "$job_fail_dir"
-        sync
 
         exit 1
     fi
@@ -98,4 +96,3 @@ rm -f "$tsdb_raw" "$tsdb_ok"
 # mark job completed
 mkdir -p "$job_done_dir"
 mv "$job" "$job_done"
-sync
