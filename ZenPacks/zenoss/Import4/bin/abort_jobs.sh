@@ -27,6 +27,10 @@ mkdir -p  "$save_dir"
 chmod -R a+w "$save_dir"
 [ -f "$fail_records" ] && mv "$fail_records" "$save_dir"
 
+# the extra one for tsdb
+mkdir -p "/import4/Q.tsdb/.tmp"
+mkdir -p "/import4/Q.tsdb/.fail"
+
 for dname in $targets
 do
     # remove the residue directories
@@ -35,6 +39,7 @@ do
     # recreate the struct
     mkdir -p "/import4/Q.$dname/.done"
     chmod -R a+w "/import4/Q.$dname"
+    chown -R zenoss:zenoss "/import4/Q.$dname"
 done
 
 info_out "Performance directories cleaned up"

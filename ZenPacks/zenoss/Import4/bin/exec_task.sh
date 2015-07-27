@@ -42,15 +42,13 @@ source "$progdir/utils.sh"
 read PERFTOP < "$task_dir/PERFTOP"
 [[ -d "$PERFTOP" ]]     || err_exit "$PERFTOP location in \"$task_dir/PERFTOP\" is not correct"
 
-[[ -f "$task" ]]        || ok_exit "task:$task not available anymore"
+[[ -f "$task" ]]        || ok_exit "task:$task is being processed"
 [[ -d "$job_dir" ]]     || err_exit "Job directory not available"
 
 # double attempts for an atomic ownership
 ln "$task" "$job" >/dev/null 2>&1  || ok_exit "someone else got $task - ln" 
 touch "$job"      >/dev/null 2>&1  || ok_exit "someone else got $task - touch" 
-sync
 rm "$task"        >/dev/null 2>&1  || ok_exit "someone else got $task - rm"
-sync
 
 # Not likely but we can further monitor workers and restart crashed ones
 # <job> no being completed for a while
@@ -60,13 +58,12 @@ mkdir -p "$tsdb_tmp_dir"
 mkdir -p "$job_fail_dir"
 mkdir -p "$job_part_dir"
 rm -f "$tsdb_raw"   # cleanup first
-sync
 
 info_out "Processing $job"
 
 while read one_rrd
 do
-    "$progdir"/../rrd2tsdb.py -p "$PERFTOP" "$one_rrd" >> "$tsdb_raw"
+    "$progdir"/rrd2tsdb.sh "$PERFTOP" "$one_rrd" >> "$tsdb_raw"
     let rc=$?
     if [[ $rc -ne 0 ]] 
     then
@@ -77,7 +74,6 @@ do
 
         # put the faled job in the fail pool
         mv "$job" "$job_fail_dir"
-        sync
 
         exit 1
     fi
@@ -98,4 +94,3 @@ rm -f "$tsdb_raw" "$tsdb_ok"
 # mark job completed
 mkdir -p "$job_done_dir"
 mv "$job" "$job_done"
-sync

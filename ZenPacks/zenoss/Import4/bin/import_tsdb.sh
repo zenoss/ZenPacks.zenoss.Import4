@@ -28,23 +28,16 @@ export tsdb_fail_dir="$tsdb_dir/.fail"
 progdir=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 source "$progdir/utils.sh"
 
-# check parameters and environment
-mkdir -p "$tsdb_tmp_dir" 
-mkdir -p "$tsdb_done_dir"
-mkdir -p "$tsdb_fail_dir" 
-
-[[ -f "$tsdb_file" ]]    || ok_exit "import file:$tsdb_file not available anymore"
+[[ -f "$tsdb_file" ]]    || ok_exit "import file:$tsdb_file is being processed"
 [[ -d "$tsdb_tmp_dir" ]] || err_exit "Working directory $tsdb_tmp_dir not available"
 
 # double attempts for an atomic ownership
 ln "$tsdb_file" "$tsdb_imp_file"    >/dev/null 2>&1 || ok_exit "someone else got $tsdb_file - ln" 
 touch "$tsdb_imp_file"              >/dev/null 2>&1 || ok_exit "someone else got $tsdb_file - touch" 
-sync
 rm "$tsdb_file"             >/dev/null 2>&1 || ok_exit "someone else got $tsdb_file - rm"
-sync
 
 # now this process owns the $tsdb file
-timeout 120 /opt/opentsdb/build/tsdb import --config=/opt/zenoss/etc/opentsdb/opentsdb.conf "$tsdb_imp_file" 2>&1 | grep "TextImporter: Processed"
+timeout 120 /opt/opentsdb/build/tsdb import --config=/opt/zenoss/etc/opentsdb/opentsdb.conf "$tsdb_imp_file" 2>&1 | egrep "(TextImporter: Processed|ERROR)"
 
 let rc=$?
 if [[ $rc -eq 124 ]]
@@ -62,12 +55,10 @@ then
     # if a true error, the perf_progress monitoring will timeout 
     # then abort at the perf import level
     mv -f "$tsdb_imp_file" "$tsdb_dir"
-    sync
 
     exit 1
 fi
 
 # mark the process complete
 mv "$tsdb_imp_file" "$tsdb_done_dir/$tsdb_base"
-sync
 

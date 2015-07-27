@@ -68,6 +68,8 @@ do
         continue
     fi
 
+    [[ ! -d /import4/Q.tasks ]] && sleep 5 && continue
+
     (( fno = 0 ))
     find /import4/Q.tasks -maxdepth 1 -type f -name "task*" -print | while read task
     do
@@ -83,6 +85,5 @@ do
     then
 	    # check and revive the stuck tasks
         runuser -l zenoss -c "/import4/pkg/bin/check_task.sh"
-        sleep 5
     fi
 done

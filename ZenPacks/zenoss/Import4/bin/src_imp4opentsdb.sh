@@ -28,6 +28,8 @@ source "$progdir/utils.sh"
 while true
 do
     echo 'Rescanning tsdb files ...'
+    [[ ! -d /import4/Q.tsdb ]] && sleep 5 && continue
+
     (( tno = 0 ))
     find /import4/Q.tsdb -maxdepth 1 -type f -name "task*.tsdb" -print | while read tfile
     do
@@ -43,6 +45,5 @@ do
     then
 	        # check and revive the stuck tsdb
             /import4/pkg/bin/check_tsdb.sh
-            sleep 5
     fi
 done
