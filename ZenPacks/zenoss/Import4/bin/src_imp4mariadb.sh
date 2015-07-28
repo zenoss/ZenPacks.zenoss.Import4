@@ -27,6 +27,13 @@ source "$progdir/utils.sh"
 
 check_monitor()
 {
+    # check if the monitor is alive
+    if [[ ! -f "$ptag" ]] 
+    then
+        echo 'Performance data import process not started yet...'
+        return 1
+    fi
+
     # if monitor is dead (120 seconds), abort all operation
     if (( ($(date +"%s")-$(stat --printf="%Y" "$ptag")) > 120 )) 
     then
@@ -65,15 +72,7 @@ while true
 do
     echo 'Rescan tasks...'
 
-    # check if the monitor is alive
-    if [[ ! -f "$ptag" ]] 
-    then
-        echo 'Performance data import process not started yet...'
-        sleep 5
-        continue
-    fi
-
-    check_monitor()
+    ! check_monitor && sleep 5 && continue
 
     [[ ! -d /import4/Q.tasks ]] && sleep 5 && continue
 
@@ -88,7 +87,7 @@ do
         fi 
 
         # if monitor died, break out and wait for service to be restarted the script
-        check_monitor() || exit 1
+        ! check_monitor && exit 1
     done
 
     if [[ $fno -eq 0 ]]
