@@ -9,8 +9,9 @@
 # these variables must be provided
 # metric, device, key, dmduuid
 
-# TODO: handle negative values
-# TODO: handle DERIVE/COUNTER/ABSOLUTE
+# This script is not a generic xml parser
+# It assumes a fixed text layout from the rrdtool (ver:1.4.7-1.el6.rfx) dump command
+
 BEGIN {
     # tracking parsing context
     CONVFMT = "%1.10e"
@@ -57,15 +58,16 @@ BEGIN {
 
     if ((i=index($0,"<step>")) > 0) {
         ii=index($0,"</step>")
-        step=strtonum(substr($0, i+6, ii-i-6))
         # extract step
-        print "STEP is", step+0 > "/dev/stderr"
+        step=strtonum(substr($0, i+6, ii-i-6))
+
+        # print "STEP is", step+0 > "/dev/stderr"
         next
     }
     if (index($0,"GAUGE") > 0) { type = 0; next } 
-    if (index($0,"DERIVE") > 0) { type = 1; next }      # future
-    if (index($0,"COUNTER") > 0) { type = 2; next }     # future
-    if (index($0,"ABSOLUTE") > 0) { type = 3; next }    # future
+    if (index($0,"DERIVE") > 0) { type = 1; next }
+    if (index($0,"COUNTER") > 0) { type = 2; next }
+    if (index($0,"ABSOLUTE") > 0) { type = 3; next }
     if (index($0,"<rra>") > 0) { rra = 1; next }
     if (index($0,"</rra>") > 0) { rra = 0; avg = 0; db = 0; next }
     if ((rra == 1) && (index($0,"AVERAGE") > 0)) { avg = 1; next }

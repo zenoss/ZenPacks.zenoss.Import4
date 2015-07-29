@@ -26,7 +26,7 @@ export perfPath="${1%/}"
 export rrdPath="$2"
 export outPath="$3"
 
-# if this rrdPath as a matching rrdPath_GAUGE.rrd, we skip this file
+# if this rrdPath has a matching rrdPath_GAUGE.rrd, we skip this file
 [[ -f "${rrdPath%.rrd}_GAUGE.rrd" ]] && ok_exit "GAUGE version exists, $rrdPath skipped"
 
 # excluding the legal metric/key letters
@@ -45,12 +45,10 @@ export key=${key//$ic/-}
 export metric=${metric//$ic/-}
 export dmduuid="$(/import4/pkg/bin/get_dmduuid.sh)"
 
-info_out "perfdata_path=$perfPath"
-info_out "rrdfile_path=$rrdPath"
-info_out "metric=$metric"
-info_out "device=$device"
-info_out "key=$key"
-info_out "zenoss_tenant_id=$dmduuid"
+# worker log 
+# info_out "perfdata_path=$perfPath"
+# info_out "zenoss_tenant_id=$dmduuid"
+# info_out "rrdfile_path=$rrdPath metric=$metric device=$device key=$key"
 
 # now the rrd2tsdb conversion
 rrdtool dump "$rrdPath" | awk -v metric="$metric" -v device="$device" -v key="$key" -v dmduuid="$dmduuid" -f "$progdir/convert.awk"
