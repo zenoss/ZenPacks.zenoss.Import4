@@ -25,6 +25,28 @@ export ptag='/import4/staging/polling'
 progdir=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 source "$progdir/utils.sh"
 
+check_monitor()
+{
+    # check if the monitor is alive
+    if [[ ! -f "$ptag" ]] 
+    then
+        echo 'Performance data import process not started yet...'
+        return 1
+    fi
+
+    # if monitor is dead (120 seconds), abort all operation
+    if (( ($(date +"%s")-$(stat --printf="%Y" "$ptag")) > 120 )) 
+    then
+        echo 'Performance data import process stopped, cleaning up... '
+        rm -f "$ptag"
+        /import4/pkg/bin/abort_jobs.sh
+        echo 'Task queues removed...'
+        return 1
+    fi
+
+    return 0
+}
+
 # set the correct ports for zodb
 cp  -p /opt/zenoss/etc/zodb_db_imp4.conf /opt/zenoss/etc/zodb_db_main.conf
 
@@ -50,23 +72,7 @@ while true
 do
     echo 'Rescan tasks...'
 
-    # check if the monitor is alive
-    if [[ ! -f "$ptag" ]] 
-    then
-        echo 'Performance data import process not started yet...'
-        sleep 5
-        continue
-    fi
-
-    # if monitor is dead (300 seconds), abort all operation
-    if (( ($(date +"%s")-$(stat --printf="%Y" "$ptag")) > 300 )) 
-    then
-        echo 'Performance data import process stopped, cleaning up... '
-        rm -f "$ptag"
-        /import4/pkg/bin/abort_jobs.sh
-        echo 'Task queues removed...'
-        continue
-    fi
+    ! check_monitor && sleep 5 && continue
 
     [[ ! -d /import4/Q.tasks ]] && sleep 5 && continue
 
@@ -79,6 +85,9 @@ do
             echo "Trying $task ..."
             runuser -l zenoss -c "/import4/pkg/bin/exec_task.sh \"$task\""
         fi 
+
+        # if monitor died, break out and wait for service to be restarted the script
+        ! check_monitor && exit 1
     done
 
     if [[ $fno -eq 0 ]]
