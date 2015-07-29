@@ -231,7 +231,7 @@ class Migration(MigrationBase):
             os.remove(self.data_migrated)
 
         # cleanup the shared directories for the services
-        _args = ["%s/cleanup_jobs.sh" % self.binpath]
+        _args = ["%s/cleanup_jobs.sh" % _import4_pkg_bin]
         _rc = subprocess.call(
             _args, shell=False, stderr=subprocess.STDOUT)
         if _rc != 0:
@@ -243,7 +243,7 @@ class Migration(MigrationBase):
         text_file.close()
 
         # dispatch the work into task lists
-        _args = ["%s/dispatch.sh" % self.binpath, self.rrd_dir, _tasks_Q]
+        _args = ["%s/dispatch.sh" % _import4_pkg_bin, self.rrd_dir, _tasks_Q]
         _rc = subprocess.call(
             _args, shell=False, stderr=subprocess.STDOUT)
         if _rc != 0:
@@ -263,7 +263,7 @@ class Migration(MigrationBase):
             _last_fail_line = 0
             while True:
                 time.sleep(Config.perf_poll)
-                _progress = subprocess.check_output(["%s/perf_progress.sh" % self.binpath])
+                _progress = subprocess.check_output(["%s/perf_progress.sh" % _import4_pkg_bin])
                 if _progress == _old_progress:
                     _no_progress_count += 1
                     log.warning('No progress for %d seconds', (_no_progress_count*Config.perf_poll))
@@ -272,7 +272,7 @@ class Migration(MigrationBase):
                     if _no_progress_count > Config.perf_timeout:
                         log.error('Performance data import stalling over %d seconds, import operation aborted', (Config.perf_poll*Config.perf_timeout))
                         self.reportError('perf_import', 'Performance data import stalling, import operation aborted')
-                        self.exec_cmd("%s/abort_jobs.sh" % self.binpath)
+                        self.exec_cmd("%s/abort_jobs.sh" % _import4_pkg_bin)
                         raise ImportError(ExitCode.FAILURE)
                     continue
                 _no_progress_count = 0
