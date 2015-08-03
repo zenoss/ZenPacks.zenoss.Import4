@@ -30,7 +30,8 @@ cd /mnt/pwd
 
 # make sure /mnt/pwd is world r/w/x
 if [[ $(find /mnt/pwd -maxdepth 0 -perm -777 | wc -l) != 1 ]]; then
-    err_exit "Backup's parent directory is not world r/w/x - exiting"
+    status_out  "Backup's parent directory is not world r/w/x - exiting"
+    err_exit    "Backup's parent directory is not world r/w/x - exiting"
 fi
 
 export imp4dir="/import4"
