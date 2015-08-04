@@ -8,19 +8,14 @@
 #
 ##############################################################################
 
-#
-# try to lock/grab the given file
-#   returns non-zero if not successful
-
 export fail_records="/import4/perf.fail.records" # keep the failed status for top level UI
-export tsdb_file="$1"                   # the absolute path to a tsdb import file 
+export tsdb_imp_file="$1"               # place where we kept the importing file
 export tsdb_dir="/import4/Q.tsdb"   # the path to keep the final tsdb import files
 
 # derived
-export tsdb_base=$(basename "$tsdb_file")
+export tsdb_base=$(basename "$tsdb_imp_file")
 
 export tsdb_tmp_dir="$tsdb_dir/.tmp"
-export tsdb_imp_file="$tsdb_tmp_dir/$tsdb_base"  # place where we kept the importing file
 export tsdb_done_dir="$tsdb_dir/.done"
 export tsdb_fail_dir="$tsdb_dir/.fail"
 
@@ -28,23 +23,17 @@ export tsdb_fail_dir="$tsdb_dir/.fail"
 progdir=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 source "$progdir/utils.sh"
 
-[[ -f "$tsdb_file" ]]    || ok_exit "import file:$tsdb_file is being processed"
-[[ -d "$tsdb_tmp_dir" ]] || err_exit "Working directory $tsdb_tmp_dir not available"
+[[ -f "$tsdb_imp_file" ]] || err_exit "import file:$tsdb_imp_file not available"
 
-# double attempts for an atomic ownership
-ln "$tsdb_file" "$tsdb_imp_file"    >/dev/null 2>&1 || ok_exit "someone else got $tsdb_file - ln" 
-touch "$tsdb_imp_file"              >/dev/null 2>&1 || ok_exit "someone else got $tsdb_file - touch" 
-rm "$tsdb_file"             >/dev/null 2>&1 || ok_exit "someone else got $tsdb_file - rm"
-
-# now this process owns the $tsdb file
+# this process owns the $tsdb file
 timeout 120 /opt/opentsdb/build/tsdb import --config=/opt/zenoss/etc/opentsdb/opentsdb.conf "$tsdb_imp_file" 2>&1 | egrep "(TextImporter: Processed|ERROR)"
 
 let rc=$?
 if [[ $rc -eq 124 ]]
 then
     echo "[Warning - timeout] $tsdb_imp_file" >> "$fail_records"
-    # if time-out, move the tsdb file back
-    mv -f "$tsdb_imp_file" "$tsdb_dir"
+    # if time-out, move the tsdb file back and retry later
+    mv "$tsdb_imp_file" "$tsdb_dir"
 
     exit 1
 elif [[ $rc -ne 0 ]] 
@@ -54,7 +43,8 @@ then
     # if failed, move the tsdb file back and retry later
     # if a true error, the perf_progress monitoring will timeout 
     # then abort at the perf import level
-    mv -f "$tsdb_imp_file" "$tsdb_dir"
+    cp "$tsdb_imp_file" "$tsdb_fail_dir"    # for debug
+    mv "$tsdb_imp_file" "$tsdb_dir"
 
     exit 1
 fi
