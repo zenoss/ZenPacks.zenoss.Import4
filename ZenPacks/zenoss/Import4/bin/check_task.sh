@@ -30,5 +30,5 @@ read PERFTOP < "$task_dir/PERFTOP"
 
 find "$job_dir" -maxdepth 1 -type f -mmin +2 | while read fname
 do
-    [[ -n "$fname" ] && [[ -f "$fname" ]]  && mv "$fname" "$task_dir"
+    [[ -n "$fname" ]] && [[ -f "$fname" ]]  && mv "$fname" "$task_dir"
 done
