@@ -23,6 +23,22 @@ export PATH=$PATH:$VOL_D/pkg/bin
 progdir=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 source "$progdir/utils.sh"
 
+next_task()
+{
+    ( flock -w 120 9 || exit 1
+
+      # atomically get and move the next task
+      fn=$(ls -f1 /import4/Q.tsdb | awk '/task.*/ {print $0; exit}')
+
+      if [[ -f /import4/Q.tsdb/"$fn" ]] 
+      then
+        mv "/import4/Q.tsdb/$fn" /import4/Q.tsdb/.tmp
+        echo -n "/import4/Q.tsdb/.tmp/$fn"
+      fi
+
+    ) 9< /import4/Q.tsdb
+}
+
 #
 # find the converted input file and import it
 while true
@@ -30,20 +46,15 @@ do
     echo 'Rescanning tsdb files ...'
     [[ ! -d /import4/Q.tsdb ]] && sleep 5 && continue
 
-    (( tno = 0 ))
-    find /import4/Q.tsdb -maxdepth 1 -type f -name "task*.tsdb" -print | while read tfile
-    do
-        if [[ -n "$tfile" ]]
-        then
-            echo "Importing $tfile ..."
-            (( tno += 1 ))
-            /import4/pkg/bin/import_tsdb.sh "$tfile"
-        fi
-    done
-
-    if [[ $tno -eq 0 ]]
+    job=$(next_task)
+    if [[ -n "$job" ]] && [[ -f "$job" ]]
     then
-	        # check and revive the stuck tsdb
-            /import4/pkg/bin/check_tsdb.sh
+        echo "Importing $job ..."
+        /import4/pkg/bin/import_tsdb.sh "$job"
+    else
+        sleep 5
+	    # check and revive the stuck tsdb
+        /import4/pkg/bin/check_tsdb.sh
     fi
+
 done

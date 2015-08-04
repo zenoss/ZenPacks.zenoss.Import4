@@ -8,10 +8,6 @@
 #
 ##############################################################################
 
-#
-# try to lock/grab the given file
-#   returns non-zero if not successful
-
 export tsdb_dir="/import4/Q.tsdb"   # the path to keep the final tsdb import files
 
 # derived
@@ -31,5 +27,5 @@ source "$progdir/utils.sh"
 
 find "$tsdb_tmp_dir" -maxdepth 1 -type f -mmin +5 | while read fname
 do
-   [[ -n "$fname" ]] && mv "$fname" "$tsdb_dir" 
+   [[ -n "$fname" ]] && [[ -f "$fname" ]] && mv "$fname" "$tsdb_dir" 
 done

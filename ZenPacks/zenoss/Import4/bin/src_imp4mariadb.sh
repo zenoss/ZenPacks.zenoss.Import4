@@ -25,6 +25,23 @@ export ptag='/import4/staging/polling'
 progdir=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 source "$progdir/utils.sh"
 
+# atomically print the next job or block 
+next_task()
+{
+    ( flock -w 120 9 || exit 1
+
+      # atomically get and move the next task
+      fn=$(ls -f1 /import4/Q.tasks | awk '/task.*/ {print $0; exit}')
+
+      if [[ -f /import4/Q.tasks/"$fn" ]] 
+      then
+        mv "/import4/Q.tasks/$fn" /import4/Q.jobs
+        echo -n "/import4/Q.jobs/$fn"
+      fi
+
+    ) 9< /import4/Q.tasks
+}
+
 check_monitor()
 {
     # check if the monitor is alive
@@ -76,23 +93,18 @@ do
 
     [[ ! -d /import4/Q.tasks ]] && sleep 5 && continue
 
-    (( fno = 0 ))
-    find /import4/Q.tasks -maxdepth 1 -type f -name "task*" -print | while read task
-    do
-        if [[ -n "$task" ]]
-        then
-            (( fno += 1))
-            echo "Trying $task ..."
-            runuser -l zenoss -c "/import4/pkg/bin/exec_task.sh \"$task\""
-        fi 
-
-        # if monitor died, break out and wait for service to be restarted the script
-        ! check_monitor && exit 1
-    done
-
-    if [[ $fno -eq 0 ]]
+    job=$(next_task)
+    if [[ -n "$job" ]] && [[ -f "$job" ]]
     then
+        echo "Processing $job ..."
+        runuser -l zenoss -c "/import4/pkg/bin/exec_task.sh \"$job\""
+    else
 	    # check and revive the stuck tasks
+        sleep 5
         runuser -l zenoss -c "/import4/pkg/bin/check_task.sh"
     fi
+
+    # if monitor died, break out and wait for service to be restarted the script
+    ! check_monitor && exit 1
+
 done
