@@ -33,14 +33,16 @@ source "$progdir/utils.sh"
 [[ -d $converted_Q ]] || mkdir -p "$converted_Q"
 [[ -d $imported_Q ]] || mkdir -p "$imported_Q"
 
-# the current conversion status
-converted_no=$(find $converted_Q -type f -exec cat {} \; | wc -l)
 tsum=$(cat "$rrd_list" | wc -l)
 [[ $tsum -ne 0 ]] || err_exit "No task"
 
+# the current conversion status
+converted_no=$(find $converted_Q -type f -print | wc -l)
+((converted_no=converted_no*5))
+[ $converted_no -gt $tsum ] && ((converted_no=tsum))
+
 # the current imported number
 imported_no=$(find $imported_Q -type f -print | wc -l)
-# Each tsdb file contains 5 rrd, but not exceeding the tsum
 ((imported_no=imported_no*5))
 [ $imported_no -gt $tsum ] && ((imported_no=tsum))
 
