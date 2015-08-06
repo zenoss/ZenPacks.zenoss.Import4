@@ -12,6 +12,7 @@ import sys
 import subprocess
 import re
 import time
+import random
 
 from ZenPacks.zenoss.Import4.migration import MigrationBase, ImportError, Config, ExitCode, log, Imp4Meta
 
@@ -180,21 +181,30 @@ class Migration(MigrationBase):
             raise ImportError(ExitCode.CMD_ERROR)
 
         _rrd_list = self._get_rrd_list()
+        if self.user and (self.password != ""):
+            _cre = "-v %s:%s" % (self.user, self.password)
+        elif self.user:
+            _cre = "-v %s" % self.user
+        else:
+            _cre = "-v admin:zenoss"
+
         try:
             _no = 0
             _eno = 0
             with open(_rrd_list, "r") as f:
+                _old_dir=""
                 for _aline in f:
                     _one_rrd = _aline.strip()
+                    _one_dir=os.path.dirname(_one_rrd)
                     log.info("%s ..." % _one_rrd)
 
-                    if self.user and (self.password != ""):
-                        _cre = "-v %s:%s" % (self.user, self.password)
-                    elif self.user:
-                        _cre = "-v %s" % self.user
-                    else:
-                        _cre = ""
-
+                    # skip most 
+                    if (_one_dir == _old_dir) and (random.randrange(0,7,1) > 0) :
+                        _no += 1
+                        self.reportStatus(Imp4Meta.num_perf + "->CheckSkipped", _no+_eno)
+                        continue
+                        
+                    _old_dir = _one_dir
                     _cmd = '%s/rrd2tsdb.py %s -p "%s" "%s"' % (
                         Config.pkgPath, _cre, self.perf_top, _one_rrd)
                     _result = subprocess.call(_cmd, shell=True, stdout=None, stderr=None)
