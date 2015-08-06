@@ -243,12 +243,11 @@ class ImportRRD():
                 '{'
                 '"start":%d,'
                 '"end":%d,'
-                '"returnset":"last",'
-                '"metrics":[{"metric":"%s",'
+                '"queries":[{"metric":"%s",'
                 '            "aggregator":"avg",'
-                '            "tags":{"key":["%s"],'
-                '                    "device":["%s"],'
-                '                    "zenoss_tenant_id":["%s"]}'
+                '            "tags":{"key":"%s",'
+                '                    "device":"%s",'
+                '                    "zenoss_tenant_id":"%s"}'
                 '        }]}'
 
             ) % (_mtime-1,
@@ -256,14 +255,12 @@ class ImportRRD():
                  self.metric,
                  self.key.replace(' ', '-'),
                  self.device,
-                 self.dmd_uuid)
+                 self.dmd_uuid.strip())
 
-            _cmd_str = ('curl -u %s -k -X POST -s '
+            _cmd_str = ('curl -k -X POST -s '
                         '-H "Content-Type: application/json" '
                         '-d \'%s\' '
-                        'http://localhost:8080/api/performance/query') % (
-                            self.verify_credential,
-                            _json_str)
+                        'http://localhost:4242/api/query') % _json_str
 
             log.debug(_cmd_str)
             _result = subprocess.check_output(_cmd_str, shell=True)
@@ -276,12 +273,11 @@ class ImportRRD():
 
         # verify here, log warning and raise exception
         try:
-            _tm = int(_json_data["results"][0]["datapoints"][0]["timestamp"])
-            _vl = float(_json_data["results"][0]["datapoints"][0]["value"])
+            _vl = float(_json_data[0]["dps"]["%d" % _mtime])
 
-            if _tm != pnt[0]:
-                log.warning('Timestamp not matching:%d/%d' % (_tm, pnt[0]))
-                raise _Error('E_TSDB')
+            # if _tm != pnt[0]:
+            #     log.warning('Timestamp not matching:%d/%d' % (_tm, pnt[0]))
+            #     raise _Error('E_TSDB')
 
             # What is the best way to compare two floating points?
             if _mvalue == 0.0:
@@ -377,7 +373,7 @@ def parse_args():
                        dest='test_mode', default=False,
                        help="Perform a parse on the input file and generate stat info, only")
     group.add_argument('-v', '--verify_credential',
-                       dest='verify_credential', default=None,
+                       dest='verify_credential', default="admin:zenoss",
                        help=("Perform a validation by sampling/comparing input against tsdb,"
                              "credential must be supplied.. e.g. 'admin:zenoss' "))
 
