@@ -51,15 +51,7 @@ mv "$tasktmp"/* "$tasktop"                                              || err_e
 rm -rf "$tasktmp"                                                       || err_exit "Error cleaning up $tasktmp"
 sync
 
-# we'll start polling cpu idle time after jobs are dispatched
-(
-  chmod 777 "$idle"
-  chmod 777 "$idle".lock
-  while true
-  do
-      iostat -y -c 5 1 | awk '/^ +[0-9]+.[0-9]+/{ print int($6) }' > "$idle".tmp
-      flock -w 120 -x "$idle".lock mv "$idle".tmp "$idle"
-  done
-) &
+# start polling cpu idle time in the background after jobs are dispatched
+poll_idle &
 
 exit 0

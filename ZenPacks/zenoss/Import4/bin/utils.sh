@@ -46,7 +46,7 @@ export ptag='/import4/staging/perf_importing'
 check_monitor()
 {
     # check if the perf_import is alive
-    flock -n -E 1 -x "$ptag" echo "Performance import process not started yet"
+    flock -n -x "$ptag" echo "Performance import process not started yet"
     if [[ $? -eq 0 ]]
     then
         return 1
@@ -64,12 +64,23 @@ check_idle()
     if [[ $cpu_idle < 10 ]]
     then
         # CPU busy
-        info_out "CPU too busy ..."
+        info_out "CPU too busy"
         return 1
     else
-        info_out "CPU OK ..."
+        info_out "CPU OK"
         return 0
     fi
 }
 export -f check_idle
 
+poll_idle()
+{
+  chmod 777 "$idle"
+  chmod 777 "$idle".lock
+  while true
+  do
+      iostat -y -c 2 1 | awk '/^ +[0-9]+.[0-9]+/{ print int($6) }' > "$idle".tmp
+      flock -w 120 -x "$idle".lock mv "$idle".tmp "$idle"
+  done
+} 
+export -f poll_idle

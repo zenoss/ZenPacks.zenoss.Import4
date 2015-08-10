@@ -64,7 +64,7 @@ runuser -l zenoss -c /import4/pkg/bin/get_dmduuid.sh
 # find the available task and execute it
 while true
 do
-    echo 'Rescan tasks...'
+    echo 'Conversion loop start ... '
 
     ! check_monitor && sleep 5 && continue
 
