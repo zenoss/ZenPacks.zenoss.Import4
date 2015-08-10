@@ -44,6 +44,9 @@ next_task()
 while true
 do
     echo 'Rescanning tsdb files ...'
+
+    ! check_monitor && sleep 5 && continue
+
     [[ ! -d /import4/Q.tsdb ]] && sleep 5 && continue
 
     job=$(next_task)

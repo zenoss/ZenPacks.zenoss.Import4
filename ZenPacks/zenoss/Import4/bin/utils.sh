@@ -7,6 +7,35 @@
 #
 ##############################################################################
 
+# common files
+export ptag='/import4/staging/perf_importing'
+check_monitor()
+{
+    # check if the perf_import is alive
+    flock -n -E 1 -x "$ptag" echo "Performance import process not started yet"
+    if [[ $? -eq 0 ]]
+    then
+        return 1
+    else
+        # else, the alive is properly locked by the run command!
+        return 0
+    fi
+}
+export -f check_monitor
+
+export idle="/import4/staging/cpu_idle"
+check_idle()
+{
+    cpu_idle=$(flock -w 120 "$idle".lock cat "$idle")
+    if [[ $cpu_idle < 10 ]]
+    then
+        return 1
+    else
+        return 0
+    fi
+}
+export -f check_idle
+
 #
 # common scrip utilities to be imported by other scripts
 #
