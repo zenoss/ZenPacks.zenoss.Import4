@@ -43,8 +43,14 @@ next_task()
 # find the converted input file and import it
 while true
 do
-    echo 'Rescanning tsdb files ...'
+    echo 'Importer loop start ...'
+
+    ! check_monitor && sleep 5 && continue
+
     [[ ! -d /import4/Q.tsdb ]] && sleep 5 && continue
+
+    # if CPU is busy
+    ! check_idle && sleep 5 && continue
 
     job=$(next_task)
     if [[ -n "$job" ]] && [[ -f "$job" ]]

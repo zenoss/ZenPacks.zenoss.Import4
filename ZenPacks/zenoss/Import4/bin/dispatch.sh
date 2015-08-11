@@ -51,4 +51,7 @@ mv "$tasktmp"/* "$tasktop"                                              || err_e
 rm -rf "$tasktmp"                                                       || err_exit "Error cleaning up $tasktmp"
 sync
 
+# start polling cpu idle time in the background after jobs are dispatched
+poll_idle &
+
 exit 0

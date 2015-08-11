@@ -72,7 +72,7 @@
          "Pause": "",
          "Resume": ""
        },
-       "RAMCommitment": "256M",
+       "RAMCommitment": "512M",
        "CPUCommitment": 1,
        "Runs": null,
        "Actions": null,

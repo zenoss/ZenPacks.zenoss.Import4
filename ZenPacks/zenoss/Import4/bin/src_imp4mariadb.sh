@@ -19,7 +19,6 @@ echo "$0 Running ..."
 export VOL_D='/import4'
 export PYTHONPATH=$PYTHONPATH:$VOL_D/pkg
 export PATH=$PATH:$VOL_D/pkg/bin
-export ptag='/import4/staging/polling'
 
 # common block
 progdir=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
@@ -40,28 +39,6 @@ next_task()
       fi
 
     ) 9< /import4/Q.tasks
-}
-
-check_monitor()
-{
-    # check if the monitor is alive
-    if [[ ! -f "$ptag" ]] 
-    then
-        echo 'Performance data import process not started yet...'
-        return 1
-    fi
-
-    # if monitor is dead (120 seconds), abort all operation
-    if (( ($(date +"%s")-$(stat --printf="%Y" "$ptag")) > 120 )) 
-    then
-        echo 'Performance data import process stopped, cleaning up... '
-        rm -f "$ptag"
-        /import4/pkg/bin/abort_jobs.sh
-        echo 'Task queues removed...'
-        return 1
-    fi
-
-    return 0
 }
 
 # set the correct ports for zodb
@@ -87,11 +64,18 @@ runuser -l zenoss -c /import4/pkg/bin/get_dmduuid.sh
 # find the available task and execute it
 while true
 do
-    echo 'Rescan tasks...'
-
-    ! check_monitor && sleep 5 && continue
+    echo 'Conversion loop start ... '
 
     [[ ! -d /import4/Q.tasks ]] && sleep 5 && continue
+
+    # check if perf import started
+    ! check_monitor && sleep 5 && continue
+
+    # check if importer is catching up
+    ! check_pile && sleep 5 && continue
+
+    # check CPU is busy
+    ! check_idle && sleep 5 && continue
 
     job=$(next_task)
     if [[ -n "$job" ]] && [[ -f "$job" ]]
@@ -104,7 +88,7 @@ do
         runuser -l zenoss -c "/import4/pkg/bin/check_task.sh"
     fi
 
-    # if monitor died, break out and wait for service to be restarted the script
+    # if monitor died, break out and wait for service to restart the script
     ! check_monitor && exit 1
 
 done

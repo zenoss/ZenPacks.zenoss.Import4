@@ -26,7 +26,7 @@ source "$progdir/utils.sh"
 [[ -f "$tsdb_imp_file" ]] || err_exit "import file:$tsdb_imp_file not available"
 
 # this process owns the $tsdb file
-timeout 120 /opt/opentsdb/build/tsdb import --config=/opt/zenoss/etc/opentsdb/opentsdb.conf "$tsdb_imp_file" 2>&1 | egrep "(TextImporter: Processed|ERROR)"
+JVMARGS='-Xms1g' timeout 240 /opt/opentsdb/build/tsdb import --config=/opt/zenoss/etc/opentsdb/opentsdb.conf "$tsdb_imp_file" 2>&1 | egrep "(TextImporter: Processed|ERROR)"
 
 let rc=$?
 if [[ $rc -eq 124 ]]
@@ -50,5 +50,7 @@ then
 fi
 
 # mark the process complete
-mv "$tsdb_imp_file" "$tsdb_done_dir/$tsdb_base"
+touch "$tsdb_done_dir/$tsdb_base"
 
+# remove the tmp file
+rm "$tsdb_imp_file" 
