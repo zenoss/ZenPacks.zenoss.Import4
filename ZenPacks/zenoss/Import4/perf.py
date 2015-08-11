@@ -29,6 +29,18 @@ _jobs_done = '%s/.done' % _jobs_Q
 _tsdb_done = '%s/.done' % _tsdb_Q
 
 
+def check_runtime_environment():
+   if not os.path.exists(_import4_vol):
+       log.error("%s does not exist.", _import4_vol)
+       raise ImportError(ExitCode.RUNTIME_ERROR)
+   if not os.path.exists('%s/imp4mariadb.sh' % _import4_pkg_bin):
+       log.error("%s/imp4mariadb.sh does not exist.", _import4_pkg_bin)
+       raise ImportError(ExitCode.RUNTIME_ERROR)
+   if not os.path.exists('%s/imp4opentsdb.sh' % _import4_pkg_bin):
+       log.error("%s/imp4opentsdb.sh does not exist.", _import4_pkg_bin)
+       raise ImportError(ExitCode.RUNTIME_ERROR)
+
+
 class Migration(MigrationBase):
 
     importFuncs = {}
@@ -53,16 +65,8 @@ class Migration(MigrationBase):
         self.data_checked = '%s/PERF_CHECKED' % self.tempDir
         self.data_migrated = '%s/PERF_MIGRATED' % self.tempDir
 
-        # check runtime environment
-        if not os.path.exists(_import4_vol):
-            log.error("%s does not exist.", _import4_vol)
-            raise ImportError(ExitCode.RUNTIME_ERROR)
-        if not os.path.exists('%s/imp4mariadb.sh' % _import4_pkg_bin):
-            log.error("%s/imp4mariadb.sh does not exist.", _import4_pkg_bin)
-            raise ImportError(ExitCode.RUNTIME_ERROR)
-        if not os.path.exists('%s/imp4opentsdb.sh' % _import4_pkg_bin):
-            log.error("%s/imp4opentsdb.sh does not exist.", _import4_pkg_bin)
-            raise ImportError(ExitCode.RUNTIME_ERROR)
+        if not args.skip_check_env:
+            check_runtime_environment()
 
     @staticmethod
     def init_command_parser(m_parser):
@@ -73,6 +77,8 @@ class Migration(MigrationBase):
                                 help="Parent directory of the rrd trees")
         m_parser.add_argument('-n', '--skip-scan', action='store_true', dest='skip_scan', default=False,
                                 help="Skip the scanning of rrdfiles' content")
+        m_parser.add_argument('--skip-check-env', action='store_true', dest='skip_check_env',
+                                help="Skip the checking of runtime environment")
 
     @classmethod
     def init_command_parsers(cls, check_parser, verify_parser, import_parser):

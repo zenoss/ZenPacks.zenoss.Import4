@@ -67,6 +67,8 @@ def parse_args(args=None):
         module.Migration.init_command_parsers(check_parser, verify_parser, import_parser)
 
     args = parser.parse_args(args=args)
+    # we don't want to check runtime environment in the tests
+    args.skip_check_env = True
 
     return args
 
