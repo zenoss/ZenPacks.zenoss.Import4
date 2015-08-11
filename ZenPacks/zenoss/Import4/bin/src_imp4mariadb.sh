@@ -66,11 +66,15 @@ while true
 do
     echo 'Conversion loop start ... '
 
-    ! check_monitor && sleep 5 && continue
-
     [[ ! -d /import4/Q.tasks ]] && sleep 5 && continue
 
-    # if CPU is busy
+    # check if perf import started
+    ! check_monitor && sleep 5 && continue
+
+    # check if importer is catching up
+    ! check_pile && sleep 5 && continue
+
+    # check CPU is busy
     ! check_idle && sleep 5 && continue
 
     job=$(next_task)
