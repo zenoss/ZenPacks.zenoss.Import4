@@ -84,7 +84,7 @@ do
         runuser -l zenoss -c "/import4/pkg/bin/check_task.sh"
     fi
 
-    # if monitor died, break out and wait for service to be restarted the script
+    # if monitor died, break out and wait for service to restart the script
     ! check_monitor && exit 1
 
 done

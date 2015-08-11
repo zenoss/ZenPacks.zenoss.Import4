@@ -50,5 +50,7 @@ then
 fi
 
 # mark the process complete
-mv "$tsdb_imp_file" "$tsdb_done_dir/$tsdb_base"
+touch "$tsdb_done_dir/$tsdb_base"
 
+# remove the tmp file
+rm "$tsdb_imp_file" 
