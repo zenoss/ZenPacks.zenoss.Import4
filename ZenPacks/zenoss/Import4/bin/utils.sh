@@ -85,8 +85,8 @@ export -f check_idle
 
 poll_idle()
 {
-  chmod 777 "$idle"
-  chmod 777 "$idle".lock
+  [[ -f "$idle" ]]      && chmod 777 "$idle"
+  [[ -f "$idle".lock ]] && chmod 777 "$idle".lock
   while true
   do
       iostat -y -c 2 1 | awk '/^ +[0-9]+.[0-9]+/{ print int($6) }' > "$idle".tmp
