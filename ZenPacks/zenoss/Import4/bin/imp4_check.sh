@@ -137,7 +137,7 @@ then
     # extract the perf into the shared staging volume
     status_out "Extracting $perf_tarball"
     info_out "This operation tends to take a long time ..."
-    tar -C "$staging_zenbackup_dir" "$tar_flags" "$perf_tarball" | awk "$awk_cmd" >&2
+    nice -n 5 tar -C "$staging_zenbackup_dir" "$tar_flags" "$perf_tarball" | awk "$awk_cmd" >&2
     [[ ${PIPESTATUS[0]} -ne 0 ]] && err_exit "Extracting performance data from $perf_tarball failed!"
     ((perf_ok=1))
 else
