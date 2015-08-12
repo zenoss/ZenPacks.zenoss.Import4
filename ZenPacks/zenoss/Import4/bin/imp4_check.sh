@@ -49,6 +49,7 @@ for i in \
         EVENTS_* \
         _zen* \
         componentList.txt \
+        zenbackup_*.tgz \
         zenbackup/* \
         dmd_uuid.txt \
         "$staging_dir"
