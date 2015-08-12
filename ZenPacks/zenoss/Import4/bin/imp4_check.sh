@@ -49,12 +49,7 @@ for i in \
         EVENTS_* \
         _zen* \
         componentList.txt \
-        zenbackup_*.tgz \
-        zep.sql* \
-        zodb.sql* \
-        ZenPacks* \
-        zencatalogservice* \
-        perf.tar* \
+        zenbackup/* \
         dmd_uuid.txt \
         "$staging_dir"
 do
@@ -63,7 +58,7 @@ do
 done
 
 # extracting known data files from the tar ball
-status_out "Extracting $1" 
+status_out "Extracting $1"
 ! tar -vxf "$1" >&2              && err_exit "Extracting zenbackup failed!"
 
 if [[ -f backup.md5 ]]; then
@@ -85,7 +80,7 @@ cp dmd_uuid.txt /import4/dmd_uuid.txt || err_exit "Cannot get dmd_uuid.txt"
 
 ! cd "$zbk" && err_out "Invalid zenbackup file!"
 
-# model files (zodb and zenpacks) are required 
+# model files (zodb and zenpacks) are required
 status_out "Unzipping zodb.sql.gz"
 ! gunzip -vf "zodb.sql.gz" >&2  && err_exit "Uncompressing zodb.sql failed!"
 
@@ -95,8 +90,8 @@ tar -vxf ZenPacks.tar | awk "$awk_cmd" >&2
 
 # events file is optional
 ((zep_ok=0))
-if [ -f zep.sql.gz ] 
-then 
+if [ -f zep.sql.gz ]
+then
     status_out "Unzipping zep.sql.gz"
     ! gunzip -vf "zep.sql.gz" >&2 && err_exit "Invalid zep.sql.gz! abort"
     ((zep_ok=1))
