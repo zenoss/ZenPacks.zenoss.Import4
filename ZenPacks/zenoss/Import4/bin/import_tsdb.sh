@@ -15,7 +15,6 @@ export tsdb_dir="/import4/Q.tsdb"   # the path to keep the final tsdb import fil
 # derived
 export tsdb_base=$(basename "$tsdb_imp_file")
 
-export tsdb_tmp_dir="$tsdb_dir/.tmp"
 export tsdb_done_dir="$tsdb_dir/.done"
 export tsdb_fail_dir="$tsdb_dir/.fail"
 
@@ -26,17 +25,10 @@ source "$progdir/utils.sh"
 [[ -f "$tsdb_imp_file" ]] || err_exit "import file:$tsdb_imp_file not available"
 
 # this process owns the $tsdb file
-JVMARGS='-Xms1g' timeout 240 /opt/opentsdb/build/tsdb import --config=/opt/zenoss/etc/opentsdb/opentsdb.conf "$tsdb_imp_file" 2>&1 | egrep "(TextImporter: Processed|ERROR)"
+awk -f "$progdir"/import_tsdb.awk "$tsdb_imp_file"
 
 let rc=$?
-if [[ $rc -eq 124 ]]
-then
-    echo "[Warning - timeout] $tsdb_imp_file" >> "$fail_records"
-    # if time-out, move the tsdb file back and retry later
-    mv "$tsdb_imp_file" "$tsdb_dir"
-
-    exit 1
-elif [[ $rc -ne 0 ]] 
+if [[ $rc -ne 0 ]] 
 then
     echo "[ERROR] $tsdb_imp_file" >> "$fail_records"
 
@@ -52,5 +44,5 @@ fi
 # mark the process complete
 touch "$tsdb_done_dir/$tsdb_base"
 
-# remove the tmp file
+# remove the intermediate file
 rm "$tsdb_imp_file" 

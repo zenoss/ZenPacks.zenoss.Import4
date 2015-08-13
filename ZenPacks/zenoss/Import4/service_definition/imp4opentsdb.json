@@ -14,7 +14,7 @@
         "Instances": {
             "Min": 1,
             "Max": 0,
-            "Default": 4
+            "Default": 6
         },
         "ChangeOptions": null,
         "HostPolicy": "",
@@ -40,6 +40,13 @@
          {
            "Name": "hbase-master-rest",
            "Application": "hbase-master-rest",
+           "Purpose": "import"
+         },
+         {
+           "Name": "opentsdb-writer",
+           "Application": "opentsdb-writer",
+           "PortNumber": 4242,
+           "Protocol": "tcp",
            "Purpose": "import"
          },
          {
