@@ -97,7 +97,7 @@ export -f poll_idle
 
 check_pile()
 {
-    if (( $(ls -f1 "$tsdb_dir" | wc -l) < 256 )) 
+    if (( $(ls -f1 "$tsdb_dir" | wc -l) < 512 )) 
     then 
         return 0
     else

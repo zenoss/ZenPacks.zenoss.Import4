@@ -22,6 +22,7 @@ BEGIN {
     db=0
     step=1.0
     derived=0.0
+    row_fmt="%s %d %.10e device=%s key=%s zenoss_tenant_id=%s\n"
 }
 {
     # the majarity of the lines
@@ -40,18 +41,18 @@ BEGIN {
 
         if      (type == 0) {
             # GAUGE
-            print metric, tm_v, v_v, "device=" device, "key=" key, "zenoss_tenant_id=" dmduuid
+            printf row_fmt, metric, tm_v, v_v, device, key, dmduuid
         }
         else if ((type == 1) || (type == 2)) {
             # DERIVED and COUNTER types are proceessed the same way 
             derived += strtonum(v_v)
             _vl = derived*step
-            print metric, tm_v, _vl, "device=" device, "key=" key, "zenoss_tenant_id=" dmduuid
+            printf row_fmt, metric, tm_v, _vl, device, key, dmduuid
         }
         else if (type == 3) {
             # ABSOLUTE
             _vl = strtonum(v_v)*step
-            print metric, tm_v, _vl, "device=" device, "key=" key, "zenoss_tenant_id=" dmduuid
+            printf row_fmt, metric, tm_v, _vl, device, key, dmduuid
         }
         next
     }

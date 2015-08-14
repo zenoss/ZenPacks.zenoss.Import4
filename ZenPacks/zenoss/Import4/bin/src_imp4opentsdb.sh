@@ -39,6 +39,10 @@ next_task()
     ) 9< /import4/Q.tsdb
 }
 
+# make sure that the environment has gawk installed
+which gawk || apt-get install gawk
+which gawk || err_exit "Cannot install GNU awk"
+
 #
 # find the converted input file and import it
 while true

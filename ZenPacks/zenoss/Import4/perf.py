@@ -204,12 +204,12 @@ class Migration(MigrationBase):
                     _one_dir=os.path.dirname(_one_rrd)
                     log.info("%s ..." % _one_rrd)
 
-                    # skip most 
+                    # skip most
                     if (_one_dir == _old_dir) and (random.randrange(0,7,1) > 0) :
                         _no += 1
                         self.reportStatus(Imp4Meta.num_perf + "->CheckSkipped", _no+_eno)
                         continue
-                        
+
                     _old_dir = _one_dir
                     _cmd = '%s/rrd2tsdb.py %s -p "%s" "%s"' % (
                         Config.pkgPath, _cre, self.perf_top, _one_rrd)

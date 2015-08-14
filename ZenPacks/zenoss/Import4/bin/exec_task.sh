@@ -73,17 +73,8 @@ do
     fi
 done < "$job"
 
-# if successful
-# we need to do a sort and uniq to resolve out-of-order and dup rrd data
-# this is only needed when placed in the same import file
-# this also filter out empty lines
-sort "$tsdb_raw" | awk '(NF>0) && (!x[$1 $2]++)' > "$tsdb_ok"
-
 # make the finalized tsdb import file visible
-ln "$tsdb_ok" "$tsdb_file"
-
-# cleanup
-rm -f "$tsdb_raw" "$tsdb_ok"
+mv "$tsdb_raw" "$tsdb_file"
 
 # mark job completed
 mkdir -p "$job_done_dir"

@@ -151,11 +151,15 @@ class ImportRRD():
             # always keep the last one
             self.verify_points[2] = [self.last_timestamp, _value]
             # if it is the first
-            if not self.verify_points[0]:
+            if (not self.verify_points[0]) or (self.verify_points[0][0] == self.last_timestamp):
                 self.verify_points[0] = [self.last_timestamp, _value]
-            # pick a random one
-            if self.entries == 2221:    # 2221 is just a random pick for debuggability
+
+            # pick a random 221 for debugging
+            if (self.entries == 221) :
                 self.verify_points[1] = [self.last_timestamp, _value]
+            elif self.verify_points[1] and (self.verify_points[1][0] == self.last_timestamp):
+                self.verify_points[1] = [self.last_timestamp, _value]
+
             return
 
         # import/conversion mode
@@ -260,7 +264,7 @@ class ImportRRD():
             _cmd_str = ('curl -k -X POST -s '
                         '-H "Content-Type: application/json" '
                         '-d \'%s\' '
-                        'http://localhost:4242/api/query') % _json_str
+                        'http://localhost:4243/api/query') % _json_str
 
             log.debug(_cmd_str)
             _result = subprocess.check_output(_cmd_str, shell=True)

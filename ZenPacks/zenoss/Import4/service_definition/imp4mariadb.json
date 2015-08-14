@@ -12,7 +12,7 @@
         "Instances": {
             "Min": 1,
             "Max": 0,
-            "Default": 3
+            "Default": 4
         },
         "ChangeOptions": null,
         "Launch": "manual",
@@ -104,7 +104,7 @@
          {
            "Name": "opentsdb-reader",
            "Application": "opentsdb-reader",
-           "PortNumber": 4242,
+           "PortNumber": 4243,
            "Protocol": "tcp",
            "Purpose": "import"
          },
