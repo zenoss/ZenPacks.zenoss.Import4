@@ -287,16 +287,18 @@ class MigrationBase(object):
 
     # socket must be supplied because
     # we use two different sockets for zep and zodb
-    def restoreMySqlDb(self, sql_path, db, socket, status_key='sql'):
+    def restoreMySqlDb(self, sql_path, db, socket, status_key='sql', status_max=-1):
         """
         Create MySQL database if it doesn't exist.
         """
 
         # obtain the number of insert statements again
-        status_max = int(subprocess.check_output(
-            'egrep "^INSERT INTO" %s | wc -l' % sql_path, shell=True))
-        if status_max <= 0:
+        _max = int(subprocess.check_output('egrep "^INSERT INTO" %s | wc -l' % sql_path, shell=True))
+        if _max <= 0:
             log.error("Cannot find any INSERT statement in %s" % sql_path)
+
+        if status_max < 0:
+            status_max = _max
 
         mysql_cmd = ['mysql', '--socket=%s' % socket, '-u%s' % self.user]
         mysql_cmd.extend(['--verbose'])
