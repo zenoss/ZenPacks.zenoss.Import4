@@ -30,6 +30,8 @@ chmod -R a+w "$save_dir"
 # the extra one for tsdb
 mkdir -p "/import4/Q.tsdb/.tmp"
 mkdir -p "/import4/Q.tsdb/.fail"
+chmod -R 777 "/import4/Q.tsdb"
+chown -R zenoss:zenoss "/import4/Q.tsdb"
 
 for dname in $targets
 do
@@ -38,8 +40,11 @@ do
 
     # recreate the struct
     mkdir -p "/import4/Q.$dname/.done"
-    chmod -R a+w "/import4/Q.$dname"
+    chmod -R 777 "/import4/Q.$dname"
     chown -R zenoss:zenoss "/import4/Q.$dname"
 done
+
+# print out the dir structures
+find /import4 -type d -printf "%M %u %p"
 
 info_out "Performance directories cleaned up"

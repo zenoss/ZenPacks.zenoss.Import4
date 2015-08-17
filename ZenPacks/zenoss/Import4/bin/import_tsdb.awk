@@ -27,6 +27,7 @@ function check_tsdb()
         {
             if ($0 != _old_line) {
                 print "->", $0 > "/dev/stderr"
+                print $0 > ERR_LOG
                 _old_line = $0
             }
         }
@@ -38,6 +39,8 @@ function check_tsdb()
     if (tsdb_ok == 0)
     {
         print "Cannot connect to TSDB!" > "/dev/stderr"
+        print "Cannot connect to TSDB!" > ERR_LOG
+        close (ERR_LOG)
         exit 1
     }
     else
@@ -55,6 +58,7 @@ BEGIN {
 
     # open tsdb port, this must be imported in the container
     TSDB_PORT="/inet/tcp/0/127.0.0.1/4242"
+    ERR_LOG="/import4/tsdb.err.log"
 
     check_tsdb()
 }
@@ -70,6 +74,8 @@ END {
 
     if (icnt>0) {
         print "TSDB import", icnt, "errors detected in ", row_no, "records !!" > "/dev/stderr"
+        print "TSDB import", icnt, "errors detected in ", row_no, "records !!" > ERR_LOG
+        close (ERR_LOG)
         exit 1
     }
     else {
