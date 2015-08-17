@@ -9,6 +9,7 @@
 ##############################################################################
 
 export fail_records="/import4/perf.fail.records" # keep the failed status for top level UI
+export tsdb_error="/import4/tsdb.err.log"   # keep the error output from telnet 4242
 export tsdb_imp_file="$1"               # place where we kept the importing file
 export tsdb_dir="/import4/Q.tsdb"   # the path to keep the final tsdb import files
 
@@ -25,21 +26,34 @@ source "$progdir/utils.sh"
 [[ -f "$tsdb_imp_file" ]] || err_exit "import file:$tsdb_imp_file not available"
 
 # this process owns the $tsdb file
-awk -f "$progdir"/import_tsdb.awk "$tsdb_imp_file"
+[[ -f "$tsdb_error" ]] && rm "$tsdb_error"
+
+# 30 seconds time out when import process stuck
+timeout 30 awk -f "$progdir"/import_tsdb.awk "$tsdb_imp_file"
 
 let rc=$?
 if [[ $rc -ne 0 ]] 
 then
     echo "[ERROR] $tsdb_imp_file" >> "$fail_records"
+    [[ -f "$tsdb_error" ]] && cat "$tsdb_error" >> "$fail_records"
 
     # if failed, move the tsdb file back and retry later
     # if a true error, the perf_progress monitoring will timeout 
     # then abort at the perf import level
+    if [[ ! -d "$tsdb_fail_dir" ]]
+    then
+        mkdir -p "$tsdb_fail_dir"       || err_out "Cannot mkdir $tsdb_fail_dir"
+        chmod -R 777 "$tsdb_fail_dir"   || err_out "Cannot chmod $tsdb_fail_dir"
+    fi
     cp "$tsdb_imp_file" "$tsdb_fail_dir"    # for debug
     mv "$tsdb_imp_file" "$tsdb_dir"
 
+    info_out "Import $tsdb_imp_file failed, will retry later"
     exit 1
 fi
+
+# remove failed if succeeded this time
+[[ -f "$tsdb_fail_dir/$tsdb_base" ]] && rm "$tsdb_fail_dir/$tsdb_base"
 
 # mark the process complete
 touch "$tsdb_done_dir/$tsdb_base"
