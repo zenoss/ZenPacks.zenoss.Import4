@@ -73,7 +73,7 @@ class Migration(MigrationBase):
 
         # obtain the number of insert counts
         self.insert_count = int(subprocess.check_output(
-            'egrep "^INSERT INTO" %s|wc -l' % self.zep_sql, shell=True))
+            'egrep "^INSERT INTO \`event_(archive|summary)" %s|wc -l' % self.zep_sql, shell=True))
         if self.insert_count <= 0:
             log.warning('No INSERT statements in the db file:%s', self.zep_sql)
             self.reportError('events_import', 'Invalid events sql file')
@@ -104,7 +104,8 @@ class Migration(MigrationBase):
     #==========================================================================
     def database(self):
         self._check_files()
-        self.restoreMySqlDb(self.zep_sql, 'zenoss_zep', Config.zepSocket, status_key=Imp4Meta.num_events)
+        self.restoreMySqlDb(self.zep_sql, 'zenoss_zep', Config.zepSocket,
+                            status_key=Imp4Meta.num_events, status_max=self.insert_count)
         self._migrateSchema()
         log.info(codeString[ExitCode.SUCCESS])
         return
