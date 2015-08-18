@@ -92,14 +92,11 @@ class TestImport4Migrate(TestImport4):
         self.imp4 = migration.MigrationBase(self.args, test_report_callback)
 
     def _exec_cmd(self, cmd, **kwargs):
-        print 'cmd:' + cmd
-        print kwargs
         out_s = sys.stdout
         self.out = StringIO()
         sys.stdout = self.out
         self.imp4.exec_cmd(cmd, **kwargs)
         sys.stdout = out_s
-        print self.out.getvalue()
 
     def test_init(self):
         self.imp4 = migration.MigrationBase(self.args, test_report_callback)
