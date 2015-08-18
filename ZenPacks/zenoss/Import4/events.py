@@ -74,10 +74,9 @@ class Migration(MigrationBase):
         # obtain the number of insert counts
         self.insert_count = int(subprocess.check_output(
             'egrep "^INSERT INTO \`event_(archive|summary)" %s|wc -l' % self.zep_sql, shell=True))
+
         if self.insert_count <= 0:
-            log.warning('No INSERT statements in the db file:%s', self.zep_sql)
-            self.reportError('events_import', 'Invalid events sql file')
-            raise ImportError(ExitCode.INVALID)
+            log.info('No event included in the db file:%s', self.zep_sql)
 
         # find zep indicies
         indexDir = os.path.join(self.zenbackup_dir, Config.zepIndexDir)
