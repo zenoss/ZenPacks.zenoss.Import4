@@ -27,6 +27,8 @@ status_out "initialize" "Installing import4 scripts ..."
 [[ -d "$VOL_D" ]]     || err_exit "The environment does not have the shared volume: $VOL_D" 
 
 # make all accessible to all
+/usr/bin/yum install acl -y >> "$imp4_tmp/install.log" 2>&1
+
 chmod g+s "$VOL_D"
 setfacl -d -m g::rwx "$VOL_D" 
 setfacl -d -m o::rwx "$VOL_D"

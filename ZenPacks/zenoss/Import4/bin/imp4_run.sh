@@ -8,6 +8,7 @@
 #
 ##############################################################################
 
+args="$*"
 options="__OPTIONS__: $*"
 
 # bring up the corresponding mysql daemon 
@@ -49,7 +50,7 @@ prep_env()
     elif [[ "$options" == *" import "* && "$options" == *"events "* && "$options" == *" --database"* ]]
     then
         prep_mysqld /var/lib/mysql.events 3306
-    elif [[ "$options" == *" import "* && "$options" == *"perf "* ]]
+    elif [[ "$options" == *" import"* && "$options" == *"perf "* ]]
     then
         /import4/pkg/bin/prep_perf_import.sh
     fi
@@ -59,7 +60,7 @@ prep_env()
 exec_import4()
 {
     # use the mounted directory as the current directory
-    cmd="cd /mnt/pwd; /opt/zenoss/bin/python /import4/pkg/bin/import4 $*"
+    cmd="cd /mnt/pwd; /opt/zenoss/bin/python /import4/pkg/bin/import4 $args"
     su - zenoss -c "$cmd"
     let rc=$?
 }

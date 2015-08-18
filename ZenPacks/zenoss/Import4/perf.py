@@ -296,7 +296,7 @@ class Migration(MigrationBase):
                     if _fno > 0:
                         _now_fail_line = sum(1 for line in open(Config.perf_fail_records))
                         if _now_fail_line > _last_fail_line:
-                            self.reportWarning('perf_import', 'performance data errors reported:')
+                            self.reportWarning('perf_import', 'performance data progress reported:')
                             _fail_lines = subprocess.check_output("/usr/bin/sed -n '%d,$p' %s" % (_last_fail_line+1, Config.perf_fail_records),
                                                                   shell=True)
                             for _fail_line in _fail_lines.split('\n'):

@@ -12,8 +12,8 @@
 progdir=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 source "$progdir/utils.sh"
 
-# this is supposed to be executed as a root
-tmpdir="/import4/tmp/rrdtool"
+# this is supposed to be executed as a root under the tmp/rrdtool dir
+tmpdir="$imp4_tmp/rrdtool"
 rm -rf "$tmpdir"
 mkdir -p "$tmpdir"
 cd "$tmpdir"
@@ -21,7 +21,7 @@ cd "$tmpdir"
 Prereq="libdbi ruby xorg-x11-fonts-Type1 gettext libpng12 perl-Time-HiRes"
 info_out "Installing $Prereq"
 status_out "initialize" "Installing prereq packages ..."
-/usr/bin/yum install $Prereq -y > "$tmpdir/yum.log" 2>&1
+/usr/bin/yum install $Prereq -y >> "$imp4_tmp/install.log" 2>&1
 
 let rc=$?
 if [ 0 -ne $rc ]
@@ -55,10 +55,10 @@ do
     status_out "initialize" "$pkg downloaded."
 done
 
-/usr/bin/yum erase rrdtool -y   >> "$tmpdir/yum.log" 2>&1
+/usr/bin/yum erase rrdtool -y   >> "$imp4_tmp/install.log" 2>&1
 
 status_out "initialize" "installing $packages ..."
-/usr/bin/rpm -Uvh $packages     >> "$tmpdir/yum.log" 2>&1
+/usr/bin/rpm -Uvh $packages     >> "$imp4_tmp/install.log" 2>&1
 let rc=$?
 if [ 0 -ne $rc ]
 then
