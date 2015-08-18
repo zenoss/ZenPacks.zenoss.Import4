@@ -28,7 +28,6 @@ perf_out ()
   echo -e "$1" >> "$fail_records"
 }
 
-export -f err_out
 [[ -f "$tsdb_imp_file" ]] || err_exit "import file:$tsdb_imp_file not available"
 
 # this process owns the $tsdb file
