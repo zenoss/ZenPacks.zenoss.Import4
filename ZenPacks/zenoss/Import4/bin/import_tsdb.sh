@@ -23,9 +23,18 @@ export tsdb_fail_dir="$tsdb_dir/.fail"
 progdir=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 source "$progdir/utils.sh"
 
+perf_out ()
+{
+  echo -e "$1" >> "$fail_records"
+}
+
 [[ -f "$tsdb_imp_file" ]] || err_exit "import file:$tsdb_imp_file not available"
 
 # this process owns the $tsdb file
+
+# mark the start time for revival in case this process died
+touch "$tsdb_imp_file" 
+
 [[ -f "$tsdb_error" ]] && rm "$tsdb_error"
 
 # 30 seconds time out when import process stuck
@@ -34,7 +43,6 @@ timeout 30 awk -f "$progdir"/import_tsdb.awk "$tsdb_imp_file"
 let rc=$?
 if [[ $rc -ne 0 ]] 
 then
-    echo "[ERROR] $tsdb_imp_file" >> "$fail_records"
     [[ -f "$tsdb_error" ]] && cat "$tsdb_error" >> "$fail_records"
 
     # if failed, move the tsdb file back and retry later
@@ -48,12 +56,19 @@ then
     cp "$tsdb_imp_file" "$tsdb_fail_dir"    # for debug
     mv "$tsdb_imp_file" "$tsdb_dir"
 
-    info_out "Import $tsdb_imp_file failed, will retry later"
+    info_out "Import $tsdb_imp_file failed, will retry later ..."
+    perf_out "[WARN] Import $tsdb_imp_file failed, will retry later ..." 
+
     exit 1
 fi
 
 # remove failed if succeeded this time
-[[ -f "$tsdb_fail_dir/$tsdb_base" ]] && rm "$tsdb_fail_dir/$tsdb_base"
+if [[ -f "$tsdb_fail_dir/$tsdb_base" ]]
+then
+    info_out "$tsdb_fail_dir/$tsdb_base retry succeeded"
+    perf_out "[INFO] $tsdb_fail_dir/$tsdb_base retry succeeded"
+    rm "$tsdb_fail_dir/$tsdb_base"
+fi
 
 # mark the process complete
 touch "$tsdb_done_dir/$tsdb_base"

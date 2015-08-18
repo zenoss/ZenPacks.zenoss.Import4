@@ -10,13 +10,9 @@
 export tsdb_dir="/import4/Q.tsdb"   # the path to keep the final tsdb import files
 export task_dir="/import4/Q.tasks"  # the path keeping the unclaimed tasks
 export job_dir="/import4/Q.jobs"    # the path keeping the tasks being processed
-#
-# common scrip utilities to be imported by other scripts
-#
-err_out ()
-{
-  echo -e "[ERROR] $1" " !!" >&2
-}
+export imp4_tmp="/import4/tmp"
+mkdir -p "$imp4_tmp"
+
 #
 # common scrip utilities to be imported by other scripts
 #
@@ -97,7 +93,7 @@ export -f poll_idle
 
 check_pile()
 {
-    if (( $(ls -f1 "$tsdb_dir" | wc -l) < 512 )) 
+    if (( $(ls -f1 "$tsdb_dir" | wc -l) < 200 )) 
     then 
         return 0
     else

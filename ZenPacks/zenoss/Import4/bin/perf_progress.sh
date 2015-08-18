@@ -49,7 +49,7 @@ imported_no=$(find $imported_Q -type f -print | wc -l)
 # the total failure counts, not rrd count
 [ -d "$converted_Q_fail" ] && ((fail_c_no=$(find $converted_Q_fail -type f -print | wc -l))) || ((fail_c_no=0))
 [ -d "$imported_Q_fail" ]  && ((fail_i_no=$(find $imported_Q_fail  -type f -print | wc -l))) || ((fail_i_no=0))
-((fsum=fail_c_no+fail_i_no))
+((fsum=(fail_c_no+fail_i_no)*5))
 
 # the exact output format is important. 
 echo "T:$tsum F:$fsum C:$converted_no D:$imported_no"
