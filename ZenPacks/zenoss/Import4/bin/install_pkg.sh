@@ -25,6 +25,12 @@ info_out "Installing import4 scripts from $progdir ..."
 status_out "initialize" "Installing import4 scripts ..."
 
 [[ -d "$VOL_D" ]]     || err_exit "The environment does not have the shared volume: $VOL_D" 
+
+# make all accessible to all
+chmod g+s "$VOL_D"
+setfacl -d -m g::rwx "$VOL_D" 
+setfacl -d -m o::rwx "$VOL_D"
+
 mkdir -p "$BIN_D"     || err_exit "Cannot create the pkg directories"
 
 # copy the scripts

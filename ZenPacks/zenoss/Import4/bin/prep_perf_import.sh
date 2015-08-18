@@ -8,6 +8,7 @@
 #
 ##############################################################################
 
+# executed as root
 export fail_records="/import4/perf.fail.records" # keep the failed status for top level UI
 
 # common block
@@ -26,19 +27,15 @@ save_dir="/import4/Q.save"
 # save the last run info
 if [[ -d "$save_dir" ]] 
 then
-    chmod -R 777 "$save_dir"
     rm -rf "$save_dir"
 fi
 
 mkdir -p  "$save_dir"
-chmod -R 777 "$save_dir"
 [ -f "$fail_records" ] && mv "$fail_records" "$save_dir"
 
 # the extra one for tsdb
 mkdir -p "/import4/Q.tsdb/.tmp"
 mkdir -p "/import4/Q.tsdb/.fail"
-chmod -R 777 "/import4/Q.tsdb"
-chown -R zenoss:zenoss "/import4/Q.tsdb"
 
 for dname in $targets
 do
@@ -48,10 +45,9 @@ do
     # recreate the struct
     mkdir -p "/import4/Q.$dname/.done"
     chmod -R 777 "/import4/Q.$dname"
-    chown -R zenoss:zenoss "/import4/Q.$dname"
 done
 
 # print out the dir structures
-find /import4 -type d -printf "%M %u %p"
+find /import4 -maxdepth 2 -type d -printf "%M %u %p\n"
 
 info_out "Performance directories cleaned up"
