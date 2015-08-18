@@ -32,6 +32,10 @@ export -f err_out
 [[ -f "$tsdb_imp_file" ]] || err_exit "import file:$tsdb_imp_file not available"
 
 # this process owns the $tsdb file
+
+# mark the start time for revival in case this process died
+touch "$tsdb_imp_file" 
+
 [[ -f "$tsdb_error" ]] && rm "$tsdb_error"
 
 # 30 seconds time out when import process stuck

@@ -39,6 +39,28 @@ next_task()
     ) 9< /import4/Q.tsdb
 }
 
+check_services()
+{
+    # check opentsdb
+    echo "Checking services ..."
+    if ! timeout 5 wget -q -O - http://127.0.0.1:4242/api/stats > /dev/null  
+    then
+        echo "opentsdb-writer not running!"
+        return 1
+    fi
+
+    # check region server cluster
+    dead_rs=$(wget -q -O - http://localhost:61000/status/cluster | grep -a "dead server" | cut -d" " -f4)
+    if [[ ! "$dead_rs" == 0 ]] 
+    then
+        echo "$dead_rs non-working region server(s)!"
+        return 1
+    fi
+
+    echo "depending services OK..."
+    return 0
+}
+
 # make sure that the environment has gawk installed
 which gawk || apt-get install gawk
 which gawk || err_exit "Cannot install GNU awk"
@@ -55,6 +77,9 @@ do
 
     # if CPU is busy
     ! check_idle && sleep 5 && continue
+
+    # check if depending services are ready
+    ! check_services && sleep 10 && continue
 
     job=$(next_task)
     if [[ -n "$job" ]] && [[ -f "$job" ]]
