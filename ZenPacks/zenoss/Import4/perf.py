@@ -246,13 +246,6 @@ class Migration(MigrationBase):
         if os.path.isfile(self.data_migrated):
             os.remove(self.data_migrated)
 
-        # cleanup the shared directories for the services
-        _args = ["%s/cleanup_jobs.sh" % _import4_pkg_bin]
-        _rc = subprocess.call(
-            _args, shell=False, stderr=subprocess.STDOUT)
-        if _rc != 0:
-            raise ImportError(ExitCode.CMD_ERROR)
-
         # setup the fixed PERFTOP file for the parallel services
         text_file = open("/import4/Q.tasks/PERFTOP", "w")
         text_file.write("%s" % self.perf_top)
@@ -288,7 +281,6 @@ class Migration(MigrationBase):
                     if _no_progress_count > Config.perf_timeout:
                         log.error('Performance data import stalling over %d seconds, import operation aborted', (Config.perf_poll*Config.perf_timeout))
                         self.reportError('perf_import', 'Performance data import stalling, import operation aborted')
-                        self.exec_cmd("%s/abort_jobs.sh" % _import4_pkg_bin)
                         raise ImportError(ExitCode.FAILURE)
                     continue
                 _no_progress_count = 0
