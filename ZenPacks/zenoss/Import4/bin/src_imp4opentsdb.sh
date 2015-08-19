@@ -81,6 +81,9 @@ do
     # check if depending services are ready
     ! check_services && sleep 10 && continue
 
+    # check if tsdb quota is enough
+    ! check_quota && sleep 10 && continue
+
     job=$(next_task)
     if [[ -n "$job" ]] && [[ -f "$job" ]]
     then
