@@ -80,6 +80,7 @@ END {
     }
     else {
         print "TSDB import successful:", row_no, "records ..."  > "/dev/stderr"
+        printf "%d", row_no > "/tmp/quota.used"
         exit 0
     }
 }

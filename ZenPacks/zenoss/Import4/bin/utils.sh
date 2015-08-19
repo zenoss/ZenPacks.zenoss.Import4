@@ -66,7 +66,7 @@ export -f check_monitor
 export idle="/import4/staging/cpu_idle"
 check_idle()
 {
-    cpu_idle=$(flock -w 120 "$idle".lock cat "$idle")
+    cpu_idle=$(flock -w 120 "$idle.lock" cat "$idle")
     if [[ $cpu_idle < 10 ]]
     then
         # CPU busy
@@ -81,19 +81,44 @@ export -f check_idle
 
 poll_idle()
 {
-  [[ -f "$idle" ]]      && chmod 777 "$idle"
-  [[ -f "$idle".lock ]] && chmod 777 "$idle".lock
+  [[ -f "$idle" ]]      && chmod 777 "$idle"        >/dev/null 2>&1
+  [[ -f "$idle.lock" ]] && chmod 777 "$idle.lock"   >/dev/null 2>&1
+
+  _interval=5
   while true
   do
-      iostat -y -c 2 1 | awk '/^ +[0-9]+.[0-9]+/{ print int($6) }' > "$idle".tmp
-      flock -w 120 -x "$idle".lock mv "$idle".tmp "$idle"
+      iostat -y -c $_interval 1 | awk '/^ +[0-9]+.[0-9]+/{ print int($6) }' > "$idle.tmp"
+      (
+        flock -w 120 201 || exit 1
+
+        # update the cpu idle percentage
+        mv "$idle.tmp" "$idle"
+
+        # replenish the row allowance = 50K per second
+        echo -n $(( 50000*_interval )) >"$idle.quota"
+      ) 201>"$idle.lock" 
   done
 } 
 export -f poll_idle
 
+check_quota()
+{
+    _quota=$(flock -w 120 "$idle.lock" cat "$idle.quota")
+    if (( _quota> 0 ))
+    then
+        return 0
+    else
+        info_out "No quota: $_quota"
+        return 1
+    fi
+}
+
 check_pile()
 {
-    if (( $(ls -f1 "$tsdb_dir" | wc -l) < 200 )) 
+    (( _tc=$(ls -f1 "$tsdb_dir" | wc -l) ))
+    (( _fc=$(ls -f1 "$tsdb_dir/.fail" | wc -l) ))
+
+    if (( (_tc+_fc) < 200 )) 
     then 
         return 0
     else

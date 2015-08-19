@@ -62,6 +62,15 @@ then
     exit 1
 fi
 
+# import_tsdb.awk will produce the quota used into /tmp/quota.used file
+(
+    flock -w 120 201 || exit 1
+    _quota=$(cat "$idle.quota")
+    echo -n $(( _quota-$(cat "/tmp/quota.used"))) > "$idle.quota"
+) 201>"$idle.lock"
+
+info_out "Quota:[$(cat $idle.quota)]"
+
 # remove failed if succeeded this time
 if [[ -f "$tsdb_fail_dir/$tsdb_base" ]]
 then
