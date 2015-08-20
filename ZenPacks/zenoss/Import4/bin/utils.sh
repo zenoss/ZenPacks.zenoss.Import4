@@ -14,6 +14,7 @@ export job_dir="/import4/Q.jobs"    # the path keeping the tasks being processed
 export imp4_tmp="/import4/tmp"
 export tsdb_log="/import4/tsdb.log"     # keep the error output from telnet 4242
 export tsdb_error="/import4/tmp/tsdb.err.log"   # keep the error output from telnet 4242
+export fail_records="/import4/perf.fail.records"    # keep the failed status for top level UI
 export rrds_per_task=1
 
 mkdir -p "$imp4_tmp"

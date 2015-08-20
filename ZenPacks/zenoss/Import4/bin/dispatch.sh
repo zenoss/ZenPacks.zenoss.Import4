@@ -25,6 +25,10 @@ export tasktmp="$2/.tmp"
 progdir=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 source "$progdir/utils.sh"
 
+# reset fail record file
+rm -f $fail_records
+touch $fail_records
+
 # finds all the rrd files and group them into task files
 # The result is placed into the provied task queue directory
 # The target directory is cleaned first
