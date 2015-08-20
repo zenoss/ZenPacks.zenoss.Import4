@@ -38,18 +38,18 @@ tsum=$(cat "$rrd_list" | wc -l)
 
 # the current conversion status
 converted_no=$(find $converted_Q -type f -print | wc -l)
-((converted_no=converted_no*5))
+((converted_no=converted_no*rrds_per_task))
 [ $converted_no -gt $tsum ] && ((converted_no=tsum))
 
 # the current imported number
 imported_no=$(find $imported_Q -type f -print | wc -l)
-((imported_no=imported_no*5))
+((imported_no=imported_no*rrds_per_task))
 [ $imported_no -gt $tsum ] && ((imported_no=tsum))
 
 # the total failure counts, not rrd count
 [ -d "$converted_Q_fail" ] && ((fail_c_no=$(find $converted_Q_fail -type f -print | wc -l))) || ((fail_c_no=0))
 [ -d "$imported_Q_fail" ]  && ((fail_i_no=$(find $imported_Q_fail  -type f -print | wc -l))) || ((fail_i_no=0))
-((fsum=(fail_c_no+fail_i_no)*5))
+((fsum=(fail_c_no+fail_i_no)*rrds_per_task))
 
 # the exact output format is important. 
 echo "T:$tsum F:$fsum C:$converted_no D:$imported_no"
