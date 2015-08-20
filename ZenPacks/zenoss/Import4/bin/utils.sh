@@ -12,6 +12,8 @@ export tsdb_dir="/import4/Q.tsdb"   # the path to keep the final tsdb import fil
 export task_dir="/import4/Q.tasks"  # the path keeping the unclaimed tasks
 export job_dir="/import4/Q.jobs"    # the path keeping the tasks being processed
 export imp4_tmp="/import4/tmp"
+export tsdb_log="/import4/tsdb.log"     # keep the error output from telnet 4242
+export tsdb_error="/import4/tmp/tsdb.err.log"   # keep the error output from telnet 4242
 export rrds_per_task=1
 
 mkdir -p "$imp4_tmp"
@@ -144,7 +146,7 @@ check_pile()
     (( _tc=$(ls -f1 "$tsdb_dir" | wc -l) ))
     (( _fc=$(ls -f1 "$tsdb_dir/.fail" | wc -l) ))
 
-    if (( (_tc+_fc) < 200 )) 
+    if (( (_tc+_fc) < 500 )) 
     then 
         return 0
     else
