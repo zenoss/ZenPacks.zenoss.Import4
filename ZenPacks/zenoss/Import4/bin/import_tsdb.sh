@@ -8,7 +8,6 @@
 #
 ##############################################################################
 
-export fail_records="/import4/perf.fail.records"    # keep the failed status for top level UI
 export tsdb_imp_file="$1"                           # place where we kept the importing file
 export tsdb_dir="/import4/Q.tsdb"                   # the path to keep the final tsdb import files
 
