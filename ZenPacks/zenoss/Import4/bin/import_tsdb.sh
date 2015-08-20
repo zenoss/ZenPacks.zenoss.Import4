@@ -69,7 +69,7 @@ fi
     echo -n $(( _quota-$(cat "/tmp/quota.used"))) > "$idle.quota"
 ) 201>"$idle.lock"
 
-info_out "Quota:[$(cat $idle.quota)]"
+info_out "Quota: $(cat $idle.quota)"
 
 # remove failed if succeeded this time
 if [[ -f "$tsdb_fail_dir/$tsdb_base" ]]
