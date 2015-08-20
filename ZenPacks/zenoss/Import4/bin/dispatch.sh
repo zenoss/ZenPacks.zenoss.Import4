@@ -46,8 +46,8 @@ rm -rf "$tasktmp"                                                       || err_e
 # Assertion:
 # if a task file exists under tasktop, no more change will be made to it
 mkdir -p "$tasktmp"                                                     || err_exit "Cannot create $tasktop or $tasktmp"
-find "$rrdtop" -type f -name "*.rrd" | split -l 5 - "$tasktmp"/task.    || err_exit "Error generating tasks"
-mv "$tasktmp"/* "$tasktop"                                              || err_exit "No result tasks or error moving tasks"
+find "$rrdtop" -type f -name "*.rrd" | split -l $rrds_per_task - "$tasktmp"/task.    || err_exit "Error generating tasks"
+find "$tasktmp" -type f -exec mv {} "$tasktop"  \;                      || err_exit "No result tasks or error moving tasks"
 rm -rf "$tasktmp"                                                       || err_exit "Error cleaning up $tasktmp"
 sync
 
