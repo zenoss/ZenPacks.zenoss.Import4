@@ -8,10 +8,9 @@
 #
 ##############################################################################
 
-export fail_records="/import4/perf.fail.records" # keep the failed status for top level UI
-export tsdb_error="/import4/tsdb.err.log"   # keep the error output from telnet 4242
-export tsdb_imp_file="$1"               # place where we kept the importing file
-export tsdb_dir="/import4/Q.tsdb"   # the path to keep the final tsdb import files
+export fail_records="/import4/perf.fail.records"    # keep the failed status for top level UI
+export tsdb_imp_file="$1"                           # place where we kept the importing file
+export tsdb_dir="/import4/Q.tsdb"                   # the path to keep the final tsdb import files
 
 # derived
 export tsdb_base=$(basename "$tsdb_imp_file")
@@ -25,7 +24,7 @@ source "$progdir/utils.sh"
 
 perf_out ()
 {
-  echo -e "$1" >> "$fail_records"
+  echo -e "$1" >> "$tsdb_log"
 }
 
 [[ -f "$tsdb_imp_file" ]] || err_exit "import file:$tsdb_imp_file not available"
@@ -43,7 +42,7 @@ timeout 30 awk -f "$progdir"/import_tsdb.awk "$tsdb_imp_file"
 let rc=$?
 if [[ $rc -ne 0 ]] 
 then
-    [[ -f "$tsdb_error" ]] && cat "$tsdb_error" >> "$fail_records"
+    [[ -f "$tsdb_error" ]] && cat "$tsdb_error" >> "$tsdb_log"
 
     # if failed, move the tsdb file back and retry later
     # if a true error, the perf_progress monitoring will timeout 

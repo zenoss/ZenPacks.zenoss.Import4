@@ -224,7 +224,7 @@ class Migration(MigrationBase):
                     self.reportStatus(Imp4Meta.num_perf, _no+_eno)
 
         except Exception as e:
-            log.exceptioni(e)
+            log.exception(e)
             raise ImportError(ExitCode.INVALID)
 
         return
@@ -315,7 +315,8 @@ class Migration(MigrationBase):
                     self.reportError('perf_import', 'Incorrect performance progress report')
                     raise ImportError(ExitCode.CMD_ERROR)
                 _old_progress = _progress
-        except:
+        except Exception as e:
+            log.exception(e)
             print sys.exc_info()[0]
             raise ImportError(ExitCode.FAILURE)
 
