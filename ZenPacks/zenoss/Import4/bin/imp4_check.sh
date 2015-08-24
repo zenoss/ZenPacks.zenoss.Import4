@@ -16,22 +16,35 @@ cp  -p /opt/zenoss/etc/zodb_db_imp4.conf /opt/zenoss/etc/zodb_db_main.conf
 progdir=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 source "$progdir/utils.sh"
 
-status_out ()
+chk_status_out ()
 {
   echo "{ \"imp4_status\" : { \"check\" : \"$1\" }}"
   info_out "$1"
 }
-export -f status_out
+export -f chk_status_out
+
+chk_error_out()
+{
+  echo "{ \"imp4_error\" : { \"check\" : \"$1\" }}"
+  err_out "$1"
+}
+export -f chk_error_out
+
+chk_error_exit()
+{
+  echo "{ \"imp4_error\" : { \"check\" : \"$1\" }}"
+  err_exit "$1"
+}
+export -f chk_error_exit
 
 cd /mnt/pwd
 
 # check if the backup file is available
-[[ ! -f "$1" ]] && err_exit "Migration file not found!"
+[[ ! -f "$1" ]] && chk_error_exit "Migration file not found!"
 
 # make sure /mnt/pwd is world r/w/x
 if [[ $(find /mnt/pwd -maxdepth 0 -perm -777 | wc -l) != 1 ]]; then
-    status_out  "Backup's parent directory is not world r/w/x - exiting"
-    err_exit    "Backup's parent directory is not world r/w/x - exiting"
+    chk_error_exit  "Backup's parent directory is not world r/w/x - exiting"
 fi
 
 export imp4dir="/import4"
@@ -41,7 +54,7 @@ export zbk="zenbackup"
 export awk_cmd='{ if (NR%10 == 0) printf "."} END {printf "\n"}'
 
 # removing previous artifacts
-status_out "Removing artifacts"
+chk_status_out "Removing artifacts"
 for i in \
         backup.md5 \
         MODEL_* \
@@ -59,49 +72,49 @@ do
 done
 
 # extracting known data files from the tar ball
-status_out "Extracting $1"
-! tar -vxf "$1" >&2              && err_exit "Extracting zenbackup failed!"
+chk_status_out "Extracting $1"
+! tar -vxf "$1" >&2              && chk_error_exit "Extracting zenbackup (tar -xf $1) failed!"
 
 if [[ -f backup.md5 ]]; then
-   status_out "Check md5sum against backup.md5"
-   cmp -s -n 32 backup.md5 <(md5sum -b zenbackup_*.tgz) && info_out "md5sum OK" || err_exit "md5sum failed: zenbackup_*.tgz"
+   chk_status_out "Check md5sum against backup.md5"
+   cmp -s -n 32 backup.md5 <(md5sum -b zenbackup_*.tgz) && info_out "md5sum OK" || chk_error_exit "md5sum failed: zenbackup_*.tgz"
 else
     info_out "No md5 checksum, continue"
 fi
 
-status_out "Extracting zenbackup.tgz"
-! tar -zvxf zenbackup_*.tgz  >&2 && err_exit "Extracting zenbackup_*.tgz failed!"
+chk_status_out "Extracting zenbackup.tgz"
+! tar -zvxf zenbackup_*.tgz  >&2 && chk_error_exit "Extracting (tar -zxf) zenbackup_*.tgz failed!"
 
 # make sure dmd_uuid.txt is there!
-status_out "Copying dmd_uuid.txt"
+chk_status_out "Copying dmd_uuid.txt"
 if [[ ! -f dmd_uuid.txt ]]; then
-    err_exit "dmd_uuid.txt is missing from backup, cannot continue"
+    chk_error_exit "dmd_uuid.txt is missing in the backup, cannot continue"
 fi
-cp dmd_uuid.txt /import4/dmd_uuid.txt || err_exit "Cannot get dmd_uuid.txt"
+cp dmd_uuid.txt /import4/dmd_uuid.txt || chk_error_exit "Cannot get dmd_uuid.txt"
 
-! cd "$zbk" && err_out "Invalid zenbackup file!"
+! cd "$zbk" && chk_error_exit "Invalid zenbackup file!"
 
 # model files (zodb and zenpacks) are required
-status_out "Unzipping zodb.sql.gz"
-! gunzip -vf "zodb.sql.gz" >&2  && err_exit "Uncompressing zodb.sql failed!"
+chk_status_out "Unzipping zodb.sql.gz"
+! gunzip -vf "zodb.sql.gz" >&2  && chk_error_exit "Uncompressing (gunzip) zodb.sql failed!"
 
-status_out "Extracting ZenPacks.tar"
+chk_status_out "Extracting ZenPacks.tar"
 tar -vxf ZenPacks.tar | awk "$awk_cmd" >&2
-[[ ${PIPESTATUS[0]} -ne 0 ]] && err_exit "Extracting ZenPack.tar failed!"
+[[ ${PIPESTATUS[0]} -ne 0 ]] && chk_error_exit "Extracting (tar -xf) ZenPack.tar failed!"
 
 # events file is optional
 ((zep_ok=0))
 if [ -f zep.sql.gz ]
 then
-    status_out "Unzipping zep.sql.gz"
-    ! gunzip -vf "zep.sql.gz" >&2 && err_exit "Invalid zep.sql.gz! abort"
+    chk_status_out "Unzipping zep.sql.gz"
+    ! gunzip -vf "zep.sql.gz" >&2 && chk_error_exit "Invalid zep.sql.gz! abort"
     ((zep_ok=1))
 
     if [ -f zep.tar ]
     then
-        status_out "Extracting zep.tar"
+        chk_status_out "Extracting zep.tar"
         tar -vxf zep.tar 2>/dev/null | awk "$awk_cmd" >&2
-        [[ ${PIPESTATUS[0]} -ne 0 ]] && err_exit "Extracting Zeneventserver indexes failed! abort"
+        [[ ${PIPESTATUS[0]} -ne 0 ]] && chk_error_exit "Extracting (tar -xf) Zeneventserver indexes failed! abort"
     else
         info_out "No Zeneventserver indexes archive, continue"
     fi
@@ -112,19 +125,19 @@ fi
 # catalogservice file is optional
 if [ -f zencatalogservice.tar ]
 then
-    status_out "Extracting zencatalogservice.tar"
+    chk_status_out "Extracting zencatalogservice.tar"
     tar -vxf zencatalogservice.tar | awk "$awk_cmd" >&2
-    [[ ${PIPESTATUS[0]} -ne 0 ]] && err_exit "Extracting zencatalogservice.tar failed! abort"
+    [[ ${PIPESTATUS[0]} -ne 0 ]] && chk_error_exit "Extracting zencatalogservice.tar failed! abort"
 else
     info_out "No catalogservice archive, continue"
 fi
 
 # prep the staging area
-! mkdir -p "$staging_zenbackup_dir" && err_exit "Cannot create staging directory in the containter!"
+! mkdir -p "$staging_zenbackup_dir" && chk_error_exit "Cannot create staging directory in the containter!"
 
 ((perf_ok=0))
 perf_tarball=""
-[[ -f perf.tar && -f perf.tar.gz ]] && err_exit "Multiple perf data tarballs found!"
+[[ -f perf.tar && -f perf.tar.gz ]] && chk_error_exit "Multiple perf data tarballs found!"
 if [[ -f perf.tar ]]; then
     perf_tarball="perf.tar"
     tar_flags="-vxf"
@@ -135,10 +148,10 @@ fi
 if [[ -n $perf_tarball ]]
 then
     # extract the perf into the shared staging volume
-    status_out "Extracting $perf_tarball"
+    chk_status_out "Extracting $perf_tarball"
     info_out "This operation tends to take a long time ..."
     nice -n 5 tar -C "$staging_zenbackup_dir" "$tar_flags" "$perf_tarball" | awk "$awk_cmd" >&2
-    [[ ${PIPESTATUS[0]} -ne 0 ]] && err_exit "Extracting performance data from $perf_tarball failed!"
+    [[ ${PIPESTATUS[0]} -ne 0 ]] && chk_error_exit "Extracting performance data from $perf_tarball failed!"
     ((perf_ok=1))
 else
     info_out "No performance data archive, continue"
@@ -154,13 +167,13 @@ wait
 # use the mounted directory as the current directory
 # no redirect of stdout where meta data is reported
 cmd="cd /mnt/pwd; /opt/zenoss/bin/python /import4/pkg/bin/import4 "
-status_out "Finding import meta data"
-! su - zenoss -c "$cmd model check"            && err_exit "Model files not valid!"
+chk_status_out "Finding import meta data"
+! su - zenoss -c "$cmd model check"            && chk_error_exit "Model files not valid!"
 
 # optional prevalidation
-[ $zep_ok -eq 1 ]  && ! su - zenoss -c "$cmd events check"           && err_exit "Events files not valid!"
-[ $perf_ok -eq 1 ] && ! su - zenoss -c "$cmd perf --skip-scan check" && err_exit "Performance data files not valid!"
+[ $zep_ok -eq 1 ]  && ! su - zenoss -c "$cmd events check"           && chk_error_exit "Events files not valid!"
+[ $perf_ok -eq 1 ] && ! su - zenoss -c "$cmd perf --skip-scan check" && chk_error_exit "Performance data files not valid!"
 
-info_out "Migration files checked OK..."
+chk_status_out "Migration files checked OK..."
 info_out "No need to commit image for this operation..."
 exit 42
