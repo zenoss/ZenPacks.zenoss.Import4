@@ -40,7 +40,7 @@ export -f chk_error_exit
 cd /mnt/pwd
 
 # check if the backup file is available
-[[ ! -f "$1" ]] && chk_error_exit "Migration file not found!"
+[[ ! -f "$1" ]] && chk_error_exit "Migration file \"$1\" not found!"
 
 # make sure /mnt/pwd is world r/w/x
 if [[ $(find /mnt/pwd -maxdepth 0 -perm -777 | wc -l) != 1 ]]; then
@@ -73,7 +73,7 @@ done
 
 # extracting known data files from the tar ball
 chk_status_out "Extracting $1"
-! tar -vxf "$1" >&2              && chk_error_exit "Extracting zenbackup (tar -xf $1) failed!"
+! tar -vxf "$1" >&2              && chk_error_exit "Extracting zenbackup (tar -xf \"$1\") failed! Invalid backup file."
 
 if [[ -f backup.md5 ]]; then
    chk_status_out "Check md5sum against backup.md5"
@@ -83,38 +83,38 @@ else
 fi
 
 chk_status_out "Extracting zenbackup.tgz"
-! tar -zvxf zenbackup_*.tgz  >&2 && chk_error_exit "Extracting (tar -zxf) zenbackup_*.tgz failed!"
+! tar -zvxf zenbackup_*.tgz  >&2 && chk_error_exit "Extracting (tar -zxf) zenbackup_*.tgz failed! Invalid backup file."
 
 # make sure dmd_uuid.txt is there!
 chk_status_out "Copying dmd_uuid.txt"
 if [[ ! -f dmd_uuid.txt ]]; then
-    chk_error_exit "dmd_uuid.txt is missing in the backup, cannot continue"
+    chk_error_exit "dmd_uuid.txt is missing in the backup file, cannot continue"
 fi
-cp dmd_uuid.txt /import4/dmd_uuid.txt || chk_error_exit "Cannot get dmd_uuid.txt"
+cp dmd_uuid.txt /import4/dmd_uuid.txt || chk_error_exit "Missing dmd_uuid.txt file! Invalid backup file."
 
-! cd "$zbk" && chk_error_exit "Invalid zenbackup file!"
+! cd "$zbk" && chk_error_exit "Missing zenbackup directory! Invalid backup file."
 
 # model files (zodb and zenpacks) are required
 chk_status_out "Unzipping zodb.sql.gz"
-! gunzip -vf "zodb.sql.gz" >&2  && chk_error_exit "Uncompressing (gunzip) zodb.sql failed!"
+! gunzip -vf "zodb.sql.gz" >&2  && chk_error_exit "Uncompressing (gunzip) zodb.sql failed! Invalid backup file."
 
 chk_status_out "Extracting ZenPacks.tar"
 tar -vxf ZenPacks.tar | awk "$awk_cmd" >&2
-[[ ${PIPESTATUS[0]} -ne 0 ]] && chk_error_exit "Extracting (tar -xf) ZenPack.tar failed!"
+[[ ${PIPESTATUS[0]} -ne 0 ]] && chk_error_exit "Extracting (tar -xf) ZenPack.tar failed! Invalid backup file."
 
 # events file is optional
 ((zep_ok=0))
 if [ -f zep.sql.gz ]
 then
     chk_status_out "Unzipping zep.sql.gz"
-    ! gunzip -vf "zep.sql.gz" >&2 && chk_error_exit "Invalid zep.sql.gz! abort"
+    ! gunzip -vf "zep.sql.gz" >&2 && chk_error_exit "Uncompressing zep.sql.gz failed! Invalid backup file."
     ((zep_ok=1))
 
     if [ -f zep.tar ]
     then
         chk_status_out "Extracting zep.tar"
         tar -vxf zep.tar 2>/dev/null | awk "$awk_cmd" >&2
-        [[ ${PIPESTATUS[0]} -ne 0 ]] && chk_error_exit "Extracting (tar -xf) Zeneventserver indexes failed! abort"
+        [[ ${PIPESTATUS[0]} -ne 0 ]] && chk_error_exit "Extracting (tar -xf) Zeneventserver indexes failed! Invalid backup file."
     else
         info_out "No Zeneventserver indexes archive, continue"
     fi
@@ -127,7 +127,7 @@ if [ -f zencatalogservice.tar ]
 then
     chk_status_out "Extracting zencatalogservice.tar"
     tar -vxf zencatalogservice.tar | awk "$awk_cmd" >&2
-    [[ ${PIPESTATUS[0]} -ne 0 ]] && chk_error_exit "Extracting zencatalogservice.tar failed! abort"
+    [[ ${PIPESTATUS[0]} -ne 0 ]] && chk_error_exit "Extracting zencatalogservice.tar failed! Invalid backup file."
 else
     info_out "No catalogservice archive, continue"
 fi
@@ -137,7 +137,7 @@ fi
 
 ((perf_ok=0))
 perf_tarball=""
-[[ -f perf.tar && -f perf.tar.gz ]] && chk_error_exit "Multiple perf data tarballs found!"
+[[ -f perf.tar && -f perf.tar.gz ]] && chk_error_exit "Multiple perf data tarballs found! Invalid backup file."
 if [[ -f perf.tar ]]; then
     perf_tarball="perf.tar"
     tar_flags="-vxf"
@@ -151,7 +151,7 @@ then
     chk_status_out "Extracting $perf_tarball"
     info_out "This operation tends to take a long time ..."
     nice -n 5 tar -C "$staging_zenbackup_dir" "$tar_flags" "$perf_tarball" | awk "$awk_cmd" >&2
-    [[ ${PIPESTATUS[0]} -ne 0 ]] && chk_error_exit "Extracting performance data from $perf_tarball failed!"
+    [[ ${PIPESTATUS[0]} -ne 0 ]] && chk_error_exit "Extracting performance data from $perf_tarball failed! Invalid backup file."
     ((perf_ok=1))
 else
     info_out "No performance data archive, continue"
