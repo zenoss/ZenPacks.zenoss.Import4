@@ -145,7 +145,7 @@ check_pile()
     local _tc=0
     local _fc=0
     (( _tc=$(ls -f1 "$tsdb_dir" | wc -l) ))
-    (( _fc=$(ls -f1 "$tsdb_dir/.fail" | wc -l) ))
+    [[ -d "$tsdb_dir/.fail" ]] && (( _fc=$(ls -f1 "$tsdb_dir/.fail" | wc -l) ))
 
     if (( (_tc+_fc) < 500 )) 
     then 
