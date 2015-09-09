@@ -1,5 +1,5 @@
 {
-    "servicePath": "/",
+    "servicePath": "/Infrastructure",
     "serviceDefinition" : {
         "Name": "Imp4MariaDB",
         "Description": "Mariadb environment and RRD converter worker for import4",

@@ -1,5 +1,5 @@
 {
-   "servicePath": "/",
+   "servicePath": "/Infrastructure",
    "serviceDefinition": {
         "Name": "Imp4OpenTSDB",
         "Description": "OpenTSDB and perf data import worker for import4",
