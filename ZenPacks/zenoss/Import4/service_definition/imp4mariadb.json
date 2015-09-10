@@ -1,5 +1,5 @@
 {
-    "servicePath": "/Infrastructure",
+    "servicePath": "/=Infrastructure",
     "serviceDefinition" : {
         "Name": "Imp4MariaDB",
         "Description": "Mariadb environment and RRD converter worker for import4",
@@ -15,7 +15,6 @@
             "Default": 4
         },
         "ChangeOptions": null,
-        "Launch": "manual",
         "HostPolicy": "",
         "Hostname": "",
         "Privileged": false,

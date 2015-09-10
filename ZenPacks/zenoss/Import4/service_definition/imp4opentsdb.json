@@ -1,8 +1,7 @@
 {
-   "servicePath": "/Infrastructure",
+   "servicePath": "/=Infrastructure",
    "serviceDefinition": {
         "Name": "Imp4OpenTSDB",
-        "Description": "OpenTSDB and perf data import worker for import4",
         "Launch": "manual",
         "Command": "bash -c \"/import4/pkg/bin/imp4opentsdb.sh\"",
         "Description": "OpenTSDB environment for import4",
