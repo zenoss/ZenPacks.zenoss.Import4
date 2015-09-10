@@ -72,32 +72,9 @@ restore_env()
     cp  -p /tmp/zodb_db_main.conf.sav /opt/zenoss/etc/zodb_db_main.conf
 }
 
-# decide if an image commit is necessary and exit
-check_commit_exit()
-{
-    # check to see if we need to commit the image
-    [[ $rc != 0 ]] && exit $rc
-
-    for op in ' -h ' ' --help' 
-    do
-        if [[ "$options" == *"$op"* ]]
-        then
-            # no need to commit the image for help commands
-            exit 1
-        fi
-    done
-
-    # commit only when it is for successful 'model import --zenpack'
-    if [[ "$options" == *" import "* && "$options" == *"model "* && "$options" == *" --zenpack"* ]]; then
-        exit 0
-    fi
-
-    echo "No need to commit image for this operation..."
-    exit 42
-}
-
 ### the main sequence ###
 prep_env
 exec_import4
 restore_env
-check_commit_exit
+
+exit $rc

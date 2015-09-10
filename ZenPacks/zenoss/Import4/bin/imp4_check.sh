@@ -175,5 +175,4 @@ chk_status_out "Finding import meta data"
 [ $perf_ok -eq 1 ] && ! su - zenoss -c "$cmd perf --skip-scan check" && chk_error_exit "Performance data files not valid!"
 
 chk_status_out "Migration files checked OK..."
-info_out "No need to commit image for this operation..."
-exit 42
+exit 0
