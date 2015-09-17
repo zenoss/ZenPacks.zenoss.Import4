@@ -19,4 +19,8 @@ lic_dir="/opt/zenoss/var/flexera"
 
 [ -d "$src_dir" ] && [ -d "$lic_dir" ] && cp -vrp "$src_dir/"* "$lic_dir" 
 [ $? -ne 0 ] && err_exit "Error in copying license files"
+
+# update dmd with migrated licenses
+echo "getFacade('ucsxskin').get_license_info(refresh=True)" | zendmd
+
 info_out "License files copied"
