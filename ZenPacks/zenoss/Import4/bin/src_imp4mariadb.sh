@@ -44,20 +44,6 @@ next_task()
 # set the correct ports for zodb
 cp  -p /opt/zenoss/etc/zodb_db_imp4.conf /opt/zenoss/etc/zodb_db_main.conf
 
-# after a cycle
-# depending on serviced to restart the service
-
-# pre install in each container
-while ! which rrdtool 
-do
-   if [[ -f /import4/pkg/bin/install_rrdtool.sh ]]
-   then
-       /import4/pkg/bin/install_rrdtool.sh > /opt/zenoss/log/install_rrdtool.log 2>&1
-   else
-       sleep 5
-   fi
-done
-
 # cache the uuid first. This needs to be 'after' model import
 runuser -l zenoss -c /import4/pkg/bin/get_dmduuid.sh
 
@@ -88,7 +74,7 @@ do
         runuser -l zenoss -c "/import4/pkg/bin/check_task.sh"
     fi
 
-    # if monitor died, break out and wait for service to restart the script
+    # if monitor terminated, the import loop is done
     ! check_monitor && exit 1
 
 done

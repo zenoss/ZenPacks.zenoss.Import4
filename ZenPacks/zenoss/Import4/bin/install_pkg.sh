@@ -26,9 +26,18 @@ status_out "initialize" "Installing import4 scripts ..."
 
 [[ -d "$VOL_D" ]]     || err_exit "The environment does not have the shared volume: $VOL_D" 
 
-# make all accessible to all
-/usr/bin/yum install acl -y >> "$imp4_tmp/install.log" 2>&1
+# install rpms used by migration
+rpms="acl-2.2.51-12.el7.x86_64.rpm
+dejavu-fonts-common-2.33-6.el7.noarch.rpm
+dejavu-sans-mono-fonts-2.33-6.el7.noarch.rpm
+rrdtool-1.4.8-8.el7.x86_64.rpm"
 
+for rn in ${rpms}
+do
+    /usr/bin/rpm -Uvh ${progdir}/../rpm/$rn
+done
+
+# make all accessible to all
 chmod g+s "$VOL_D"
 setfacl -d -m g::rwx "$VOL_D" 
 setfacl -d -m o::rwx "$VOL_D"
@@ -57,4 +66,9 @@ done
 
 info_out "Import4 scripts Installed."
 status_out "initialize" "Import4 scripts installed."
+
+# drop a dotfile so that we can tell that initialization happened
+mkdir -p /var/import4 && touch /var/import4/.initialized
+[[ $? = 0 ]] || err_exit "ERROR: creating initialization marker failed"
+
 exit 0
