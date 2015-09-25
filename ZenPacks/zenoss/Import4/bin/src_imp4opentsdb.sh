@@ -95,4 +95,6 @@ do
         /import4/pkg/bin/check_tsdb.sh
     fi
 
+    # if monitor terminated, the import loop is done
+    ! check_monitor && exit 1
 done
