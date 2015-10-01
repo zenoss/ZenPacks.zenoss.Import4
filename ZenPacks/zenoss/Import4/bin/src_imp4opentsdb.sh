@@ -42,22 +42,14 @@ next_task()
 check_services()
 {
     # check opentsdb
-    echo "Checking services ..."
+    echo -n "Checking services ..."
     if ! timeout 5 wget -q -O - http://127.0.0.1:4242/api/stats > /dev/null  
     then
         echo "opentsdb-writer not running!"
         return 1
     fi
 
-    # check region server cluster
-    dead_rs=$(wget -q -O - http://localhost:61000/status/cluster | grep -a "dead server" | cut -d" " -f4)
-    if [[ ! "$dead_rs" == 0 ]] 
-    then
-        echo "$dead_rs non-working region server(s)!"
-        return 1
-    fi
-
-    echo "depending services OK..."
+    echo " OK..."
     return 0
 }
 
