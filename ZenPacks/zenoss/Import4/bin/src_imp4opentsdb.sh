@@ -49,13 +49,7 @@ check_services()
         return 1
     fi
 
-    # check region server cluster
-    dead_rs=$(wget -q -O - http://localhost:61000/status/cluster | grep -a "dead server" | cut -d" " -f4)
-    if [[ ! "$dead_rs" == 0 ]] 
-    then
-        echo "$dead_rs non-working region server(s)!"
-        return 1
-    fi
+    # may need to check region server cluster in the future for stability
 
     echo "depending services OK..."
     return 0
