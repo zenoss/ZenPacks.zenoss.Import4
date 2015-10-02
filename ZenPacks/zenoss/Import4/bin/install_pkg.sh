@@ -67,8 +67,8 @@ done
 info_out "Import4 scripts Installed."
 status_out "initialize" "Import4 scripts installed."
 
-# drop a dotfile so that we can tell that initialization happened
-mkdir -p /var/import4 && touch /var/import4/.initialized
+# drop a dotfile so that we can tell that initialization happened at the target pkg dir
+touch ${PKG_D}/.initialized
 [[ $? = 0 ]] || err_exit "ERROR: creating initialization marker failed"
 
 exit 0

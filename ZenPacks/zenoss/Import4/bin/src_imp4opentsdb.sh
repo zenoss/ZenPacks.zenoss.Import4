@@ -42,16 +42,14 @@ next_task()
 check_services()
 {
     # check opentsdb
-    echo "Checking services ..."
+    echo -n "Checking services ..."
     if ! timeout 5 wget -q -O - http://127.0.0.1:4242/api/stats > /dev/null  
     then
         echo "opentsdb-writer not running!"
         return 1
     fi
 
-    # may need to check region server cluster in the future for stability
-
-    echo "depending services OK..."
+    echo "OK..."
     return 0
 }
 
