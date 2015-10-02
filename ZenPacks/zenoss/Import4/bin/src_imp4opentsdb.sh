@@ -49,7 +49,7 @@ check_services()
         return 1
     fi
 
-    echo " OK..."
+    echo "OK..."
     return 0
 }
 
