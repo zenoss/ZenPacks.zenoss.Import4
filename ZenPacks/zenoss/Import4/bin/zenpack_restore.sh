@@ -18,3 +18,9 @@ restore() {
 }
 
 restore
+((rc=$?))
+
+# update dmd with migrated licenses
+echo "getFacade('ucsxskin').get_license_info(refresh=True)" | zendmd
+
+exit $rc
