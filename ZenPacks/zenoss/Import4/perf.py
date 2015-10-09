@@ -30,15 +30,15 @@ _tsdb_done = '%s/.done' % _tsdb_Q
 
 
 def check_runtime_environment():
-   if not os.path.exists(_import4_vol):
-       log.error("%s does not exist.", _import4_vol)
-       raise ImportError(ExitCode.RUNTIME_ERROR)
-   if not os.path.exists('%s/imp4mariadb.sh' % _import4_pkg_bin):
-       log.error("%s/imp4mariadb.sh does not exist.", _import4_pkg_bin)
-       raise ImportError(ExitCode.RUNTIME_ERROR)
-   if not os.path.exists('%s/imp4opentsdb.sh' % _import4_pkg_bin):
-       log.error("%s/imp4opentsdb.sh does not exist.", _import4_pkg_bin)
-       raise ImportError(ExitCode.RUNTIME_ERROR)
+    if not os.path.exists(_import4_vol):
+        log.error("%s does not exist.", _import4_vol)
+        raise ImportError(ExitCode.RUNTIME_ERROR)
+    if not os.path.exists('%s/imp4mariadb.sh' % _import4_pkg_bin):
+        log.error("%s/imp4mariadb.sh does not exist.", _import4_pkg_bin)
+        raise ImportError(ExitCode.RUNTIME_ERROR)
+    if not os.path.exists('%s/imp4opentsdb.sh' % _import4_pkg_bin):
+        log.error("%s/imp4opentsdb.sh does not exist.", _import4_pkg_bin)
+        raise ImportError(ExitCode.RUNTIME_ERROR)
 
 
 class Migration(MigrationBase):
@@ -72,13 +72,13 @@ class Migration(MigrationBase):
     def init_command_parser(m_parser):
         # if rrd_dir is specified, it will only import the selected
         m_parser.add_argument('--rrd_dir', dest='rrd_dir', default="",
-                                help="Top directory for a existing 4.x rrd tree")
+                              help="Top directory for a existing 4.x rrd tree")
         m_parser.add_argument('-t', '--perf_top', dest='perf_top', default="",
-                                help="Parent directory of the rrd trees")
+                              help="Parent directory of the rrd trees")
         m_parser.add_argument('-n', '--skip-scan', action='store_true', dest='skip_scan', default=False,
-                                help="Skip the scanning of rrdfiles' content")
+                              help="Skip the scanning of rrdfiles' content")
         m_parser.add_argument('--skip-check-env', action='store_true', dest='skip_check_env',
-                                help="Skip the checking of runtime environment")
+                              help="Skip the checking of runtime environment")
 
     @classmethod
     def init_command_parsers(cls, check_parser, verify_parser, import_parser):
@@ -198,14 +198,14 @@ class Migration(MigrationBase):
             _no = 0
             _eno = 0
             with open(_rrd_list, "r") as f:
-                _old_dir=""
+                _old_dir = ""
                 for _aline in f:
                     _one_rrd = _aline.strip()
-                    _one_dir=os.path.dirname(_one_rrd)
+                    _one_dir = os.path.dirname(_one_rrd)
                     log.info("%s ..." % _one_rrd)
 
                     # skip most
-                    if (_one_dir == _old_dir) and (random.randrange(0,7,1) > 0) :
+                    if (_one_dir == _old_dir) and (random.randrange(0, 7, 1) > 0):
                         _no += 1
                         self.reportStatus(Imp4Meta.num_perf + "->CheckSkipped", _no+_eno)
                         continue
@@ -276,6 +276,7 @@ class Migration(MigrationBase):
                 if _progress == _old_progress:
                     _no_progress_count += 1
                     log.warning('No progress for %d seconds', (_no_progress_count*Config.perf_poll))
+                    self.reportWarning('perf_import', 'No progress for %d seconds' % (_no_progress_count*Config.perf_poll))
                     self.reportHeartbeat()
                     # if the progress stuck and timeout, we abort the perf import
                     if _no_progress_count > Config.perf_timeout:
