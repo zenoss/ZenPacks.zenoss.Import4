@@ -17,6 +17,14 @@ export VOL_D='/import4'
 export PKG_D="$VOL_D/pkg"
 export BIN_D="$VOL_D/pkg/bin"
 
+export IMARKER="/var/import4/.initialized"
+
+if [[ -f "$IMARKER" ]]
+then
+    info_out "Initialization was done before"
+    exit 42
+fi
+
 # common block
 progdir=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 source "$progdir/utils.sh"
@@ -68,8 +76,7 @@ info_out "Import4 scripts Installed."
 status_out "initialize" "Import4 scripts installed."
 
 # drop a dotfile so that we can tell that initialization happened at the target pkg dir
-touch ${PKG_D}/.initialized
-mkdir -p /var/import4 && touch /var/import4/.initialized
+mkdir -p /var/import4 && touch $IMARKER
 [[ $? = 0 ]] || err_exit "ERROR: creating initialization marker failed"
 
 exit 0
