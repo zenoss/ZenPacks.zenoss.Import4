@@ -65,7 +65,7 @@ do
         echo "[ERROR] $one_rrd in $job" >> "$fail_records"
 
         # failed, send the partial result to the part pool for debug
-        [ -f "job_raw" ] && mv "$job_raw" "$job_part_dir"
+        [ -f "$job_raw" ] && mv "$job_raw" "$job_part_dir"
 
         # put the faled job in the fail pool
         mv "$job" "$job_fail_dir"
