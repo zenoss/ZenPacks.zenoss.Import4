@@ -8,9 +8,20 @@
 ##############################################################################
 
 # clean up the artifacts but leave .fail and pkg dir for debugging purpose
-[[ -d /import4/Q.tsdb/.fail ]] && mv /import4/Q.tsdb/.fail /import4/tmp/Q.tsdb.fail
+save_this()
+{
+    [[ -d "/import4/$1/$2" ]] && mv "/import4/$1/$2" "/import4/tmp/$1.$2"
+}
 
-# now remove the larger artifacts
-rm -rf /import4/tmp/rrdtool
-rm -rf /import4/staging
-rm -rf /import4/Q.*
+save_this Q.tsdb .tmp
+save_this Q.tsdb .fail
+
+save_this Q.jobs .tmp
+save_this Q.jobs .fail
+save_this Q.jobs .part
+
+# now that the large artifacts are on the removable drive
+# we do not remove these artifacts afterward
+# rm -rf /import4/tmp/rrdtool
+# rm -rf /import4/staging
+# rm -rf /import4/Q.*
