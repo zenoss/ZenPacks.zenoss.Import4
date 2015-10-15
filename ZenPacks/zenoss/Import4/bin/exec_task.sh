@@ -26,11 +26,12 @@ export jobname=$(basename "$job")
 export job_done_dir="$job_dir/.done"
 export job_fail_dir="$job_dir/.fail"
 export job_part_dir="$job_dir/.part"
+export job_tmp_dir="$job_dir/.tmp"
 export job_done="$job_done_dir/$jobname"
 
-export tsdb_tmp_dir="$tsdb_dir/.tmp"
-export tsdb_raw="$tsdb_tmp_dir/$jobname".tsdb.raw
-export tsdb_ok="$tsdb_tmp_dir/$jobname".tsdb.ok
+export job_raw="$job_tmp_dir/$jobname".tsdb.raw
+export job_ok="$job_tmp_dir/$jobname".tsdb.ok
+
 export tsdb_file="$tsdb_dir/$jobname".tsdb
 
 # common block
@@ -47,24 +48,24 @@ read PERFTOP < "$task_dir/PERFTOP"
 # <job> no being completed for a while
 
 # now this process does own the $job
-mkdir -p "$tsdb_tmp_dir" 
+mkdir -p "$job_tmp_dir" 
 mkdir -p "$job_fail_dir"
 mkdir -p "$job_part_dir"
-rm -f "$tsdb_raw"   # cleanup first
+rm -f "$job_raw"   # cleanup first
 
 info_out "Processing $job"
 
 # the conversion time should be < 10 seconds
 while read one_rrd
 do
-    "$progdir"/rrd2tsdb.sh "$PERFTOP" "$one_rrd" >> "$tsdb_raw"
+    "$progdir"/rrd2tsdb.sh "$PERFTOP" "$one_rrd" >> "$job_raw"
     let rc=$?
     if [[ $rc -ne 0 ]] 
     then
         echo "[ERROR] $one_rrd in $job" >> "$fail_records"
 
         # failed, send the partial result to the part pool for debug
-        [ -f "tsdb_raw" ] && mv "$tsdb_raw" "$job_part_dir"
+        [ -f "job_raw" ] && mv "$job_raw" "$job_part_dir"
 
         # put the faled job in the fail pool
         mv "$job" "$job_fail_dir"
@@ -74,7 +75,7 @@ do
 done < "$job"
 
 # make the finalized tsdb import file visible
-mv "$tsdb_raw" "$tsdb_file"
+mv "$job_raw" "$tsdb_file"
 
 # mark job completed
 mkdir -p "$job_done_dir"
