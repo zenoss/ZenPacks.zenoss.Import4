@@ -88,5 +88,5 @@ do
     fi
 
     # if monitor terminated, the import loop is done
-    ! check_monitor && exit 1
+    ! check_monitor && exit 0
 done
