@@ -32,6 +32,7 @@ next_task()
 
       if [[ -f /import4/Q.tsdb/"$fn" ]] 
       then
+        [[ ! -d /import4/Q.tsdb/.tmp ]] && mkdir -p /import4/Q.tsdb/.tmp
         mv "/import4/Q.tsdb/$fn" /import4/Q.tsdb/.tmp
         echo -n "/import4/Q.tsdb/.tmp/$fn"
       fi
