@@ -33,10 +33,6 @@ fi
 mkdir -p  "$save_dir"
 [ -f "$fail_records" ] && mv "$fail_records" "$save_dir"
 
-# the extra one for tsdb
-mkdir -p "/import4/Q.tsdb/.tmp"
-mkdir -p "/import4/Q.tsdb/.fail"
-
 for dname in $targets
 do
     # remove the residue directories
@@ -44,6 +40,9 @@ do
 
     # recreate the struct
     mkdir -p "/import4/Q.$dname/.done"
+    mkdir -p "/import4/Q.$dname/.tmp"
+    mkdir -p "/import4/Q.$dname/.fail"
+    mkdir -p "/import4/Q.$dname/.part"
     chmod -R 777 "/import4/Q.$dname"
 done
 

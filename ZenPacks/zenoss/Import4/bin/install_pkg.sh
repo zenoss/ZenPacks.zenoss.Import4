@@ -21,7 +21,7 @@ export IMARKER="/var/import4/.initialized"
 
 if [[ -f "$IMARKER" ]]
 then
-    info_out "Initialization was done before"
+    echo "Initialization was done before"
     exit 42
 fi
 
@@ -71,6 +71,9 @@ for i in 'Q.jobs'  'Q.tasks'  'Q.tsdb'  'staging'  'tmp' 'dmd_uuid.txt'
 do
     rm -rf "/import4/$i"
 done
+
+# setup all the dir structure
+$BIN_D/prep_perf_import.sh
 
 info_out "Import4 scripts Installed."
 status_out "initialize" "Import4 scripts installed."
