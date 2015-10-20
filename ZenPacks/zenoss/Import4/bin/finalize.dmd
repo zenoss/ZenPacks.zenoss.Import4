@@ -1,0 +1,8 @@
+# uncatalog the uninstalled zenpacks
+with open('/import4/pkg/bin/zenpack_skipped.list') as f:
+    for zp in f:
+        zp_name = zp.strip()
+        zport.global_catalog.uncatalog_object('/zport/dmd/ZenPackManager/packs/%s' % zp_name)
+
+getFacade('ucsxskin').get_license_info(refresh=True)
+commit()
