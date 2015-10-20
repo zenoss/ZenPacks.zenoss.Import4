@@ -20,7 +20,9 @@ restore() {
 restore
 ((rc=$?))
 
-# update dmd with migrated licenses
-echo "getFacade('ucsxskin').get_license_info(refresh=True)" | zendmd
+# update dmd 
+# 1. remove zenpacks from catalog
+# 2. migrated licenses
+zendmd --script=/import4/pkg/bin/finalize.dmd
 
 exit $rc
