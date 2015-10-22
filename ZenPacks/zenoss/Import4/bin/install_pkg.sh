@@ -19,12 +19,6 @@ export BIN_D="$VOL_D/pkg/bin"
 
 export IMARKER="/var/import4/.initialized"
 
-if [[ -f "$IMARKER" ]]
-then
-    echo "Initialization was done before"
-    exit 42
-fi
-
 # common block
 progdir=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 source "$progdir/utils.sh"
@@ -34,17 +28,32 @@ status_out "initialize" "Installing import4 scripts ..."
 
 [[ -d "$VOL_D" ]]     || err_exit "The environment does not have the shared volume: $VOL_D" 
 
-# install rpms used by migration
-rpms="acl-2.2.51-12.el7.x86_64.rpm
-dejavu-fonts-common-2.33-6.el7.noarch.rpm
-dejavu-sans-mono-fonts-2.33-6.el7.noarch.rpm
-rrdtool-1.4.8-8.el7.x86_64.rpm"
+# install the rpm to the base image is necessary
+(( need_commit=0 ))
+if [[ -f "$IMARKER" ]]
+then
+    echo "RPMs already installed."
+    (( need_commit=42 ))
+else
+    # install rpms used by migration
+    rpms="acl-2.2.51-12.el7.x86_64.rpm
+    dejavu-fonts-common-2.33-6.el7.noarch.rpm
+    dejavu-sans-mono-fonts-2.33-6.el7.noarch.rpm
+    rrdtool-1.4.8-8.el7.x86_64.rpm"
 
-for rn in ${rpms}
-do
-    /usr/bin/rpm -Uvh ${progdir}/../rpm/$rn
-done
+    for rn in ${rpms}
+    do
+        /usr/bin/rpm -Uvh ${progdir}/../rpm/$rn
+    done
 
+    # drop a dotfile so that we can tell that rpm installation happened 
+    mkdir -p /var/import4 && touch $IMARKER
+    [[ $? = 0 ]] || err_exit "ERROR: creating initialization marker failed"
+
+    (( need_commit=0 ))
+fi
+
+# initialize the working space
 # make all accessible to all
 chmod g+s "$VOL_D"
 setfacl -d -m g::rwx "$VOL_D" 
@@ -78,8 +87,4 @@ $BIN_D/prep_perf_import.sh
 info_out "Import4 scripts Installed."
 status_out "initialize" "Import4 scripts installed."
 
-# drop a dotfile so that we can tell that initialization happened at the target pkg dir
-mkdir -p /var/import4 && touch $IMARKER
-[[ $? = 0 ]] || err_exit "ERROR: creating initialization marker failed"
-
-exit 0
+exit ${need_commit}
