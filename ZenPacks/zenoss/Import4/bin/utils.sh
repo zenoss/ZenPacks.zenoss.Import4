@@ -16,6 +16,7 @@ export tsdb_log="/import4/tsdb.log"     # keep the error output from telnet 4242
 export tsdb_error="/import4/tmp/tsdb.err.log"   # keep the error output from telnet 4242
 export fail_records="/import4/perf.fail.records"    # keep the failed status for top level UI
 export rrds_per_task=1
+export rrdmap="/import4/staging/rrdpath.map"    # the map of rrdpath to the dev/component path
 
 mkdir -p "$imp4_tmp"
 

@@ -37,7 +37,23 @@ tr_pattern='/*'
  device=${cntx%%$tr_pattern}
 export device=${device//$ic/-}
 
- key=Devices/$(dirname "$cntx")
+# find the dev key that the rrdPath mapped to
+            devPath=$(dirname "$cntx")   # e.g. 10.10.99.107/os/something_good
+  export    key=Devices/$devPath
+            mapped=$(grep "^${key}" $rrdmap | sed 's/.*|//')
+  if [[ ! -z $mapped ]]
+  then
+      info_out "$devPath mapped to $mapped"
+      dev_pattern='*devices/'
+      mapped_key="Devices/${mapped#$dev_pattern}"
+      if [[ "Devices/${devPath}" != "${mapped_key}" ]]
+      then
+          info_out "Replacing $devPath with $mapped_key"
+          export key=${mapped_key}
+      fi
+  fi
+
+# cleanup the illegal chars
 export key=${key//$ic/-}
 
  metric=$device/$(basename "$rrdPath" .rrd)
