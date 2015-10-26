@@ -93,6 +93,13 @@ if [[ ! -f dmd_uuid.txt ]]; then
 fi
 cp dmd_uuid.txt /import4/dmd_uuid.txt || chk_error_exit "Missing dmd_uuid.txt file! Invalid backup file."
 
+# put the rrdpath.map file to the staging area
+if [[ -f rrdpath.map ]]; then
+    cp rrdpath.map "$rrdmap"          || chk_error_exit "Copying rrdpath.map file failed!"
+else
+    info_out "No rrdpath map file, continue"
+fi
+
 cd "$zbk" || chk_error_exit "Missing zenbackup directory! Invalid backup file."
 
 # model files (zodb and zenpacks) are required
@@ -135,10 +142,6 @@ fi
 
 # prep the staging area
 mkdir -p "$staging_dir" || chk_error_exit "Cannot create staging directory in the containter!"
-
-# put the rrdpath.map file to the staging area
-[[ -f rrdpath.map ]]                    || info_out "No rrdpath map file, continue"
-cp rrdpath.map "$rrdmap"                || chk_error_exit "Copying rrdpath.map file failed!"
 
 ((perf_ok=0))
 perf_tarball=""
