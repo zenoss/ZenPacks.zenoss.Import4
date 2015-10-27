@@ -20,11 +20,9 @@ source "$progdir/utils.sh"
 
 # $1: perfPath- /mnt/dumptree/Devices
 # $2: rrdPath - /mnt/dumptree/Devices/10.10.99.107/os/something_good/abc.rrd
-# $3: outPath - the dirctory to hold all the tsdb output files
 
 export perfPath="${1%/}"
 export rrdPath="$2"
-export outPath="$3"
 
 # if this rrdPath has a matching rrdPath_GAUGE.rrd, we skip this file
 [[ -f "${rrdPath%.rrd}_GAUGE.rrd" ]] && ok_exit "GAUGE version exists, $rrdPath skipped"
@@ -39,8 +37,8 @@ export device=${device//$ic/-}
 
 # find the dev key that the rrdPath mapped to
             devPath=$(dirname "$cntx")   # e.g. 10.10.99.107/os/something_good
-  export    key=Devices/$devPath
-            mapped=$(grep "^${key}" $rrdmap | sed 's/.*|//')
+  export    key="Devices/$devPath"
+            mapped=$(grep "^${key}|" $rrdmap | sed 's/.*|//')
   if [[ ! -z $mapped ]]
   then
       info_out "$devPath mapped to $mapped"
