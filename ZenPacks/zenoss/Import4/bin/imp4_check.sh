@@ -93,7 +93,12 @@ if [[ ! -f dmd_uuid.txt ]]; then
 fi
 cp dmd_uuid.txt /import4/dmd_uuid.txt || chk_error_exit "Missing dmd_uuid.txt file! Invalid backup file."
 
+# prep the staging area
+mkdir -p "$staging_dir"             || chk_error_exit "Cannot create staging directory in the containter!"
+mkdir -p "$staging_zenbackup_dir"   || chk_error_exit "Cannot create staging zenbackup directory in the containter!"
+
 # put the rrdpath.map file to the staging area
+chk_status_out "Copying rrdpath.map"
 if [[ -f rrdpath.map ]]; then
     cp rrdpath.map "$rrdmap"          || chk_error_exit "Copying rrdpath.map file failed!"
 else
@@ -112,13 +117,13 @@ tar -vxf ZenPacks.tar | awk "$awk_cmd" >&2
 
 # events file is optional
 ((zep_ok=0))
-if [ -f zep.sql.gz ]
+if [[ -f zep.sql.gz ]]
 then
     chk_status_out "Unzipping zep.sql.gz"
     ! gunzip -vf "zep.sql.gz" >&2 && chk_error_exit "Uncompressing zep.sql.gz failed! Invalid backup file."
     ((zep_ok=1))
 
-    if [ -f zep.tar ]
+    if [[ -f zep.tar ]]
     then
         chk_status_out "Extracting zep.tar"
         tar -vxf zep.tar 2>/dev/null | awk "$awk_cmd" >&2
@@ -131,7 +136,7 @@ else
 fi
 
 # catalogservice file is optional
-if [ -f zencatalogservice.tar ]
+if [[ -f zencatalogservice.tar ]]
 then
     chk_status_out "Extracting zencatalogservice.tar"
     tar -vxf zencatalogservice.tar | awk "$awk_cmd" >&2
@@ -139,9 +144,6 @@ then
 else
     info_out "No catalogservice archive, continue"
 fi
-
-# prep the staging area
-mkdir -p "$staging_dir" || chk_error_exit "Cannot create staging directory in the containter!"
 
 ((perf_ok=0))
 perf_tarball=""
