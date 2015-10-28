@@ -15,7 +15,7 @@ import logging
 
 from ZenPacks.zenoss.Import4 import migration, model, events, perf
 
-log = logging.getLogger('import4')
+log = logging.getLogger('ZenPacks.zenoss.Import4')
 
 def run_migration(migration_class, args):
     # The main control running a migration process

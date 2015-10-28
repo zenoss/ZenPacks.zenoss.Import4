@@ -23,7 +23,7 @@ import string
 
 import ZenPacks.zenoss.Import4
 
-log = logging.getLogger('rrd2tsdb')
+log = logging.getLogger(__name__)
 script_path = os.path.dirname(os.path.realpath(__file__))
 
 _ES = OrderedDict(
