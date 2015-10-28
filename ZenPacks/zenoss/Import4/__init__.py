@@ -15,11 +15,12 @@ from Products.ZenModel.ZenPack import ZenPack as ZenPackBase
 from Products.ZenUtils.Utils import unused, zenPath
 
 import logging
-logging.basicConfig(
-    stream=sys.stderr,
-    level=logging.INFO,
-    format='%(asctime)s %(levelname)s %(name)s:%(lineno)s: %(message)s'
-)
+
+logger = logging.getLogger(__name__)
+handler = logging.StreamHandler(stream=sys.stderr)
+formatter = logging.Formatter('%(asctime)s %(levelname)s %(name)s:%(lineno)s: %(message)s')
+handler.setFormatter(formatter)
+logger.addHandler(handler)
 
 unused(Globals)
 
