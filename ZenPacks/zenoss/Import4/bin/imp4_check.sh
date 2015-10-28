@@ -64,6 +64,7 @@ for i in \
         componentList.txt \
         zenbackup_*.tgz \
         zenbackup/* \
+        rrdpath.map \
         dmd_uuid.txt \
         "$staging_dir"
 do
@@ -73,7 +74,7 @@ done
 
 # extracting known data files from the tar ball
 chk_status_out "Extracting $1"
-! tar -vxf "$1" >&2              && chk_error_exit "Extracting zenbackup (tar -xf \"$1\") failed! Invalid backup file."
+tar -vxf "$1" >&2              || chk_error_exit "Extracting zenbackup (tar -xf \"$1\") failed! Invalid backup file."
 
 if [[ -f backup.md5 ]]; then
    chk_status_out "Check md5sum against backup.md5"
@@ -83,7 +84,7 @@ else
 fi
 
 chk_status_out "Extracting zenbackup.tgz"
-! tar -zvxf zenbackup_*.tgz  >&2 && chk_error_exit "Extracting (tar -zxf) zenbackup_*.tgz failed! Invalid backup file."
+tar -zvxf zenbackup_*.tgz  >&2 || chk_error_exit "Extracting (tar -zxf) zenbackup_*.tgz failed! Invalid backup file."
 
 # make sure dmd_uuid.txt is there!
 chk_status_out "Copying dmd_uuid.txt"
@@ -92,11 +93,23 @@ if [[ ! -f dmd_uuid.txt ]]; then
 fi
 cp dmd_uuid.txt /import4/dmd_uuid.txt || chk_error_exit "Missing dmd_uuid.txt file! Invalid backup file."
 
-! cd "$zbk" && chk_error_exit "Missing zenbackup directory! Invalid backup file."
+# prep the staging area
+mkdir -p "$staging_dir"             || chk_error_exit "Cannot create staging directory in the containter!"
+mkdir -p "$staging_zenbackup_dir"   || chk_error_exit "Cannot create staging zenbackup directory in the containter!"
+
+# put the rrdpath.map file to the staging area
+chk_status_out "Copying rrdpath.map"
+if [[ -f rrdpath.map ]]; then
+    cp rrdpath.map "$rrdmap"          || chk_error_exit "Copying rrdpath.map file failed!"
+else
+    info_out "No rrdpath map file, continue"
+fi
+
+cd "$zbk" || chk_error_exit "Missing zenbackup directory! Invalid backup file."
 
 # model files (zodb and zenpacks) are required
 chk_status_out "Unzipping zodb.sql.gz"
-! gunzip -vf "zodb.sql.gz" >&2  && chk_error_exit "Uncompressing (gunzip) zodb.sql failed! Invalid backup file."
+gunzip -vf "zodb.sql.gz" >&2  || chk_error_exit "Uncompressing (gunzip) zodb.sql failed! Invalid backup file."
 
 chk_status_out "Extracting ZenPacks.tar"
 tar -vxf ZenPacks.tar | awk "$awk_cmd" >&2
@@ -104,13 +117,13 @@ tar -vxf ZenPacks.tar | awk "$awk_cmd" >&2
 
 # events file is optional
 ((zep_ok=0))
-if [ -f zep.sql.gz ]
+if [[ -f zep.sql.gz ]]
 then
     chk_status_out "Unzipping zep.sql.gz"
     ! gunzip -vf "zep.sql.gz" >&2 && chk_error_exit "Uncompressing zep.sql.gz failed! Invalid backup file."
     ((zep_ok=1))
 
-    if [ -f zep.tar ]
+    if [[ -f zep.tar ]]
     then
         chk_status_out "Extracting zep.tar"
         tar -vxf zep.tar 2>/dev/null | awk "$awk_cmd" >&2
@@ -123,7 +136,7 @@ else
 fi
 
 # catalogservice file is optional
-if [ -f zencatalogservice.tar ]
+if [[ -f zencatalogservice.tar ]]
 then
     chk_status_out "Extracting zencatalogservice.tar"
     tar -vxf zencatalogservice.tar | awk "$awk_cmd" >&2
@@ -131,9 +144,6 @@ then
 else
     info_out "No catalogservice archive, continue"
 fi
-
-# prep the staging area
-! mkdir -p "$staging_zenbackup_dir" && chk_error_exit "Cannot create staging directory in the containter!"
 
 ((perf_ok=0))
 perf_tarball=""
@@ -168,7 +178,7 @@ wait
 # no redirect of stdout where meta data is reported
 cmd="cd /mnt/pwd; /opt/zenoss/bin/python /import4/pkg/bin/import4 "
 chk_status_out "Finding import meta data"
-! su - zenoss -c "$cmd model check"            && chk_error_exit "Model files not valid!"
+su - zenoss -c "$cmd model check"            || chk_error_exit "Model files not valid!"
 
 # optional prevalidation
 [ $zep_ok -eq 1 ]  && ! su - zenoss -c "$cmd events check"           && chk_error_exit "Events files not valid!"
