@@ -10,6 +10,7 @@
 
 args="$*"
 options="__OPTIONS__: $*"
+mysql_sock=""
 
 # bring up the corresponding mysql daemon 
 prep_mysqld()
@@ -21,16 +22,17 @@ prep_mysqld()
     cp -rp /var/lib/mysql/* "$1"
 
     # start the daemon 
-    /usr/bin/mysqld_safe --datadir="$1" --port="$2" --nowatch --socket="$1"/mysql.sock
+    export mysql_sock="$1"/mysql.sock
+    /usr/bin/mysqld_safe --datadir="$1" --port="$2" --nowatch --socket="$mysql_sock"
 
     # wait until the daemon is running or timeout
     ((i=0))
-    while ! /usr/bin/mysqladmin --socket="$1"/mysql.sock status > /dev/null 2>&1
+    while ! /usr/bin/mysqladmin --socket="$mysql_sock" status >/dev/null 2>&1
     do
         echo -n '.'
         sleep 5
         ((i=i+1))
-        ((i>12)) && echo -n "\nCannot start mysql daemon!" && exit 1
+        ((i>12)) && echo -en "\nCannot start mysql daemon!" && exit 1
     done
     echo "Mysql daemon started on $1"
 }
@@ -46,14 +48,19 @@ prep_env()
     # we'll start our own mysqld for import operation if not running
     if [[   "$options" == *" import "* && "$options" == *"model "*  && "$options" == *" --database"* ]]
     then
-        prep_mysqld /var/lib/mysql.model 3307
+        prep_mysqld /var/lib/mysql.model 13307
     elif [[ "$options" == *" import "* && "$options" == *"events "* && "$options" == *" --database"* ]]
     then
-        prep_mysqld /var/lib/mysql.events 3306
+        prep_mysqld /var/lib/mysql.events 13306
     elif [[ "$options" == *" import"* && "$options" == *"perf "* ]]
     then
         /import4/pkg/bin/prep_perf_import.sh
     fi
+}
+
+stop_mysqld()
+{
+    [[ -n "$mysql_sock" ]] && /usr/bin/mysqladmin --socket="$mysql_sock" shutdown >/dev/null 2>&1
 }
 
 # execute the import4 command
@@ -68,6 +75,9 @@ exec_import4()
 # restore the image after import4 in case docker image got committed
 restore_env()
 {
+    # stop mysqld if running
+    stop_mysqld
+
     # restore the config file
     cp  -p /tmp/zodb_db_main.conf.sav /opt/zenoss/etc/zodb_db_main.conf
 }
