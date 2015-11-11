@@ -1,0 +1,7 @@
+*.py[cod]
+.rope*
+
+# Packages
+/*.egg-info
+/dist
+/build
