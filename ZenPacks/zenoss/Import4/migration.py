@@ -83,9 +83,9 @@ class Config(object):
     # other locations
     rrdTop =        '/import4/staging/zenbackup/perf/Devices'
     zepSocket =     '/var/lib/mysql.events/mysql.sock'
-    zepPort =       '3306'
+    zepPort =       '13306'     # for schema migration using migrate mysqld
     zodbSocket =    '/var/lib/mysql.model/mysql.sock'
-    zodbPort =      '3307'
+    zodbPort =      '13307'     # for database import using migrate mysqld, not during zenPack migrate, which uses 3307
     perf_poll =     10
     perf_timeout =  120
     perf_fail_records = '/import4/perf.fail.records'
