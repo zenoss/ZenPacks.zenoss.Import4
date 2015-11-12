@@ -87,7 +87,7 @@ class Config(object):
     zodbSocket =    '/var/lib/mysql.model/mysql.sock'
     zodbPort =      '13307'     # for database import using migrate mysqld, not during zenPack migrate, which uses 3307
     perf_poll =     10
-    perf_timeout =  120
+    perf_timeout =  720
     perf_fail_records = '/import4/perf.fail.records'
 
 
