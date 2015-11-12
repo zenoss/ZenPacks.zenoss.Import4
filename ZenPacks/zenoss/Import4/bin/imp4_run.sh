@@ -30,7 +30,7 @@ prep_mysqld()
     while ! /usr/bin/mysqladmin --socket="$mysql_sock" status >/dev/null 2>&1
     do
         echo -n '.'
-        sleep 15 
+        sleep 20
         ((i=i+1))
         ((i>12)) && echo -en "\nCannot start mysql daemon!" && exit 1
     done
