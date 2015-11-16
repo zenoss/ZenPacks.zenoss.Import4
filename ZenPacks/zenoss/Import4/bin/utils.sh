@@ -94,7 +94,7 @@ poll_idle()
 
   # initialize the quota 
   local _interval=5
-  local _row_per_sec=25000
+  local _row_per_sec=35000
   local _quota=0
   (( _quota=_interval*_row_per_sec ))
   echo -n "$_quota" >"$idle.quota"
@@ -110,7 +110,7 @@ poll_idle()
 
         # replenish the row allowance = 50K per second
         local _interval=5
-        local _row_per_sec=50000
+        local _row_per_sec=35000
         local _quota=0
         (( _quota=_interval*_row_per_sec ))
 
