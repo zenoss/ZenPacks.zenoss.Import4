@@ -65,9 +65,9 @@ BEGIN {
 {
     row_no += 1
     print tsdb_cmd, $0 |& TSDB_PORT
-    # cap the rate 10K
-    if ((row_no%10000) == 0) {
-            system("sleep 1")
+    # cap the rate 30K/second
+    if ((row_no%3000) == 0) {
+            system("sleep 0.1")
     }
 }
 END {
