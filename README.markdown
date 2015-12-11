@@ -1,16 +1,18 @@
 ZenPacks.zenoss.Import4
 =======================
-This zenpack provides the back-end implementation of the migration functionality from the Zenoss 4.x application to a 5.x one. When the ZenPack is installed, it contains two control-center services. The functionalities are encapsulated by the service run commands defined in `ZenPacks/zenoss/Import4/service_definition`.
+When a user upgrades Zenoss 4.x to a 5.x environment, there is also a need to migrate the existing 4.x operating data to the 5.x environment.  This zenpack provides the back-end of the migration functionalities. 
 
-The implementation is done by a set of python programs with shell script when convenient. flock over NFS is used for control flow synchronization.
+When the ZenPack is installed in the 5.x environment, it provides two control-center services. The migration functionalities are encapsulated into the service run commands defined in these two services - `imp4mariadb` and `imp4opentsdb`.
 
-The migration process includes three logical parts - model objects, events archive, and performance data. 
+The back-end is implemented by a set of python programs and shell scripts. `flock` over NFS is used to control flow synchronization.
+
+The migration process includes three logical classes of operations listed below - events archive, Models, and performance data. 
 
 Events archive
 --------------
-Event migration is a relatively straightforward process. The related event database and index are first extracted from the back-up file from the 4.x application and directly imported into the 5.x database.
+Event migration is relatively straightforward. The related event database and index are first extracted from the back-up file from the 4.x application. There contents are imported directly into the 5.x database, i.e.  `zenoss_zep`.
 
-* imp4mariadb service commands:
+* related imp4mariadb service commands:
 ```
 events-database - import the zenoss_zep event database
 events-index - copy the zep_index
@@ -18,8 +20,8 @@ events-index - copy the zep_index
 
 Models
 ------
-zodb keeps the model object data. The object data must be restored and migrated in order. 
-* imp4mariadb service commands:
+zodb keeps the model object data. Note that the model object data must be restored and migrated in order. 
+* related imp4mariadb service commands:
 ```
 model-database - import the zodb model object database
 model-catalog - copy the global catalog index
@@ -51,7 +53,7 @@ Performance data migration converts and imports the RRD time series data from th
 1
 ```
 
-* imp4mariadb service command:
+* related imp4mariadb service command:
 ```
 perf-import - the main interface to start the performance data migration process. It dispatches the rrd files into tasks that can be converted and imported by the following two types of workers.
 ```
@@ -70,7 +72,7 @@ serviced service shell ${SERVICED_MOUNT_OPT} imp4opentsdb bash -c /import4/pkg/b
 
 Back-end storage management
 ------------------
-* imp4mariadb service command:
+* other imp4mariadb service command:
 ```
 check - checks the integrity of the migration data file. It extracts its content at the same directory, the current directory of execution, as the input file. The current directory must be world read-writable.
 ```
@@ -97,3 +99,43 @@ serviced service run imp4mariadb check <filename.tar>
 ```
 Once all the migration data is in place, the migration sequences can be started in parallel as illustrated by the graph above.
 
+Migration data flow
+-------------------
+
+The diagram shows the life-cycle of the migration data from 4.x to 5.x environment.
+```
+4.x             migration data file             5.x
+export4.py ---> 4x-backup.tar                   initialize
+                +----------------------------+
+                | zenbackup_4x.tgz:          |
+                | +------------------------+ |
+                | |zep.sql.gz              | |
+                | |zep.tar                 | |
+                | |zodb.sql.gz             | |
+                | |zencatalogservice.tar   | |
+                | |ZenPacks.tar            | |
+                | |perf.tar.gz             | |
+                | +------------------------+ |
+                | md5                        |
+                | componentList.txt          |
+                | dmd_uuid.txt               |
+                | flexera license            |
+                | rrdpath.map                |
+                +----------------------------+  
+                                |
+                                +-------------> /mnt/pwd 
+                                                check -+-> /mnt/pwd/<extracted files>
+                                                       +---> /import4/staging/<performance data>
+                                                                    |
+                                                event-database      |
+                                                event-index         |
+                                                                    |
+                                                model-database      |
+                                                model-catalog       |
+                                                model-zenmigrate    |
+                                                model-zenpack       |
+                                                                    V
+                                                perf-import -+-> converter    +----------+
+                                                             +-> importer --> | opentsdb |
+                                                                              +----------+
+```
